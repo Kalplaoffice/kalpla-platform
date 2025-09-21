@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useUser } from '@/contexts/UserContext';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
+
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic';
 import { profileService } from '@/lib/profileService';
 import { 
   UserIcon,

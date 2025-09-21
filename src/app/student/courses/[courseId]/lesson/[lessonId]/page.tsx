@@ -7,6 +7,9 @@ import { VideoPlayer } from '@/components/video/VideoPlayer';
 import { LessonSidebar } from '@/components/video/LessonSidebar';
 import { VideoTabs } from '@/components/video/VideoTabs';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
+
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic';
 import { videoAnalyticsService } from '@/lib/videoAnalyticsService';
 import { notesService } from '@/lib/notesService';
 import { qaService } from '@/lib/qaService';

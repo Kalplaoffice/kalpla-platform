@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
+
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic';
 import { 
   CurrencyDollarIcon,
   ArrowPathIcon,

@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
+
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic';
 import { mentorApplicationService, MentorApplication } from '@/lib/mentorApplicationService';
 import { 
   EyeIcon, 

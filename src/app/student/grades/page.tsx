@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { StudentLayout } from '@/components/student/StudentLayout';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
+
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic';
 import { transcriptService } from '@/lib/transcriptService';
 import { 
   ChartBarIcon,
