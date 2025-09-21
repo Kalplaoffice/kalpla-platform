@@ -7,8 +7,9 @@ frontend:
     build:
       commands:
         - npm run build
+        - cp -r .next build
   artifacts:
-    baseDirectory: .next
+    baseDirectory: build
     files:
       - '**/*'
   cache:

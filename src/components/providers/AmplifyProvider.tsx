@@ -4,7 +4,12 @@ import { useEffect, useState } from 'react';
 import { Authenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
 import { getCurrentUser } from 'aws-amplify/auth';
+import { Amplify } from 'aws-amplify';
 import { UserProvider, UserContext } from '@/contexts/UserContext';
+import awsExports from '@/aws-exports';
+
+// Configure Amplify
+Amplify.configure(awsExports);
 
 interface AmplifyProviderProps {
   children: React.ReactNode;
