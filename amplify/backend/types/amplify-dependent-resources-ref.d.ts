@@ -14,5 +14,19 @@ export type AmplifyDependentResourcesAttributes = {
       "UserPoolId": "string",
       "UserPoolName": "string"
     }
+  },
+  "storage": {
+    "kalplaDocuments": {
+      "BucketArn": "string",
+      "BucketName": "string"
+    },
+    "kalplaStorage": {
+      "BucketArn": "string",
+      "BucketName": "string"
+    },
+    "kalplaVideos": {
+      "BucketArn": "string",
+      "BucketName": "string"
+    }
   }
 }
