@@ -34,7 +34,13 @@ interface UserProfile {
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, isStudent, isMentor, isAdmin, isInvestor } = useRoleBasedAccess();
+  const { user, hasRole } = useRoleBasedAccess();
+  
+  // Check user roles
+  const isStudent = hasRole('Student');
+  const isMentor = hasRole('Mentor');
+  const isAdmin = hasRole('Admin');
+  const isInvestor = hasRole('Investor');
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);

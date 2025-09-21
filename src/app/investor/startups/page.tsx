@@ -57,7 +57,10 @@ interface FeaturedStartup {
 }
 
 export default function FeaturedStartupsPage() {
-  const { isInvestor } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  
+  // Check if user is investor
+  const isInvestor = hasRole('Investor');
   const [startups, setStartups] = useState<FeaturedStartup[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'fundraising' | 'growth' | 'development' | 'launched'>('all');

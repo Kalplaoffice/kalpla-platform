@@ -48,7 +48,9 @@ interface DemoDay {
 }
 
 export default function DemoDaySchedulesPage() {
-  const { isInvestor } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  // Check if user is investor
+  const isInvestor = hasRole('Investor');
   const [demoDays, setDemoDays] = useState<DemoDay[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'live' | 'completed'>('upcoming');

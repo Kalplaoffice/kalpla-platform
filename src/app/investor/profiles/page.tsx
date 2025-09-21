@@ -97,7 +97,10 @@ interface InvestorAccess {
 }
 
 export default function StartupProfilesPage() {
-  const { isInvestor } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  
+  // Check if user is investor
+  const isInvestor = hasRole('Investor');
   const [startupProfiles, setStartupProfiles] = useState<StartupProfile[]>([]);
   const [investorAccess, setInvestorAccess] = useState<InvestorAccess | null>(null);
   const [loading, setLoading] = useState(true);

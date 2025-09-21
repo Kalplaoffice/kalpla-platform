@@ -35,7 +35,9 @@ interface ApprovalItem {
 }
 
 export default function ApprovalsPage() {
-  const { isAdmin } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  // Check if user is admin
+  const isAdmin = hasRole('Admin');
   const [approvals, setApprovals] = useState<ApprovalItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');

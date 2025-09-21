@@ -75,7 +75,9 @@ interface Payout {
 }
 
 export default function PaymentsPage() {
-  const { isAdmin } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  // Check if user is admin
+  const isAdmin = hasRole('Admin');
   const [activeTab, setActiveTab] = useState<'transactions' | 'refunds' | 'payouts'>('transactions');
   const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
   const [refunds, setRefunds] = useState<RefundRequest[]>([]);

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
+import { useUser } from '@/contexts/UserContext';
 import { 
   HomeIcon,
   ClipboardDocumentCheckIcon,
@@ -36,7 +37,8 @@ const navigation = [
 export function AdminLayout({ children }: AdminLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
-  const { user, signOut } = useRoleBasedAccess();
+  const { user } = useRoleBasedAccess();
+  const { signOut } = useUser();
 
   const handleSignOut = async () => {
     try {

@@ -74,7 +74,9 @@ interface InvestmentOpportunity {
 }
 
 export default function InvestorOpportunitiesPage() {
-  const { isInvestor } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  // Check if user is investor
+  const isInvestor = hasRole('Investor');
   const [opportunities, setOpportunities] = useState<InvestmentOpportunity[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

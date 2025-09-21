@@ -43,7 +43,10 @@ interface User {
 }
 
 export default function UsersPage() {
-  const { isAdmin } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  
+  // Check if user is admin
+  const isAdmin = hasRole('Admin');
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

@@ -80,7 +80,9 @@ interface AssignmentSubmission {
 }
 
 export default function KSMPManagementPage() {
-  const { isAdmin } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  // Check if user is admin
+  const isAdmin = hasRole('Admin');
   const [activeTab, setActiveTab] = useState<'phases' | 'cohorts' | 'assignments'>('phases');
   const [phases, setPhases] = useState<KSMPPhase[]>([]);
   const [cohorts, setCohorts] = useState<KSMPCohort[]>([]);

@@ -59,7 +59,9 @@ interface KSMPCohort {
 }
 
 export default function ProgramsPage() {
-  const { isAdmin } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  // Check if user is admin
+  const isAdmin = hasRole('Admin');
   const [activeTab, setActiveTab] = useState<'degree' | 'ksmp'>('degree');
   const [degreePrograms, setDegreePrograms] = useState<DegreeProgram[]>([]);
   const [ksmpCohorts, setKsmpCohorts] = useState<KSMPCohort[]>([]);

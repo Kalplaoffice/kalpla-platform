@@ -93,7 +93,9 @@ interface PortfolioSummary {
 }
 
 export default function InvestorPortfolioPage() {
-  const { isInvestor } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  // Check if user is investor
+  const isInvestor = hasRole('Investor');
   const [investments, setInvestments] = useState<PortfolioInvestment[]>([]);
   const [portfolioSummary, setPortfolioSummary] = useState<PortfolioSummary | null>(null);
   const [loading, setLoading] = useState(true);

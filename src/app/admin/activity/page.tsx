@@ -41,7 +41,10 @@ interface ActivityLog {
 }
 
 export default function AdminActivityPage() {
-  const { isAdmin } = useRoleBasedAccess();
+  const { hasRole, checkAccess } = useRoleBasedAccess();
+  
+  // Check if user is admin
+  const isAdmin = hasRole('Admin');
   const [activities, setActivities] = useState<ActivityLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

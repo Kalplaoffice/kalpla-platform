@@ -57,7 +57,10 @@ interface DemoDay {
 }
 
 export default function InvestorDashboard() {
-  const { isInvestor, user } = useRoleBasedAccess();
+  const { hasRole, user } = useRoleBasedAccess();
+  
+  // Check if user is investor
+  const isInvestor = hasRole('Investor');
   const [featuredStartups, setFeaturedStartups] = useState<FeaturedStartup[]>([]);
   const [upcomingDemoDays, setUpcomingDemoDays] = useState<DemoDay[]>([]);
   const [loading, setLoading] = useState(true);

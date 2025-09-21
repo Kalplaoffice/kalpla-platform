@@ -40,7 +40,10 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
-  const { isAdmin } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  
+  // Check if user is admin
+  const isAdmin = hasRole('Admin');
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
