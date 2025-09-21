@@ -11,6 +11,7 @@ frontend:
         - cp build/server/app/index.html build/index.html
         - cp -r build/server/app/* build/
         - cp -r build/static/* build/
+        - cp -r build/chunks/* build/
   artifacts:
     baseDirectory: build
     files:
