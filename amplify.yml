@@ -10,6 +10,7 @@ frontend:
         - cp -r .next build
         - cp build/server/app/index.html build/index.html
         - cp -r build/server/app/* build/
+        - cp -r build/static/* build/
   artifacts:
     baseDirectory: build
     files:
