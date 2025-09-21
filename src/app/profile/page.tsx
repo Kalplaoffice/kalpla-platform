@@ -16,12 +16,9 @@ import {
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 
-// Force dynamic rendering to prevent prerendering issues
-export const dynamic = 'force-dynamic';
 import { getCurrentUser, updateUserAttributes } from 'aws-amplify/auth';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 
-// Force dynamic rendering to prevent prerendering issues
 
 interface UserProfile {
   id: string;

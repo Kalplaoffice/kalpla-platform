@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { StudentLayout } from '@/components/student/StudentLayout';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 
-// Force dynamic rendering to prevent prerendering issues
 import { 
   AcademicCapIcon,
   UserGroupIcon,
@@ -21,8 +20,6 @@ import {
   BookOpenIcon
 } from '@heroicons/react/24/outline';
 
-// Force dynamic rendering to prevent prerendering issues
-export const dynamic = 'force-dynamic';
 
 interface EnrolledCourse {
   id: string;

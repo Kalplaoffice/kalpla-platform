@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { StudentLayout } from '@/components/student/StudentLayout';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 
-// Force dynamic rendering to prevent prerendering issues
 import { transcriptService } from '@/lib/transcriptService';
 import { 
   ChartBarIcon,
@@ -21,8 +20,6 @@ import {
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 
-// Force dynamic rendering to prevent prerendering issues
-export const dynamic = 'force-dynamic';
 
 interface Grade {
   id: string;

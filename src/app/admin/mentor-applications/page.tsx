@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 
-// Force dynamic rendering to prevent prerendering issues
 import { mentorApplicationService, MentorApplication } from '@/lib/mentorApplicationService';
 import { 
   EyeIcon, 
@@ -14,8 +13,6 @@ import {
   UserIcon
 } from '@heroicons/react/24/outline';
 
-// Force dynamic rendering to prevent prerendering issues
-export const dynamic = 'force-dynamic';
 
 export default function MentorApplicationsPage() {
   const { checkAccess, hasPermission } = useRoleBasedAccess();

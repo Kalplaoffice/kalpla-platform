@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 
-// Force dynamic rendering to prevent prerendering issues
 import { 
   UsersIcon,
   MagnifyingGlassIcon,
@@ -26,8 +25,6 @@ import {
   ClockIcon
 } from '@heroicons/react/24/outline';
 
-// Force dynamic rendering to prevent prerendering issues
-export const dynamic = 'force-dynamic';
 
 interface User {
   id: string;

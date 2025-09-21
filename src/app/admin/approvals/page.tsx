@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 
-// Force dynamic rendering to prevent prerendering issues
 import { 
   ClipboardDocumentCheckIcon,
   AcademicCapIcon,
@@ -18,8 +17,6 @@ import {
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 
-// Force dynamic rendering to prevent prerendering issues
-export const dynamic = 'force-dynamic';
 
 interface ApprovalItem {
   id: string;

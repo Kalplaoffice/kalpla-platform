@@ -21,6 +21,9 @@ export const metadata: Metadata = {
   description: "Learn, grow, and succeed with Kalpla's comprehensive educational platform",
 };
 
+// Force dynamic rendering for all pages
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
   children,
 }: Readonly<{

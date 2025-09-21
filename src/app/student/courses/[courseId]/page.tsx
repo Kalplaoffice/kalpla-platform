@@ -5,7 +5,6 @@ import { StudentLayout } from '@/components/student/StudentLayout';
 import { ResponsiveLMSCourseView } from '@/components/lms/ResponsiveLMSCourseView';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 
-// Force dynamic rendering to prevent prerendering issues
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 export default function CoursePage() {

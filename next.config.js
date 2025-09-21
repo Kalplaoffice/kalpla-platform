@@ -12,6 +12,12 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  // Force dynamic rendering for all pages
+  output: 'standalone',
+  // Disable static generation
+  trailingSlash: false,
+  // Skip static generation for all pages
+  generateStaticParams: false,
 };
 
 module.exports = nextConfig;
