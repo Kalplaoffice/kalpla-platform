@@ -47,6 +47,11 @@
       },
       "api": {
         "kalpla": {}
+      },
+      "storage": {
+        "kalplaVideos": {},
+        "kalplaDocuments": {},
+        "kalplaStorage": {}
       }
     }
   }
