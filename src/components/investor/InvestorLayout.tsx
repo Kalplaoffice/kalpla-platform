@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
+import { useUser } from '@/contexts/UserContext';
 import { 
   HomeIcon,
   StarIcon,
@@ -32,7 +33,8 @@ const navigation = [
 export function InvestorLayout({ children }: InvestorLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
-  const { user, signOut } = useRoleBasedAccess();
+  const { user } = useRoleBasedAccess();
+  const { signOut } = useUser();
 
   const handleSignOut = async () => {
     try {
