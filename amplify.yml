@@ -8,6 +8,8 @@ frontend:
       commands:
         - npm run build
         - cp -r .next build
+        - cp build/server/app/index.html build/index.html
+        - cp -r build/server/app/* build/
   artifacts:
     baseDirectory: build
     files:
