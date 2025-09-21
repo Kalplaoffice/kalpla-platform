@@ -15,18 +15,16 @@ export type AmplifyDependentResourcesAttributes = {
       "UserPoolName": "string"
     }
   },
-  "storage": {
-    "kalplaDocuments": {
-      "BucketArn": "string",
-      "BucketName": "string"
-    },
-    "kalplaStorage": {
-      "BucketArn": "string",
-      "BucketName": "string"
-    },
-    "kalplaVideos": {
-      "BucketArn": "string",
-      "BucketName": "string"
+  "hosting": {
+    "S3AndCloudFront": {
+      "CloudFrontDistributionID": "string",
+      "CloudFrontDomainName": "string",
+      "CloudFrontOriginAccessIdentity": "string",
+      "CloudFrontSecureURL": "string",
+      "HostingBucketName": "string",
+      "Region": "string",
+      "S3BucketSecureURL": "string",
+      "WebsiteURL": "string"
     }
   }
 }
