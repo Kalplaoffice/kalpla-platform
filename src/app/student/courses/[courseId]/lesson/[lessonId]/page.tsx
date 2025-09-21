@@ -9,7 +9,6 @@ import { VideoTabs } from '@/components/video/VideoTabs';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 
 // Force dynamic rendering to prevent prerendering issues
-export const dynamic = 'force-dynamic';
 import { videoAnalyticsService } from '@/lib/videoAnalyticsService';
 import { notesService } from '@/lib/notesService';
 import { qaService } from '@/lib/qaService';
@@ -23,6 +22,9 @@ import {
   UserGroupIcon,
   AcademicCapIcon
 } from '@heroicons/react/24/outline';
+
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic';
 
 interface Lesson {
   id: string;

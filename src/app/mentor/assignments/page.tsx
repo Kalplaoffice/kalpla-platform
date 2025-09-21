@@ -5,7 +5,6 @@ import { MentorLayout } from '@/components/mentor/MentorLayout';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 
 // Force dynamic rendering to prevent prerendering issues
-export const dynamic = 'force-dynamic';
 import { 
   DocumentTextIcon,
   ClockIcon,
@@ -18,6 +17,9 @@ import {
   AcademicCapIcon,
   ArrowRightIcon
 } from '@heroicons/react/24/outline';
+
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic';
 
 interface AssignmentSubmission {
   id: string;

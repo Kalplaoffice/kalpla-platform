@@ -5,7 +5,6 @@ import { Authenticator } from '@aws-amplify/ui-react';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 
 // Force dynamic rendering to prevent prerendering issues
-export const dynamic = 'force-dynamic';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
@@ -18,6 +17,9 @@ import {
   CalendarIcon,
   DocumentTextIcon
 } from '@heroicons/react/24/outline';
+
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic';
 import Link from 'next/link';
 
 export default function DashboardPage() {

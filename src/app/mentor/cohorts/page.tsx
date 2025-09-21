@@ -6,7 +6,6 @@ import { MentorLayout } from '@/components/mentor/MentorLayout';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 
 // Force dynamic rendering to prevent prerendering issues
-export const dynamic = 'force-dynamic';
 import { 
   UserGroupIcon,
   AcademicCapIcon,
@@ -25,6 +24,9 @@ import {
   TrophyIcon,
   SignalIcon
 } from '@heroicons/react/24/outline';
+
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic';
 
 interface Cohort {
   id: string;

@@ -6,7 +6,6 @@ import { MentorLayout } from '@/components/mentor/MentorLayout';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 
 // Force dynamic rendering to prevent prerendering issues
-export const dynamic = 'force-dynamic';
 import { 
   UserGroupIcon,
   VideoCameraIcon,
@@ -20,6 +19,9 @@ import {
   AcademicCapIcon,
   ChartBarIcon
 } from '@heroicons/react/24/outline';
+
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic';
 
 interface AssignedPhase {
   id: string;

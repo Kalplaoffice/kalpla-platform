@@ -3,9 +3,6 @@
 import { useState, useEffect } from 'react';
 import { MentorLayout } from '@/components/mentor/MentorLayout';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
-
-// Force dynamic rendering to prevent prerendering issues
-export const dynamic = 'force-dynamic';
 import { 
   ChartBarIcon,
   DocumentTextIcon,
@@ -18,6 +15,9 @@ import {
   ClockIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
+
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic';
 
 interface StudentGrade {
   studentId: string;

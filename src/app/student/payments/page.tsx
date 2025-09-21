@@ -6,7 +6,6 @@ import { StudentLayout } from '@/components/student/StudentLayout';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 
 // Force dynamic rendering to prevent prerendering issues
-export const dynamic = 'force-dynamic';
 import { 
   CreditCardIcon,
   CheckCircleIcon,
@@ -20,6 +19,9 @@ import {
   DocumentTextIcon,
   BanknotesIcon
 } from '@heroicons/react/24/outline';
+
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic';
 
 interface PaymentTransaction {
   id: string;

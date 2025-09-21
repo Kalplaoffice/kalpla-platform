@@ -5,7 +5,6 @@ import { AdminLayout } from '@/components/admin/AdminLayout';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 
 // Force dynamic rendering to prevent prerendering issues
-export const dynamic = 'force-dynamic';
 import { 
   ClockIcon,
   UserIcon,
@@ -24,6 +23,9 @@ import {
   DocumentTextIcon,
   VideoCameraIcon
 } from '@heroicons/react/24/outline';
+
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic';
 
 interface ActivityLog {
   id: string;

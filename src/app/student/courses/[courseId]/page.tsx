@@ -6,7 +6,6 @@ import { ResponsiveLMSCourseView } from '@/components/lms/ResponsiveLMSCourseVie
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 
 // Force dynamic rendering to prevent prerendering issues
-export const dynamic = 'force-dynamic';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 export default function CoursePage() {

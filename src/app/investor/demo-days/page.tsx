@@ -5,7 +5,6 @@ import { InvestorLayout } from '@/components/investor/InvestorLayout';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
 
 // Force dynamic rendering to prevent prerendering issues
-export const dynamic = 'force-dynamic';
 import { 
   CalendarIcon,
   ClockIcon,
@@ -18,6 +17,9 @@ import {
   EyeIcon,
   VideoCameraIcon
 } from '@heroicons/react/24/outline';
+
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = 'force-dynamic';
 
 interface DemoDay {
   id: string;
