@@ -1,0 +1,14 @@
+{
+  "AppSyncApiName": "kalpla",
+  "DynamoDBBillingMode": "PAY_PER_REQUEST",
+  "AuthCognitoUserPoolId": {
+    "Fn::GetAtt": [
+      "authkalplaAuth",
+      "Outputs.UserPoolId"
+    ]
+  },
+  "APIKeyExpirationEpoch": 1767225600,
+  "ConflictResolutionStrategy": "AUTOMERGE",
+  "DefaultTableName": "kalpla",
+  "Region": "ap-south-1"
+}

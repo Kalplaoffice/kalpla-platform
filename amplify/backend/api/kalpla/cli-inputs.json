@@ -20,9 +20,9 @@
       }
     },
     "apiName": "kalpla",
-    "gqlSchemaPath": "kalpla-platform/amplify/backend/api/kalpla/schema.graphql",
-    "resolverConfigPath": "kalpla-platform/amplify/backend/api/kalpla/resolvers",
+    "gqlSchemaPath": "amplify/backend/api/kalpla/schema.graphql",
+    "resolverConfigPath": "amplify/backend/api/kalpla/resolvers",
     "defaultTableName": "kalpla",
-    "region": "us-east-1"
+    "region": "ap-south-1"
   }
 }

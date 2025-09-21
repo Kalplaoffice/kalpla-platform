@@ -44,6 +44,9 @@
           "deploymentBucketName": "amplify-kalplaplatform-dev-737da-deployment",
           "s3Key": "amplify-builds/videoUploadProcessor-4b5073497665462b6544-build.zip"
         }
+      },
+      "api": {
+        "kalpla": {}
       }
     }
   }
