@@ -61,7 +61,9 @@ interface KSMPPhase {
 }
 
 export default function MentorPhasesPage() {
-  const { isMentor } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  // Check if user is mentor
+  const isMentor = hasRole('Mentor');
   const [phases, setPhases] = useState<KSMPPhase[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPhase, setSelectedPhase] = useState<KSMPPhase | null>(null);

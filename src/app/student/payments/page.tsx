@@ -50,7 +50,9 @@ interface Subscription {
 }
 
 export default function StudentPayments() {
-  const { isStudent } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  // Check if user is student
+  const isStudent = hasRole('Student');
   const [transactions, setTransactions] = useState<PaymentTransaction[]>([]);
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);

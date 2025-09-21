@@ -44,7 +44,9 @@ interface Course {
 }
 
 export default function StudentCoursesPage() {
-  const { isStudent } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  // Check if user is student
+  const isStudent = hasRole('Student');
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

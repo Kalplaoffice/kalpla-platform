@@ -60,7 +60,9 @@ interface Session {
 }
 
 export default function MentorSessionsPage() {
-  const { isMentor } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  // Check if user is mentor
+  const isMentor = hasRole('Mentor');
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

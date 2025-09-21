@@ -77,7 +77,9 @@ interface Transcript {
 }
 
 export default function StudentGrades() {
-  const { isStudent } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  // Check if user is student
+  const isStudent = hasRole('Student');
   const [transcript, setTranscript] = useState<Transcript | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'overview' | 'courses' | 'ksmp' | 'transcript'>('overview');

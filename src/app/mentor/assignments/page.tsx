@@ -46,7 +46,9 @@ interface GradingForm {
 }
 
 export default function MentorAssignments() {
-  const { isMentor } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  // Check if user is mentor
+  const isMentor = hasRole('Mentor');
   const [submissions, setSubmissions] = useState<AssignmentSubmission[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'submitted' | 'graded' | 'overdue'>('submitted');

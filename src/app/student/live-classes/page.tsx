@@ -44,7 +44,9 @@ interface LiveSession {
 }
 
 export default function StudentLiveClassesPage() {
-  const { isStudent } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  // Check if user is student
+  const isStudent = hasRole('Student');
   const [sessions, setSessions] = useState<LiveSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');

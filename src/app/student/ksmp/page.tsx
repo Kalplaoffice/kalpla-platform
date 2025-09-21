@@ -82,7 +82,9 @@ interface KSMPCohort {
 }
 
 export default function StudentKSMP() {
-  const { isStudent } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  // Check if user is student
+  const isStudent = hasRole('Student');
   const [ksmpData, setKsmpData] = useState<{
     enrolled: boolean;
     cohort: KSMPCohort | null;

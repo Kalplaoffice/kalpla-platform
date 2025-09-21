@@ -94,7 +94,9 @@ interface ProfileStats {
 
 export default function StudentProfilePage() {
   const { user } = useUser();
-  const { isStudent } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  // Check if user is student
+  const isStudent = hasRole('Student');
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [profileStats, setProfileStats] = useState<ProfileStats | null>(null);
   const [loading, setLoading] = useState(true);

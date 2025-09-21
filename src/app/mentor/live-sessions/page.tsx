@@ -51,7 +51,9 @@ interface NewSession {
 }
 
 export default function LiveSessionsPage() {
-  const { isMentor } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  // Check if user is mentor
+  const isMentor = hasRole('Mentor');
   const [sessions, setSessions] = useState<LiveSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);

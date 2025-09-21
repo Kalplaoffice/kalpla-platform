@@ -50,7 +50,9 @@ interface PhaseGrade {
 }
 
 export default function MentorGradebook() {
-  const { isMentor } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  // Check if user is mentor
+  const isMentor = hasRole('Mentor');
   const [phaseGrades, setPhaseGrades] = useState<PhaseGrade[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPhase, setSelectedPhase] = useState<PhaseGrade | null>(null);

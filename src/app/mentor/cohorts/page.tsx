@@ -63,7 +63,9 @@ interface Cohort {
 }
 
 export default function MentorCohortsPage() {
-  const { isMentor } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  // Check if user is mentor
+  const isMentor = hasRole('Mentor');
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCohort, setSelectedCohort] = useState<Cohort | null>(null);

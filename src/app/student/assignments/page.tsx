@@ -49,7 +49,10 @@ interface Assignment {
 }
 
 export default function StudentAssignments() {
-  const { isStudent } = useRoleBasedAccess();
+  const { hasRole } = useRoleBasedAccess();
+  
+  // Check if user is student
+  const isStudent = hasRole('Student');
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'pending' | 'submitted' | 'graded'>('all');
