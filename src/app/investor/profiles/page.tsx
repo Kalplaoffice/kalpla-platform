@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { InvestorLayout } from '@/components/investor/InvestorLayout';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
@@ -96,7 +96,7 @@ interface InvestorAccess {
   requestedDate: string;
 }
 
-export default function StartupProfilesPage() {
+function StartupProfilesContent() {
   const { hasRole } = useRoleBasedAccess();
   
   // Check if user is investor
@@ -853,5 +853,25 @@ export default function StartupProfilesPage() {
         )}
       </div>
     </InvestorLayout>
+  );
+}
+
+export default function StartupProfilesPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <ClockIcon className="h-16 w-16 text-blue-500 animate-spin mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Loading...
+          </h2>
+          <p className="text-gray-600">
+            Please wait...
+          </p>
+        </div>
+      </div>
+    }>
+      <StartupProfilesContent />
+    </Suspense>
   );
 }
