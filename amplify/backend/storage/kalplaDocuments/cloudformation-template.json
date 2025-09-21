@@ -82,20 +82,9 @@
           "Statement": [
             {
               "Effect": "Allow",
-              "Principal": {
-                "AWS": [
-                  {
-                    "Ref": "authRoleName"
-                  },
-                  {
-                    "Ref": "unauthRoleName"
-                  }
-                ]
-              },
+              "Principal": "*",
               "Action": [
-                "s3:GetObject",
-                "s3:PutObject",
-                "s3:DeleteObject"
+                "s3:GetObject"
               ],
               "Resource": {
                 "Fn::Sub": "${S3Bucket}/*"
