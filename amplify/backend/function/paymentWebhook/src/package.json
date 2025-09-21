@@ -1,0 +1,9 @@
+{
+  "name": "payment-webhook",
+  "version": "1.0.0",
+  "description": "Lambda function to handle PayU payment webhooks",
+  "main": "index.js",
+  "dependencies": {
+    "aws-sdk": "^2.1691.0"
+  }
+}

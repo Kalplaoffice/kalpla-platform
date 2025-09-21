@@ -1,0 +1,9 @@
+{
+  "name": "kalpla-auth-pre-token-generation",
+  "version": "1.0.0",
+  "description": "Lambda function for Cognito pre token generation trigger",
+  "main": "index.js",
+  "dependencies": {
+    "aws-sdk": "^2.1691.0"
+  }
+}

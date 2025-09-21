@@ -1,0 +1,9 @@
+{
+  "name": "kalpla-auth-post-confirmation",
+  "version": "1.0.0",
+  "description": "Lambda function for Cognito post confirmation trigger",
+  "main": "index.js",
+  "dependencies": {
+    "aws-sdk": "^2.1691.0"
+  }
+}

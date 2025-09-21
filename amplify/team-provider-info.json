@@ -1,0 +1,50 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-kalplaplatform-dev-737da-authRole",
+      "UnauthRoleArn": "arn:aws:iam::112914241644:role/amplify-kalplaplatform-dev-737da-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::112914241644:role/amplify-kalplaplatform-dev-737da-authRole",
+      "Region": "ap-south-1",
+      "DeploymentBucketName": "amplify-kalplaplatform-dev-737da-deployment",
+      "UnauthRoleName": "amplify-kalplaplatform-dev-737da-unauthRole",
+      "StackName": "amplify-kalplaplatform-dev-737da",
+      "StackId": "arn:aws:cloudformation:ap-south-1:112914241644:stack/amplify-kalplaplatform-dev-737da/6e0e9ff0-95ca-11f0-8f19-06ca444976e5",
+      "AmplifyAppId": "d198lpm4y4jfjq"
+    },
+    "categories": {
+      "auth": {
+        "kalplaAuth": {}
+      },
+      "function": {
+        "analyticsProcessor": {
+          "deploymentBucketName": "amplify-kalplaplatform-dev-737da-deployment",
+          "s3Key": "amplify-builds/analyticsProcessor-526b452f64724273527a-build.zip"
+        },
+        "kalplaAuthPostConfirmation": {
+          "deploymentBucketName": "amplify-kalplaplatform-dev-737da-deployment",
+          "s3Key": "amplify-builds/kalplaAuthPostConfirmation-45704442625968466b78-build.zip"
+        },
+        "kalplaAuthPreTokenGeneration": {
+          "deploymentBucketName": "amplify-kalplaplatform-dev-737da-deployment",
+          "s3Key": "amplify-builds/kalplaAuthPreTokenGeneration-48414d6932342b4f3647-build.zip"
+        },
+        "paymentProcessor": {
+          "deploymentBucketName": "amplify-kalplaplatform-dev-737da-deployment",
+          "s3Key": "amplify-builds/paymentProcessor-5239642b32714e703264-build.zip"
+        },
+        "paymentWebhook": {
+          "deploymentBucketName": "amplify-kalplaplatform-dev-737da-deployment",
+          "s3Key": "amplify-builds/paymentWebhook-486f51456d722b524231-build.zip"
+        },
+        "videoSignedUrlGenerator": {
+          "deploymentBucketName": "amplify-kalplaplatform-dev-737da-deployment",
+          "s3Key": "amplify-builds/videoSignedUrlGenerator-726335622b3133365132-build.zip"
+        },
+        "videoUploadProcessor": {
+          "deploymentBucketName": "amplify-kalplaplatform-dev-737da-deployment",
+          "s3Key": "amplify-builds/videoUploadProcessor-4b5073497665462b6544-build.zip"
+        }
+      }
+    }
+  }
+}

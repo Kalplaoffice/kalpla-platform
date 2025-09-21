@@ -1,0 +1,5 @@
+{
+  "CloudFrontDistributionId": "E1234567890ABC",
+  "CloudFrontKeyPairId": "APKAIOSFODNN7EXAMPLE",
+  "CloudFrontPrivateKeySecretArn": "arn:aws:secretsmanager:us-east-1:123456789012:secret:cloudfront-private-key-abc123"
+}

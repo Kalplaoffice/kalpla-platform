@@ -1,0 +1,684 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Kalpla EdTech Platform - Complete AWS Infrastructure'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: 'dev'
+    AllowedValues: ['dev', 'staging', 'prod']
+    Description: 'Environment name'
+  
+  DomainName:
+    Type: String
+    Default: 'kalpla.com'
+    Description: 'Domain name for the application'
+  
+  PayUMerchantId:
+    Type: String
+    Description: 'PayU Merchant ID'
+    NoEcho: true
+  
+  PayUMerchantKey:
+    Type: String
+    Description: 'PayU Merchant Key'
+    NoEcho: true
+  
+  PayUSalt:
+    Type: String
+    Description: 'PayU Salt'
+    NoEcho: true
+
+Resources:
+  # S3 Buckets
+  CourseContentBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'kalpla-course-content-${Environment}-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, PUT, POST, DELETE, HEAD]
+            AllowedOrigins: ['*']
+            MaxAge: 3600
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteIncompleteMultipartUploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+          - Id: TransitionToIA
+            Status: Enabled
+            Transitions:
+              - StorageClass: STANDARD_IA
+                TransitionInDays: 30
+              - StorageClass: GLACIER
+                TransitionInDays: 90
+
+  AssignmentSubmissionsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'kalpla-assignments-${Environment}-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteIncompleteMultipartUploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+
+  # CloudFront Distribution
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt CourseContentBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: !Ref CloudFrontOriginAccessIdentity
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad  # Managed-CachingOptimized
+          OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf  # Managed-CORS-S3Origin
+        Enabled: true
+        DefaultRootObject: index.html
+        PriceClass: PriceClass_100
+        HttpVersion: http2
+        Comment: !Sub 'Kalpla Course Content Distribution - ${Environment}'
+
+  CloudFrontOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub 'Kalpla OAI - ${Environment}'
+
+  # Cognito User Pool
+  UserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub 'kalpla-user-pool-${Environment}'
+      UsernameAttributes:
+        - email
+        - phone_number
+      AutoVerifiedAttributes:
+        - email
+        - phone_number
+      MfaConfiguration: OPTIONAL
+      MfaTypes:
+        - SMS
+        - TOTP
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+        - Name: name
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+        - Name: phone_number
+          AttributeDataType: String
+          Required: false
+          Mutable: true
+        - Name: role
+          AttributeDataType: String
+          Required: false
+          Mutable: true
+      UserPoolTags:
+        Environment: !Ref Environment
+        Project: Kalpla
+
+  UserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref UserPool
+      ClientName: !Sub 'kalpla-client-${Environment}'
+      GenerateSecret: false
+      RefreshTokenValidity: 30
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_PASSWORD_AUTH
+      SupportedIdentityProviders:
+        - COGNITO
+        - Google
+      CallbackURLs:
+        - !Sub 'https://${DomainName}/auth/callback'
+        - 'http://localhost:3000/auth/callback'
+      LogoutURLs:
+        - !Sub 'https://${DomainName}/auth/signin'
+        - 'http://localhost:3000/auth/signin'
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - email
+        - openid
+        - profile
+      AllowedOAuthFlowsUserPoolClient: true
+
+  # Cognito Identity Pool
+  IdentityPool:
+    Type: AWS::Cognito::IdentityPool
+    Properties:
+      IdentityPoolName: !Sub 'kalpla-identity-pool-${Environment}'
+      AllowUnauthenticatedIdentities: false
+      CognitoIdentityProviders:
+        - ClientId: !Ref UserPoolClient
+          ProviderName: !GetAtt UserPool.ProviderName
+
+  # Cognito User Pool Groups
+  AdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      UserPoolId: !Ref UserPool
+      GroupName: Admin
+      Description: 'Administrators with full access'
+      Precedence: 1
+
+  StudentGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      UserPoolId: !Ref UserPool
+      GroupName: Student
+      Description: 'Students enrolled in courses'
+      Precedence: 2
+
+  InstructorGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      UserPoolId: !Ref UserPool
+      GroupName: Instructor
+      Description: 'Course instructors'
+      Precedence: 3
+
+  MentorGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      UserPoolId: !Ref UserPool
+      GroupName: Mentor
+      Description: 'KSMP mentors'
+      Precedence: 4
+
+  InvestorGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      UserPoolId: !Ref UserPool
+      GroupName: Investor
+      Description: 'Approved investors'
+      Precedence: 5
+
+  # DynamoDB Tables
+  UserTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'User-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: email
+          AttributeType: S
+        - AttributeName: role
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: byEmail
+          KeySchema:
+            - AttributeName: email
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+        - IndexName: byRole
+          KeySchema:
+            - AttributeName: role
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: Kalpla
+
+  CourseTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'Course-${Environment}'
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: instructorId
+          AttributeType: S
+        - AttributeName: category
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+        - AttributeName: publishedDate
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: byInstructor
+          KeySchema:
+            - AttributeName: instructorId
+              KeyType: HASH
+            - AttributeName: publishedDate
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: byCategory
+          KeySchema:
+            - AttributeName: category
+              KeyType: HASH
+            - AttributeName: publishedDate
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: byStatus
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: publishedDate
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Project
+          Value: Kalpla
+
+  # Lambda Functions
+  PaymentProcessorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'kalpla-payment-processor-${Environment}'
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Code:
+        ZipFile: |
+          const crypto = require('crypto');
+          
+          exports.handler = async (event) => {
+            const { studentId, courseId, amount, currency = 'INR' } = JSON.parse(event.body);
+            
+            // Generate PayU hash
+            const hashString = `${process.env.PAYU_MERCHANT_ID}|${courseId}|${amount}|${currency}|${process.env.PAYU_SALT}`;
+            const hash = crypto.createHash('sha512').update(hashString).digest('hex');
+            
+            const paymentData = {
+              key: process.env.PAYU_MERCHANT_ID,
+              txnid: courseId,
+              amount: amount,
+              productinfo: 'Course Enrollment',
+              firstname: 'Student',
+              email: 'student@example.com',
+              phone: '9999999999',
+              surl: `${process.env.FRONTEND_URL}/payment/success`,
+              furl: `${process.env.FRONTEND_URL}/payment/failure`,
+              hash: hash,
+              service_provider: 'payu_paisa'
+            };
+            
+            return {
+              statusCode: 200,
+              headers: {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+              },
+              body: JSON.stringify(paymentData)
+            };
+          };
+      Environment:
+        Variables:
+          PAYU_MERCHANT_ID: !Ref PayUMerchantId
+          PAYU_SALT: !Ref PayUSalt
+          FRONTEND_URL: !Sub 'https://${DomainName}'
+      Role: !GetAtt PaymentProcessorRole.Arn
+      Timeout: 30
+
+  PaymentProcessorRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  PaymentWebhookFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'kalpla-payment-webhook-${Environment}'
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Code:
+        ZipFile: |
+          const AWS = require('aws-sdk');
+          const crypto = require('crypto');
+          
+          const dynamodb = new AWS.DynamoDB.DocumentClient();
+          
+          exports.handler = async (event) => {
+            const { txnid, status, hash, amount } = JSON.parse(event.body);
+            
+            // Verify hash
+            const hashString = `${process.env.PAYU_SALT}|${status}|||||||||||${process.env.PAYU_MERCHANT_KEY}|${txnid}|${amount}`;
+            const calculatedHash = crypto.createHash('sha512').update(hashString).digest('hex');
+            
+            if (calculatedHash !== hash) {
+              return {
+                statusCode: 400,
+                body: JSON.stringify({ error: 'Invalid hash' })
+              };
+            }
+            
+            if (status === 'success') {
+              // Update enrollment status
+              await dynamodb.update({
+                TableName: process.env.ENROLLMENT_TABLE,
+                Key: { id: txnid },
+                UpdateExpression: 'SET paymentStatus = :status, updatedAt = :timestamp',
+                ExpressionAttributeValues: {
+                  ':status': 'PAID',
+                  ':timestamp': new Date().toISOString()
+                }
+              }).promise();
+            }
+            
+            return {
+              statusCode: 200,
+              body: JSON.stringify({ status: 'processed' })
+            };
+          };
+      Environment:
+        Variables:
+          PAYU_SALT: !Ref PayUSalt
+          PAYU_MERCHANT_KEY: !Ref PayUMerchantKey
+          ENROLLMENT_TABLE: !Ref CourseEnrollmentTable
+      Role: !GetAtt PaymentWebhookRole.Arn
+      Timeout: 30
+
+  PaymentWebhookRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:UpdateItem
+                  - dynamodb:GetItem
+                Resource: !GetAtt CourseEnrollmentTable.Arn
+
+  # API Gateway
+  PaymentAPI:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub 'kalpla-payment-api-${Environment}'
+      Description: 'Payment processing API for Kalpla'
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  PaymentProcessorResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref PaymentAPI
+      ParentId: !GetAtt PaymentAPI.RootResourceId
+      PathPart: 'payment'
+
+  PaymentProcessorMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref PaymentAPI
+      ResourceId: !Ref PaymentProcessorResource
+      HttpMethod: POST
+      AuthorizationType: AWS_IAM
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PaymentProcessorFunction.Arn}/invocations'
+
+  PaymentWebhookResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref PaymentAPI
+      ParentId: !Ref PaymentProcessorResource
+      PathPart: 'webhook'
+
+  PaymentWebhookMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref PaymentAPI
+      ResourceId: !Ref PaymentWebhookResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PaymentWebhookFunction.Arn}/invocations'
+
+  # Lambda Permissions
+  PaymentProcessorPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref PaymentProcessorFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PaymentAPI}/*/*'
+
+  PaymentWebhookPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref PaymentWebhookFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${PaymentAPI}/*/*'
+
+  # AppSync API
+  AppSyncAPI:
+    Type: AWS::AppSync::GraphQLApi
+    Properties:
+      Name: !Sub 'kalpla-graphql-api-${Environment}'
+      AuthenticationType: AMAZON_COGNITO_USER_POOLS
+      UserPoolConfig:
+        UserPoolId: !Ref UserPool
+        AwsRegion: !Ref AWS::Region
+        DefaultAction: ALLOW
+      LogConfig:
+        CloudWatchLogsRoleArn: !GetAtt AppSyncLogsRole.Arn
+        FieldLogLevel: ALL
+
+  AppSyncLogsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: appsync.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AppSyncPushToCloudWatchLogs
+
+  # DynamoDB Data Source
+  UserDataSource:
+    Type: AWS::AppSync::DataSource
+    Properties:
+      ApiId: !GetAtt AppSyncAPI.ApiId
+      Name: UserDataSource
+      Type: AMAZON_DYNAMODB
+      DynamoDBConfig:
+        TableName: !Ref UserTable
+        AwsRegion: !Ref AWS::Region
+      ServiceRoleArn: !GetAtt AppSyncDynamoDBRole.Arn
+
+  AppSyncDynamoDBRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: appsync.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: DynamoDBAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                Resource: 
+                  - !GetAtt UserTable.Arn
+                  - !Sub '${UserTable.Arn}/index/*'
+
+  # SES Configuration
+  SESConfigurationSet:
+    Type: AWS::SES::ConfigurationSet
+    Properties:
+      Name: !Sub 'kalpla-ses-config-${Environment}'
+
+  # SNS Topics
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub 'kalpla-notifications-${Environment}'
+      DisplayName: 'Kalpla Notifications'
+
+  # CloudWatch Log Groups
+  PaymentProcessorLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/kalpla-payment-processor-${Environment}'
+      RetentionInDays: 14
+
+  PaymentWebhookLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/kalpla-payment-webhook-${Environment}'
+      RetentionInDays: 14
+
+Outputs:
+  UserPoolId:
+    Description: 'Cognito User Pool ID'
+    Value: !Ref UserPool
+    Export:
+      Name: !Sub '${AWS::StackName}-UserPoolId'
+
+  UserPoolClientId:
+    Description: 'Cognito User Pool Client ID'
+    Value: !Ref UserPoolClient
+    Export:
+      Name: !Sub '${AWS::StackName}-UserPoolClientId'
+
+  IdentityPoolId:
+    Description: 'Cognito Identity Pool ID'
+    Value: !Ref IdentityPool
+    Export:
+      Name: !Sub '${AWS::StackName}-IdentityPoolId'
+
+  AppSyncAPIId:
+    Description: 'AppSync API ID'
+    Value: !GetAtt AppSyncAPI.ApiId
+    Export:
+      Name: !Sub '${AWS::StackName}-AppSyncAPIId'
+
+  AppSyncAPIEndpoint:
+    Description: 'AppSync API Endpoint'
+    Value: !GetAtt AppSyncAPI.GraphQLUrl
+    Export:
+      Name: !Sub '${AWS::StackName}-AppSyncAPIEndpoint'
+
+  CloudFrontDistributionId:
+    Description: 'CloudFront Distribution ID'
+    Value: !Ref CloudFrontDistribution
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudFrontDistributionId'
+
+  CloudFrontDomainName:
+    Description: 'CloudFront Domain Name'
+    Value: !GetAtt CloudFrontDistribution.DomainName
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudFrontDomainName'
+
+  CourseContentBucketName:
+    Description: 'S3 Bucket for Course Content'
+    Value: !Ref CourseContentBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-CourseContentBucketName'
+
+  PaymentAPIEndpoint:
+    Description: 'Payment API Endpoint'
+    Value: !Sub 'https://${PaymentAPI}.execute-api.${AWS::Region}.amazonaws.com/prod'
+    Export:
+      Name: !Sub '${AWS::StackName}-PaymentAPIEndpoint'
+
+  NotificationTopicArn:
+    Description: 'SNS Notification Topic ARN'
+    Value: !Ref NotificationTopic
+    Export:
+      Name: !Sub '${AWS::StackName}-NotificationTopicArn'

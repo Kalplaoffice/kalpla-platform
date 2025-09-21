@@ -1,0 +1,1006 @@
+// GraphQL Queries for Kalpla Platform
+
+export const GET_USER = `
+  query GetUser($id: ID!) {
+    getUser(id: $id) {
+      id
+      email
+      firstName
+      lastName
+      role
+      profilePicture
+      bio
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const LIST_USERS = `
+  query ListUsers($filter: ModelUserFilterInput, $limit: Int, $nextToken: String) {
+    listUsers(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        email
+        firstName
+        lastName
+        role
+        profilePicture
+        bio
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+
+export const GET_COURSE = `
+  query GetCourse($id: ID!) {
+    getCourse(id: $id) {
+      id
+      title
+      description
+      instructorId
+      instructor {
+        id
+        firstName
+        lastName
+        profilePicture
+      }
+      status
+      price
+      thumbnail
+      createdAt
+      updatedAt
+      sections {
+        items {
+          id
+          title
+          description
+          order
+          lessons {
+            items {
+              id
+              title
+              description
+              duration
+              order
+              videoUrl
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+export const LIST_COURSES = `
+  query ListCourses($filter: ModelCourseFilterInput, $limit: Int, $nextToken: String) {
+    listCourses(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        title
+        description
+        instructorId
+        instructor {
+          id
+          firstName
+          lastName
+          profilePicture
+        }
+        status
+        price
+        thumbnail
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+
+export const GET_LESSON = `
+  query GetLesson($id: ID!) {
+    getLesson(id: $id) {
+      id
+      title
+      description
+      courseId
+      sectionId
+      videoUrl
+      duration
+      order
+      interactiveElements
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const LIST_LESSONS = `
+  query ListLessons($filter: ModelLessonFilterInput, $limit: Int, $nextToken: String) {
+    listLessons(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        title
+        description
+        courseId
+        sectionId
+        videoUrl
+        duration
+        order
+        interactiveElements
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+
+export const GET_COURSE_SECTION = `
+  query GetCourseSection($id: ID!) {
+    getCourseSection(id: $id) {
+      id
+      title
+      description
+      courseId
+      order
+      createdAt
+      updatedAt
+      lessons {
+        items {
+          id
+          title
+          description
+          duration
+          order
+          videoUrl
+        }
+      }
+    }
+  }
+`;
+
+export const LIST_COURSE_SECTIONS = `
+  query ListCourseSections($filter: ModelCourseSectionFilterInput, $limit: Int, $nextToken: String) {
+    listCourseSections(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        title
+        description
+        courseId
+        order
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+
+export const GET_COURSE_ENROLLMENT = `
+  query GetCourseEnrollment($id: ID!) {
+    getCourseEnrollment(id: $id) {
+      id
+      userId
+      courseId
+      course {
+        id
+        title
+        description
+        instructor {
+          id
+          firstName
+          lastName
+        }
+      }
+      status
+      enrolledAt
+      completedAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const LIST_COURSE_ENROLLMENTS = `
+  query ListCourseEnrollments($filter: ModelCourseEnrollmentFilterInput, $limit: Int, $nextToken: String) {
+    listCourseEnrollments(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        userId
+        courseId
+        course {
+          id
+          title
+          description
+        }
+        status
+        enrolledAt
+        completedAt
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+
+export const GET_STUDENT_PROGRESS = `
+  query GetStudentProgress($id: ID!) {
+    getStudentProgress(id: $id) {
+      id
+      userId
+      courseId
+      lessonId
+      lesson {
+        id
+        title
+        duration
+      }
+      progress
+      completed
+      lastWatchedAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const LIST_STUDENT_PROGRESS = `
+  query ListStudentProgress($filter: ModelStudentProgressFilterInput, $limit: Int, $nextToken: String) {
+    listStudentProgress(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        userId
+        courseId
+        lessonId
+        lesson {
+          id
+          title
+          duration
+        }
+        progress
+        completed
+        lastWatchedAt
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+
+export const GET_PAYMENT = `
+  query GetPayment($id: ID!) {
+    getPayment(id: $id) {
+      id
+      userId
+      courseId
+      course {
+        id
+        title
+      }
+      amount
+      currency
+      status
+      paymentMethod
+      transactionId
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const LIST_PAYMENTS = `
+  query ListPayments($filter: ModelPaymentFilterInput, $limit: Int, $nextToken: String) {
+    listPayments(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        userId
+        courseId
+        course {
+          id
+          title
+        }
+        amount
+        currency
+        status
+        paymentMethod
+        transactionId
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+
+export const GET_MENTOR_APPLICATION = `
+  query GetMentorApplication($id: ID!) {
+    getMentorApplication(id: $id) {
+      id
+      userId
+      user {
+        id
+        firstName
+        lastName
+        email
+      }
+      status
+      submittedAt
+      reviewedAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const LIST_MENTOR_APPLICATIONS = `
+  query ListMentorApplications($filter: ModelMentorApplicationFilterInput, $limit: Int, $nextToken: String) {
+    listMentorApplications(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        userId
+        user {
+          id
+          firstName
+          lastName
+          email
+        }
+        status
+        submittedAt
+        reviewedAt
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+
+// Video-related queries
+export const GET_VIDEO_PROGRESS = `
+  query GetVideoProgress($userId: ID!, $lessonId: ID!) {
+    getVideoProgress(userId: $userId, lessonId: $lessonId) {
+      id
+      userId
+      lessonId
+      progress
+      completed
+      lastWatchedAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const GET_VIDEO_ANALYTICS = `
+  query GetVideoAnalytics($lessonId: ID!) {
+    getVideoAnalytics(lessonId: $lessonId) {
+      id
+      lessonId
+      totalViews
+      averageWatchTime
+      completionRate
+      dropOffPoints
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const GET_INTERACTIVE_TIMELINE = `
+  query GetInteractiveTimeline($lessonId: ID!) {
+    getInteractiveTimeline(lessonId: $lessonId) {
+      id
+      lessonId
+      timeline
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+// Analytics queries
+export const GET_COURSE_METRICS = `
+  query GetCourseMetrics($courseId: ID!) {
+    getCourseMetrics(courseId: $courseId) {
+      id
+      courseId
+      totalEnrollments
+      completionRate
+      averageRating
+      revenue
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const LIST_COURSE_METRICS = `
+  query ListCourseMetrics($filter: ModelCourseMetricsFilterInput, $limit: Int, $nextToken: String) {
+    listCourseMetrics(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        courseId
+        course {
+          id
+          title
+        }
+        totalEnrollments
+        completionRate
+        averageRating
+        revenue
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+
+export const GET_REVENUE_ANALYTICS = `
+  query GetRevenueAnalytics($date: String!) {
+    getRevenueAnalytics(date: $date) {
+      id
+      date
+      totalRevenue
+      courseRevenue
+      subscriptionRevenue
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const LIST_REVENUE_ANALYTICS = `
+  query ListRevenueAnalytics($filter: ModelRevenueAnalyticsFilterInput, $limit: Int, $nextToken: String) {
+    listRevenueAnalytics(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        date
+        totalRevenue
+        courseRevenue
+        subscriptionRevenue
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+
+export const GET_STUDENT_ANALYTICS = `
+  query GetStudentAnalytics($userId: ID!) {
+    getStudentAnalytics(userId: $userId) {
+      id
+      userId
+      user {
+        id
+        firstName
+        lastName
+      }
+      totalCoursesEnrolled
+      totalCoursesCompleted
+      totalHoursWatched
+      averageRating
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const LIST_STUDENT_ANALYTICS = `
+  query ListStudentAnalytics($filter: ModelStudentAnalyticsFilterInput, $limit: Int, $nextToken: String) {
+    listStudentAnalytics(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        userId
+        user {
+          id
+          firstName
+          lastName
+        }
+        totalCoursesEnrolled
+        totalCoursesCompleted
+        totalHoursWatched
+        averageRating
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+
+// Notes System Queries
+export const GET_NOTES_BY_LESSON = `
+  query GetNotesByLesson($lessonId: ID!, $studentId: ID!) {
+    getNotesByLesson(lessonId: $lessonId, studentId: $studentId) {
+      items {
+        id
+        studentId
+        lessonId
+        content
+        timestamp
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
+export const LIST_NOTES = `
+  query ListNotes($filter: ModelNoteFilterInput, $limit: Int, $nextToken: String) {
+    listNotes(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        studentId
+        lessonId
+        content
+        timestamp
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;
+
+// Q&A System Queries
+export const GET_QUESTIONS_BY_LESSON = `
+  query GetQuestionsByLesson($lessonId: ID!) {
+    getQuestionsByLesson(lessonId: $lessonId) {
+      items {
+        id
+        studentId
+        lessonId
+        question
+        status
+        answers {
+          items {
+            id
+            mentorId
+            answer
+            createdAt
+          }
+        }
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
+export const GET_QUESTIONS_BY_STUDENT = `
+  query GetQuestionsByStudent($studentId: ID!) {
+    getQuestionsByStudent(studentId: $studentId) {
+      items {
+        id
+        lessonId
+        question
+        status
+        answers {
+          items {
+            id
+            mentorId
+            answer
+            createdAt
+          }
+        }
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
+export const GET_PENDING_QUESTIONS = `
+  query GetPendingQuestions($mentorId: ID!) {
+    getPendingQuestions(mentorId: $mentorId) {
+      items {
+        id
+        studentId
+        lessonId
+        question
+        status
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
+// Discussion Forum Queries
+export const GET_DISCUSSIONS_BY_LESSON = `
+  query GetDiscussionsByLesson($lessonId: ID!) {
+    getDiscussionsByLesson(lessonId: $lessonId) {
+      items {
+        id
+        studentId
+        lessonId
+        title
+        content
+        likes
+        replies {
+          items {
+            id
+            userId
+            content
+            createdAt
+          }
+        }
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
+export const GET_DISCUSSION_REPLIES = `
+  query GetDiscussionReplies($discussionId: ID!) {
+    getDiscussionReplies(discussionId: $discussionId) {
+      items {
+        id
+        discussionId
+        userId
+        content
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
+// Assignment System Queries
+export const GET_ASSIGNMENTS_BY_COURSE = `
+  query GetAssignmentsByCourse($courseId: ID!) {
+    getAssignmentsByCourse(courseId: $courseId) {
+      items {
+        id
+        courseId
+        title
+        description
+        instructions
+        dueDate
+        maxPoints
+        submissionTypes
+        resources
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
+export const GET_SUBMISSIONS_BY_USER = `
+  query GetSubmissionsByUser($userId: ID!) {
+    getSubmissionsByUser(userId: $userId) {
+      items {
+        id
+        assignmentId
+        assignment {
+          id
+          title
+          courseId
+          course {
+            id
+            title
+          }
+        }
+        textSubmission
+        fileSubmission
+        linkSubmission
+        status
+        grade
+        feedback
+        submittedAt
+        gradedAt
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
+export const GET_SUBMISSIONS_BY_ASSIGNMENT = `
+  query GetSubmissionsByAssignment($assignmentId: ID!) {
+    getSubmissionsByAssignment(assignmentId: $assignmentId) {
+      items {
+        id
+        userId
+        user {
+          id
+          firstName
+          lastName
+        }
+        textSubmission
+        fileSubmission
+        linkSubmission
+        status
+        grade
+        feedback
+        submittedAt
+        gradedAt
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
+export const GET_PENDING_SUBMISSIONS = `
+  query GetPendingSubmissions($mentorId: ID!) {
+    getPendingSubmissions(mentorId: $mentorId) {
+      items {
+        id
+        assignmentId
+        assignment {
+          id
+          title
+          courseId
+          course {
+            id
+            title
+          }
+        }
+        userId
+        user {
+          id
+          firstName
+          lastName
+        }
+        textSubmission
+        fileSubmission
+        linkSubmission
+        status
+        submittedAt
+        createdAt
+        updatedAt
+      }
+    }
+  }
+`;
+
+// Profile Queries
+export const GET_USER_PROFILE = `
+  query GetUserProfile($id: ID!) {
+    getUser(id: $id) {
+      id
+      email
+      firstName
+      lastName
+      role
+      profilePicture
+      bio
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const GET_STUDENT_PROFILE = `
+  query GetStudentProfile($userId: ID!) {
+    getStudentProfile(userId: $userId) {
+      id
+      userId
+      bio
+      interests
+      goals
+      currentPhase
+      education
+      experience
+      skills
+      totalCoursesCompleted
+      totalHoursWatched
+      averageGrade
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const GET_MENTOR_PROFILE = `
+  query GetMentorProfile($userId: ID!) {
+    getMentorProfile(userId: $userId) {
+      id
+      userId
+      bio
+      expertise
+      experience
+      education
+      certifications
+      portfolio
+      linkedinProfile
+      website
+      assignedPhases
+      maxStudentsPerPhase
+      status
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+// Transcript Queries
+export const GET_TRANSCRIPT = `
+  query GetTranscript($studentId: ID!) {
+    getTranscript(studentId: $studentId) {
+      id
+      studentId
+      transcriptUrl
+      generatedAt
+      createdAt
+    }
+  }
+`;
+
+export const LIST_TRANSCRIPTS = `
+  query ListTranscripts($filter: ModelTranscriptFilterInput, $limit: Int, $nextToken: String) {
+    listTranscripts(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        studentId
+        transcriptUrl
+        generatedAt
+        createdAt
+      }
+      nextToken
+    }
+  }
+`;
+
+// Application Queries
+export const GET_KSMP_APPLICATION = `
+  query GetKSMPApplication($id: ID!) {
+    getKSMPApplication(id: $id) {
+      id
+      userId
+      user {
+        id
+        firstName
+        lastName
+        email
+      }
+      status
+      submittedAt
+      startupIdea
+      teamSize
+      currentPhase
+      fundingRaised
+      businessModel
+      targetMarket
+      competitiveAdvantage
+      reviewedBy
+      reviewedAt
+      reviewNotes
+      rejectionReason
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const GET_INVESTOR_APPLICATION = `
+  query GetInvestorApplication($id: ID!) {
+    getInvestorApplication(id: $id) {
+      id
+      userId
+      user {
+        id
+        firstName
+        lastName
+        email
+      }
+      status
+      submittedAt
+      company
+      position
+      investmentFocus
+      portfolioSize
+      website
+      linkedinProfile
+      reviewedBy
+      reviewedAt
+      reviewNotes
+      rejectionReason
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const GET_MENTOR_APPLICATION_DETAILS = `
+  query GetMentorApplication($id: ID!) {
+    getMentorApplication(id: $id) {
+      id
+      userId
+      user {
+        id
+        firstName
+        lastName
+        email
+      }
+      status
+      submittedAt
+      bio
+      expertise
+      experience
+      education
+      certifications
+      portfolio
+      linkedinProfile
+      website
+      documents
+      reviewedBy
+      reviewedAt
+      reviewNotes
+      rejectionReason
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const LIST_PENDING_APPLICATIONS = `
+  query ListPendingApplications {
+    listPendingApplications {
+      ksmpApplications {
+        items {
+          id
+          userId
+          user {
+            id
+            firstName
+            lastName
+            email
+          }
+          status
+          submittedAt
+          startupIdea
+          teamSize
+          currentPhase
+          createdAt
+        }
+      }
+      investorApplications {
+        items {
+          id
+          userId
+          user {
+            id
+            firstName
+            lastName
+            email
+          }
+          status
+          submittedAt
+          company
+          position
+          investmentFocus
+          createdAt
+        }
+      }
+      mentorApplications {
+        items {
+          id
+          userId
+          user {
+            id
+            firstName
+            lastName
+            email
+          }
+          status
+          submittedAt
+          bio
+          expertise
+          createdAt
+        }
+      }
+    }
+  }
+`;

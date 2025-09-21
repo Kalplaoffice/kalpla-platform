@@ -1,0 +1,7 @@
+{
+  "PayUMerchantKey": "J7JOvh",
+  "PayUMerchantSalt": "a2bo9K3otgyaleULdXEQC8LWMCK04BP2",
+  "PayUClientId": "ac17125563d136da911f51375dcaccf37adca06f69ffcfbde88f12459316eda2",
+  "PayUClientSecret": "6a8c63830d7dbe019f40ba33d0572c7ad0a58fb21638ea91d167b0cd492fddcc",
+  "AppUrl": "https://localhost:3001"
+}

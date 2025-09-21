@@ -1,0 +1,9 @@
+{
+  "bucketName": "kalpla-videos-dev",
+  "authPolicyName": "S3_ACCESS",
+  "unauthPolicyName": "S3_ACCESS",
+  "authRoleName": "amplify-kalplaplatform-dev-737da-authRole",
+  "unauthRoleName": "amplify-kalplaplatform-dev-737da-unauthRole",
+  "authPermissions": "rw",
+  "unauthPermissions": "r"
+}

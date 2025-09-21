@@ -1,0 +1,4 @@
+{
+  "S3BucketName": "kalpla-video-uploads-dev",
+  "MediaConvertRoleArn": "arn:aws:iam::123456789012:role/MediaConvertRole"
+}

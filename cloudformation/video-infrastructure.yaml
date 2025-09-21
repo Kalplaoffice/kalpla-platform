@@ -1,0 +1,523 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Kalpla Video Player Infrastructure - S3, CloudFront, DynamoDB, Lambda'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name (dev, staging, prod)
+  
+  CloudFrontDomain:
+    Type: String
+    Default: d1234567890.cloudfront.net
+    Description: CloudFront distribution domain
+  
+  CloudFrontKeyPairId:
+    Type: String
+    Default: K2JCJMDEHXQW6F
+    Description: CloudFront key pair ID for signed URLs
+  
+  JWTSecret:
+    Type: String
+    Default: your-secret-key
+    Description: JWT secret for token verification
+  
+  AllowedOrigins:
+    Type: CommaDelimitedList
+    Default: 'http://localhost:3000,https://kalpla.com'
+    Description: Allowed CORS origins
+
+Resources:
+  # S3 Bucket for Video Storage
+  VideoStorageBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'kalpla-videos-${Environment}-${AWS::AccountId}'
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders: ['*']
+            AllowedMethods: [GET, HEAD]
+            AllowedOrigins: !Ref AllowedOrigins
+            MaxAge: 3600
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteIncompleteMultipartUploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 7
+          - Id: TransitionToIA
+            Status: Enabled
+            Transitions:
+              - StorageClass: STANDARD_IA
+                TransitionInDays: 30
+          - Id: TransitionToGlacier
+            Status: Enabled
+            Transitions:
+              - StorageClass: GLACIER
+                TransitionInDays: 90
+
+  # CloudFront Distribution
+  VideoCloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Origins:
+          - Id: S3Origin
+            DomainName: !GetAtt VideoStorageBucket.RegionalDomainName
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub 'origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}'
+        Enabled: true
+        DefaultRootObject: index.html
+        Comment: !Sub 'Kalpla Video Distribution - ${Environment}'
+        DefaultCacheBehavior:
+          TargetOriginId: S3Origin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS]
+          CachedMethods: [GET, HEAD]
+          Compress: true
+          ForwardedValues:
+            QueryString: false
+            Cookies:
+              Forward: none
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad  # CachingOptimized
+          OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf  # CORS-S3Origin
+        CacheBehaviors:
+          - PathPattern: '/videos/*'
+            TargetOriginId: S3Origin
+            ViewerProtocolPolicy: redirect-to-https
+            AllowedMethods: [GET, HEAD, OPTIONS]
+            CachedMethods: [GET, HEAD]
+            Compress: true
+            ForwardedValues:
+              QueryString: true
+              Headers: ['Origin', 'Access-Control-Request-Headers', 'Access-Control-Request-Method']
+              Cookies:
+                Forward: none
+            CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad
+            OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf
+        PriceClass: PriceClass_100
+        HttpVersion: http2
+        IPV6Enabled: true
+        WebACLId: !Ref CloudFrontWebACL
+
+  # CloudFront Origin Access Identity
+  CloudFrontOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub 'Kalpla Video OAI - ${Environment}'
+
+  # CloudFront Web ACL
+  CloudFrontWebACL:
+    Type: AWS::WAFv2::WebACL
+    Properties:
+      Name: !Sub 'kalpla-video-waf-${Environment}'
+      Scope: CLOUDFRONT
+      DefaultAction:
+        Allow: {}
+      Rules:
+        - Name: RateLimitRule
+          Priority: 1
+          Statement:
+            RateBasedStatement:
+              Limit: 2000
+              AggregateKeyType: IP
+          Action:
+            Block: {}
+          VisibilityConfig:
+            SampledRequestsEnabled: true
+            CloudWatchMetricsEnabled: true
+            MetricName: RateLimitRule
+
+  # DynamoDB Tables
+  VideoProgressTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'VideoProgress-${Environment}'
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: lessonId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: lessonId
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: VideoPlayer
+
+  LessonCompletionTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'LessonCompletion-${Environment}'
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: lessonId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: lessonId
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: VideoPlayer
+
+  VideoNotesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'VideoNotes-${Environment}'
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: lessonId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: LessonIdIndex
+          KeySchema:
+            - AttributeName: lessonId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: VideoPlayer
+
+  VideoQuestionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'VideoQuestions-${Environment}'
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: lessonId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: LessonIdIndex
+          KeySchema:
+            - AttributeName: lessonId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: VideoPlayer
+
+  VideoDiscussionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'VideoDiscussions-${Environment}'
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: lessonId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: LessonIdIndex
+          KeySchema:
+            - AttributeName: lessonId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: VideoPlayer
+
+  CourseEnrollmentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'CourseEnrollments-${Environment}'
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: courseId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: courseId
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: VideoPlayer
+
+  LessonsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub 'Lessons-${Environment}'
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+        - AttributeName: courseId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: CourseIdIndex
+          KeySchema:
+            - AttributeName: courseId
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+      BillingMode: PAY_PER_REQUEST
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: VideoPlayer
+
+  # Lambda Function
+  VideoAccessManagerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub 'VideoAccessManager-${Environment}'
+      Runtime: nodejs18.x
+      Handler: index.handler
+      Role: !GetAtt VideoAccessManagerRole.Arn
+      Code:
+        ZipFile: |
+          exports.handler = async (event) => {
+            return {
+              statusCode: 200,
+              body: JSON.stringify({ message: 'Video Access Manager' })
+            };
+          };
+      Environment:
+        Variables:
+          CLOUDFRONT_DOMAIN: !Ref CloudFrontDomain
+          CLOUDFRONT_KEY_PAIR_ID: !Ref CloudFrontKeyPairId
+          JWT_SECRET: !Ref JWTSecret
+          VIDEO_PROGRESS_TABLE: !Ref VideoProgressTable
+          LESSON_COMPLETION_TABLE: !Ref LessonCompletionTable
+          VIDEO_NOTES_TABLE: !Ref VideoNotesTable
+          VIDEO_QUESTIONS_TABLE: !Ref VideoQuestionsTable
+          VIDEO_DISCUSSIONS_TABLE: !Ref VideoDiscussionsTable
+          COURSE_ENROLLMENTS_TABLE: !Ref CourseEnrollmentsTable
+          LESSONS_TABLE: !Ref LessonsTable
+      Timeout: 30
+      MemorySize: 256
+      Description: !Sub 'Manages video access and generates signed URLs - ${Environment}'
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: VideoPlayer
+
+  # Lambda Execution Role
+  VideoAccessManagerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: VideoAccessManagerPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub 'arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*'
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                Resource:
+                  - !GetAtt VideoProgressTable.Arn
+                  - !GetAtt LessonCompletionTable.Arn
+                  - !GetAtt VideoNotesTable.Arn
+                  - !GetAtt VideoQuestionsTable.Arn
+                  - !GetAtt VideoDiscussionsTable.Arn
+                  - !GetAtt CourseEnrollmentsTable.Arn
+                  - !GetAtt LessonsTable.Arn
+                  - !Sub '${VideoProgressTable.Arn}/index/*'
+                  - !Sub '${VideoNotesTable.Arn}/index/*'
+                  - !Sub '${VideoQuestionsTable.Arn}/index/*'
+                  - !Sub '${VideoDiscussionsTable.Arn}/index/*'
+                  - !Sub '${LessonsTable.Arn}/index/*'
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub '${VideoStorageBucket.Arn}/*'
+              - Effect: Allow
+                Action:
+                  - cloudfront:CreateInvalidation
+                  - cloudfront:GetInvalidation
+                  - cloudfront:ListInvalidations
+                Resource: '*'
+
+  # API Gateway
+  VideoAccessManagerAPI:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: !Sub 'VideoAccessManagerAPI-${Environment}'
+      Description: !Sub 'API Gateway for Video Access Manager - ${Environment}'
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+
+  VideoAccessManagerResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref VideoAccessManagerAPI
+      ParentId: !GetAtt VideoAccessManagerAPI.RootResourceId
+      PathPart: video
+
+  VideoAccessManagerMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref VideoAccessManagerAPI
+      ResourceId: !Ref VideoAccessManagerResource
+      HttpMethod: ANY
+      AuthorizationType: NONE
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${VideoAccessManagerFunction}/invocations'
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Origin: true
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+
+  VideoAccessManagerDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: VideoAccessManagerMethod
+    Properties:
+      RestApiId: !Ref VideoAccessManagerAPI
+      StageName: !Ref Environment
+
+  VideoAccessManagerLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref VideoAccessManagerFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${VideoAccessManagerAPI}/*/*'
+
+  # CloudWatch Log Group
+  VideoAccessManagerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${VideoAccessManagerFunction}'
+      RetentionInDays: 14
+
+  # S3 Bucket Policy
+  VideoStorageBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref VideoStorageBucket
+      PolicyDocument:
+        Statement:
+          - Sid: AllowCloudFrontServicePrincipal
+            Effect: Allow
+            Principal:
+              Service: cloudfront.amazonaws.com
+            Action: s3:GetObject
+            Resource: !Sub '${VideoStorageBucket.Arn}/*'
+            Condition:
+              StringEquals:
+                'AWS:SourceArn': !Sub 'arn:aws:cloudfront::${AWS::AccountId}:distribution/${VideoCloudFrontDistribution}'
+
+Outputs:
+  VideoStorageBucketName:
+    Description: Name of the S3 bucket for video storage
+    Value: !Ref VideoStorageBucket
+    Export:
+      Name: !Sub '${AWS::StackName}-VideoStorageBucket'
+
+  CloudFrontDistributionDomain:
+    Description: CloudFront distribution domain
+    Value: !GetAtt VideoCloudFrontDistribution.DomainName
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudFrontDomain'
+
+  CloudFrontDistributionId:
+    Description: CloudFront distribution ID
+    Value: !Ref VideoCloudFrontDistribution
+    Export:
+      Name: !Sub '${AWS::StackName}-CloudFrontId'
+
+  VideoAccessManagerFunctionArn:
+    Description: ARN of the Video Access Manager Lambda function
+    Value: !GetAtt VideoAccessManagerFunction.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-VideoAccessManagerFunction'
+
+  VideoAccessManagerAPIUrl:
+    Description: URL of the Video Access Manager API Gateway
+    Value: !Sub 'https://${VideoAccessManagerAPI}.execute-api.${AWS::Region}.amazonaws.com/${Environment}/video'
+    Export:
+      Name: !Sub '${AWS::StackName}-VideoAccessManagerAPI'
+
+  DynamoDBTables:
+    Description: DynamoDB table names
+    Value: !Sub 'VideoProgress:${VideoProgressTable}, LessonCompletion:${LessonCompletionTable}, VideoNotes:${VideoNotesTable}, VideoQuestions:${VideoQuestionsTable}, VideoDiscussions:${VideoDiscussionsTable}, CourseEnrollments:${CourseEnrollmentsTable}, Lessons:${LessonsTable}'
+    Export:
+      Name: !Sub '${AWS::StackName}-DynamoDBTables'

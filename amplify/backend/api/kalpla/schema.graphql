@@ -1,0 +1,1164 @@
+# Kalpla EdTech Platform GraphQL Schema
+
+type User @model @auth(rules: [
+  { allow: owner, operations: [read, update] },
+  { allow: groups, groups: ["Admin"], operations: [read, create, update, delete] }
+]) {
+  id: ID!
+  email: String! @index(name: "byEmail")
+  phoneNumber: String
+  firstName: String!
+  lastName: String!
+  role: String! @index(name: "byRole")
+  profilePicture: String
+  isActive: Boolean!
+  lastLoginAt: AWSDateTime
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+  
+  # Relationships
+  instructorProfile: InstructorProfile @hasOne
+  mentorProfile: MentorProfile @hasOne
+  studentProfile: StudentProfile @hasOne
+  investorProfile: InvestorProfile @hasOne
+  
+  # Enrollments
+  courseEnrollments: [CourseEnrollment!] @hasMany(indexName: "byUser")
+  programEnrollments: [ProgramEnrollment!] @hasMany(indexName: "byUser")
+  ksmpEnrollments: [KSMPEnrollment!] @hasMany(indexName: "byUser")
+  
+  # Submissions and Progress
+  assignmentSubmissions: [AssignmentSubmission!] @hasMany(indexName: "byUser")
+  studentProgress: [StudentProgress!] @hasMany(indexName: "byStudent")
+  
+  # Applications
+  instructorApplications: [InstructorApplication!] @hasMany(indexName: "byUser")
+  mentorApplications: [MentorApplication!] @hasMany(indexName: "byUser")
+  investorApplications: [InvestorApplication!] @hasMany(indexName: "byUser")
+  ksmpApplications: [KSMPApplication!] @hasMany(indexName: "byUser")
+}
+
+type InstructorProfile @model @auth(rules: [
+  { allow: owner, operations: [read, update] },
+  { allow: groups, groups: ["Admin"], operations: [read, create, update, delete] }
+]) {
+  id: ID!
+  userId: ID! @index(name: "byUser")
+  user: User! @belongsTo(fields: ["userId"])
+  
+  bio: String
+  expertise: [String!]
+  experience: String
+  education: String
+  certifications: [String!]
+  portfolio: String
+  linkedinProfile: String
+  website: String
+  
+  # Status
+  status: InstructorStatus!
+  approvedAt: AWSDateTime
+  approvedBy: ID
+  
+  # Courses
+  courses: [Course!] @hasMany(indexName: "byInstructor")
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type MentorProfile @model @auth(rules: [
+  { allow: owner, operations: [read, update] },
+  { allow: groups, groups: ["Admin"], operations: [read, create, update, delete] }
+]) {
+  id: ID!
+  userId: ID! @index(name: "byUser")
+  user: User! @belongsTo(fields: ["userId"])
+  
+  bio: String
+  expertise: [String!]
+  experience: String
+  education: String
+  certifications: [String!]
+  portfolio: String
+  linkedinProfile: String
+  website: String
+  
+  # KSMP Specific
+  assignedPhases: [KSMPPhase!]
+  maxStudentsPerPhase: Int
+  
+  # Status
+  status: MentorStatus!
+  approvedAt: AWSDateTime
+  approvedBy: ID
+  
+  # Sessions and Grading
+  liveSessions: [LiveSession!] @hasMany(indexName: "byMentor")
+  assignmentSubmissions: [AssignmentSubmission!] @hasMany(indexName: "byMentor")
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type StudentProfile @model @auth(rules: [
+  { allow: owner, operations: [read, update] },
+  { allow: groups, groups: ["Admin", "Mentor"], operations: [read] }
+]) {
+  id: ID!
+  userId: ID! @index(name: "byUser")
+  user: User! @belongsTo(fields: ["userId"])
+  
+  bio: String
+  interests: [String!]
+  goals: String
+  currentPhase: KSMPPhase
+  
+  # Academic Info
+  education: String
+  experience: String
+  skills: [String!]
+  
+  # Progress Tracking
+  totalCoursesCompleted: Int
+  totalHoursWatched: Float
+  averageGrade: Float
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type InvestorProfile @model @auth(rules: [
+  { allow: owner, operations: [read, update] },
+  { allow: groups, groups: ["Admin"], operations: [read, create, update, delete] }
+]) {
+  id: ID!
+  userId: ID! @index(name: "byUser")
+  user: User! @belongsTo(fields: ["userId"])
+  
+  company: String
+  position: String
+  investmentFocus: [String!]
+  portfolioSize: String
+  website: String
+  linkedinProfile: String
+  
+  # Status
+  status: InvestorStatus!
+  approvedAt: AWSDateTime
+  approvedBy: ID
+  
+  # Investments
+  investments: [Investment!] @hasMany(indexName: "byInvestor")
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Course @model @auth(rules: [
+  { allow: groups, groups: ["Admin"], operations: [read, create, update, delete] },
+  { allow: owner, operations: [read, update] },
+  { allow: groups, groups: ["Student"], operations: [read] }
+]) {
+  id: ID!
+  title: String!
+  description: String!
+  category: String! @index(name: "byCategory")
+  subcategory: String
+  difficulty: String!
+  language: String!
+  prerequisites: [String!]
+  learningOutcomes: [String!]
+  
+  # Pricing
+  price: Float!
+  currency: String!
+  
+  # Content
+  thumbnail: String
+  previewVideo: String
+  duration: Int! # in minutes
+  
+  # Structure
+  sections: [CourseSection!] @hasMany(indexName: "byCourse")
+  
+  # Metadata
+  instructorId: ID! @index(name: "byInstructor")
+  instructor: InstructorProfile! @belongsTo(fields: ["instructorId"])
+  
+  status: CourseStatus!
+  version: Int!
+  publishedAt: AWSDateTime
+  reviewedBy: ID
+  reviewNotes: String
+  rejectionReason: String
+  
+  # Enrollments
+  enrollments: [CourseEnrollment!] @hasMany(indexName: "byCourse")
+  
+  # Assignments
+  assignments: [Assignment!] @hasMany(indexName: "byCourse")
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type CourseSection @model @auth(rules: [
+  { allow: groups, groups: ["Admin"], operations: [read, create, update, delete] },
+  { allow: owner, operations: [read, update] }
+]) {
+  id: ID!
+  courseId: ID! @index(name: "byCourse")
+  course: Course! @belongsTo(fields: ["courseId"])
+  
+  title: String!
+  description: String
+  order: Int!
+  
+  # Section Content
+  lessons: [Lesson!] @hasMany(indexName: "bySection")
+  
+  # Metadata
+  duration: Int! # total duration in minutes
+  isPreview: Boolean! # if section is available for preview
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Lesson @model @auth(rules: [
+  { allow: groups, groups: ["Admin"], operations: [read, create, update, delete] },
+  { allow: owner, operations: [read, update] }
+]) {
+  id: ID!
+  sectionId: ID! @index(name: "bySection")
+  section: CourseSection! @belongsTo(fields: ["sectionId"])
+  
+  title: String!
+  description: String!
+  order: Int!
+  duration: Int! # in minutes
+  
+  # Content
+  videoUrl: String
+  resources: [String!]
+  isPreview: Boolean!
+  
+  # Progress Tracking
+  studentProgress: [StudentProgress!] @hasMany(indexName: "byLesson")
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Assignment @model @auth(rules: [
+  { allow: groups, groups: ["Admin"], operations: [read, create, update, delete] },
+  { allow: owner, operations: [read, update] }
+]) {
+  id: ID!
+  courseId: ID! @index(name: "byCourse")
+  course: Course! @belongsTo(fields: ["courseId"])
+  
+  title: String!
+  description: String!
+  instructions: String!
+  dueDate: AWSDateTime
+  maxPoints: Float!
+  
+  # Submission Types
+  submissionTypes: [SubmissionType!]!
+  
+  # Resources
+  resources: [String!]
+  
+  # Submissions
+  submissions: [AssignmentSubmission!] @hasMany(indexName: "byAssignment")
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type AssignmentSubmission @model @auth(rules: [
+  { allow: owner, operations: [read, create, update] },
+  { allow: groups, groups: ["Admin", "Mentor"], operations: [read, update] }
+]) {
+  id: ID!
+  assignmentId: ID! @index(name: "byAssignment")
+  assignment: Assignment! @belongsTo(fields: ["assignmentId"])
+  
+  userId: ID! @index(name: "byUser")
+  user: User! @belongsTo(fields: ["userId"])
+  
+  mentorId: ID @index(name: "byMentor")
+  mentor: MentorProfile @belongsTo(fields: ["mentorId"])
+  
+  # Submission Content
+  textSubmission: String
+  fileSubmission: String
+  linkSubmission: String
+  
+  # Status
+  status: SubmissionStatus!
+  submittedAt: AWSDateTime
+  
+  # Grading
+  grade: Float
+  feedback: String
+  gradedAt: AWSDateTime
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type StudentProgress @model @auth(rules: [
+  { allow: owner, operations: [read, create, update] },
+  { allow: groups, groups: ["Admin", "Mentor"], operations: [read] }
+]) {
+  id: ID!
+  studentId: ID! @index(name: "byStudent")
+  student: User! @belongsTo(fields: ["studentId"])
+  courseId: ID! @index(name: "byCourse")
+  course: Course! @belongsTo(fields: ["courseId"])
+  lessonId: ID! @index(name: "byLesson")
+  lesson: Lesson! @belongsTo(fields: ["lessonId"])
+  
+  lastPosition: Float! # seconds
+  duration: Float! # total lesson duration in seconds
+  percentWatched: Float!
+  completed: Boolean!
+  timeSpent: Float! # total time spent in seconds
+  
+  device: String
+  sessionId: String
+  lastWatchedAt: AWSDateTime!
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type CourseEnrollment @model @auth(rules: [
+  { allow: owner, operations: [read] },
+  { allow: groups, groups: ["Admin"], operations: [read, create, update, delete] }
+]) {
+  id: ID!
+  userId: ID! @index(name: "byUser")
+  user: User! @belongsTo(fields: ["userId"])
+  courseId: ID! @index(name: "byCourse")
+  course: Course! @belongsTo(fields: ["courseId"])
+  
+  enrolledAt: AWSDateTime!
+  status: EnrollmentStatus!
+  progress: Float! # percentage completed
+  
+  # Payment
+  paymentId: ID
+  amount: Float
+  currency: String
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type LiveSession @model @auth(rules: [
+  { allow: groups, groups: ["Admin", "Mentor"], operations: [read, create, update, delete] },
+  { allow: groups, groups: ["Student"], operations: [read] }
+]) {
+  id: ID!
+  title: String!
+  description: String
+  mentorId: ID! @index(name: "byMentor")
+  mentor: MentorProfile! @belongsTo(fields: ["mentorId"])
+  
+  scheduledAt: AWSDateTime!
+  duration: Int! # in minutes
+  meetingLink: String
+  recordingUrl: String
+  
+  # Participants
+  enrolledStudents: [ID!]
+  maxParticipants: Int
+  
+  status: SessionStatus!
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Payment @model @auth(rules: [
+  { allow: owner, operations: [read] },
+  { allow: groups, groups: ["Admin"], operations: [read, create, update, delete] }
+]) {
+  id: ID!
+  userId: ID! @index(name: "byUser")
+  user: User! @belongsTo(fields: ["userId"])
+  
+  amount: Float!
+  currency: String!
+  status: PaymentStatus!
+  
+  # PayU Details
+  payuTransactionId: String
+  payuResponse: AWSJSON
+  
+  # Course/Program
+  courseId: ID
+  programId: ID
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+# Application Models
+type InstructorApplication @model @auth(rules: [
+  { allow: owner, operations: [read, create, update] },
+  { allow: groups, groups: ["Admin"], operations: [read, update, delete] }
+]) {
+  id: ID!
+  userId: ID! @index(name: "byUser")
+  user: User! @belongsTo(fields: ["userId"])
+  
+  status: ApplicationStatus!
+  submittedAt: AWSDateTime!
+  
+  # Application Data
+  bio: String!
+  expertise: [String!]!
+  experience: String!
+  education: String!
+  certifications: [String!]
+  portfolio: String
+  linkedinProfile: String
+  website: String
+  
+  # Review
+  reviewedBy: ID
+  reviewedAt: AWSDateTime
+  reviewNotes: String
+  rejectionReason: String
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type MentorApplication @model @auth(rules: [
+  { allow: owner, operations: [read, create, update] },
+  { allow: groups, groups: ["Admin"], operations: [read, update, delete] }
+]) {
+  id: ID!
+  userId: ID! @index(name: "byUser")
+  user: User! @belongsTo(fields: ["userId"])
+  
+  status: ApplicationStatus!
+  submittedAt: AWSDateTime!
+  
+  # Application Data
+  bio: String!
+  expertise: [String!]!
+  experience: String!
+  education: String!
+  certifications: [String!]
+  portfolio: String
+  linkedinProfile: String
+  website: String
+  
+  # Documents
+  documents: [String!] # S3 URLs
+  
+  # Review
+  reviewedBy: ID
+  reviewedAt: AWSDateTime
+  reviewNotes: String
+  rejectionReason: String
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type InvestorApplication @model @auth(rules: [
+  { allow: owner, operations: [read, create, update] },
+  { allow: groups, groups: ["Admin"], operations: [read, update, delete] }
+]) {
+  id: ID!
+  userId: ID! @index(name: "byUser")
+  user: User! @belongsTo(fields: ["userId"])
+  
+  status: ApplicationStatus!
+  submittedAt: AWSDateTime!
+  
+  # Application Data
+  company: String!
+  position: String!
+  investmentFocus: [String!]!
+  portfolioSize: String!
+  website: String
+  linkedinProfile: String
+  
+  # Review
+  reviewedBy: ID
+  reviewedAt: AWSDateTime
+  reviewNotes: String
+  rejectionReason: String
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type KSMPApplication @model @auth(rules: [
+  { allow: owner, operations: [read, create, update] },
+  { allow: groups, groups: ["Admin"], operations: [read, update, delete] }
+]) {
+  id: ID!
+  userId: ID! @index(name: "byUser")
+  user: User! @belongsTo(fields: ["userId"])
+  
+  status: ApplicationStatus!
+  submittedAt: AWSDateTime!
+  
+  # Application Data
+  startupIdea: String!
+  teamSize: Int!
+  currentPhase: String!
+  fundingRaised: Float
+  businessModel: String!
+  targetMarket: String!
+  competitiveAdvantage: String!
+  
+  # Review
+  reviewedBy: ID
+  reviewedAt: AWSDateTime
+  reviewNotes: String
+  rejectionReason: String
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+# Analytics Models
+type CourseMetrics @model @auth(rules: [
+  { allow: groups, groups: ["Admin", "Mentor"], operations: [read, create, update] }
+]) {
+  id: ID!
+  courseId: ID! @index(name: "byCourse")
+  course: Course! @belongsTo(fields: ["courseId"])
+  
+  enrolledCount: Int!
+  completedCount: Int!
+  averageCompletionRate: Float!
+  
+  averageTimeSpent: Float! # average time spent per student
+  dropOffLessonId: ID
+  dropOffLesson: Lesson @belongsTo(fields: ["dropOffLessonId"])
+  
+  totalRevenue: Float!
+  averageRevenuePerStudent: Float!
+  
+  lastUpdated: AWSDateTime!
+  period: String! # daily, weekly, monthly
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type RevenueAnalytics @model @auth(rules: [
+  { allow: groups, groups: ["Admin"], operations: [read, create, update] }
+]) {
+  id: ID!
+  
+  period: String! # daily, weekly, monthly
+  date: AWSDate!
+  
+  totalRevenue: Float!
+  totalTransactions: Int!
+  successfulTransactions: Int!
+  failedTransactions: Int!
+  averageTransactionValue: Float!
+  
+  topCourses: [String!]
+  topCoursesRevenue: AWSJSON
+  
+  paymentMethodBreakdown: AWSJSON
+  
+  geographicBreakdown: AWSJSON
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type StudentAnalytics @model @auth(rules: [
+  { allow: owner, operations: [read] },
+  { allow: groups, groups: ["Admin", "Mentor"], operations: [read] }
+]) {
+  id: ID!
+  studentId: ID! @index(name: "byStudent")
+  student: User! @belongsTo(fields: ["studentId"])
+  
+  totalCoursesEnrolled: Int!
+  totalCoursesCompleted: Int!
+  overallCompletionRate: Float!
+  
+  totalTimeSpent: Float! # total time spent across all courses
+  averageSessionDuration: Float!
+  
+  totalVideoViews: Int!
+  totalAssignmentsSubmitted: Int!
+  totalAssignmentsGraded: Int!
+  
+  ksmpPhase: KSMPPhase
+  ksmpProgress: Float! # percentage through KSMP
+  
+  lastActivityAt: AWSDateTime!
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+# Enums
+enum InstructorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum MentorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum InvestorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum CourseStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  PUBLISHED
+  ARCHIVED
+}
+
+enum SubmissionStatus {
+  NOT_SUBMITTED
+  SUBMITTED
+  GRADED
+  RETURNED
+}
+
+enum SubmissionType {
+  TEXT
+  FILE
+  LINK
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  SUSPENDED
+  CANCELLED
+}
+
+enum SessionStatus {
+  SCHEDULED
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  UNDER_REVIEW
+}
+
+enum KSMPPhase {
+  IDEA_VALIDATION
+  MARKET_RESEARCH
+  BUSINESS_MODEL
+  MVP_DEVELOPMENT
+  PRODUCT_MARKET_FIT
+  FUNDRAISING_PREP
+  PITCH_DECK
+  INVESTOR_OUTREACH
+  DUE_DILIGENCE
+  TERM_SHEET
+  LEGAL_DOCUMENTATION
+  FUNDING_CLOSURE
+}
+
+# Custom Queries
+type Query {
+  # User queries
+  getUserByEmail(email: String!): User
+  getUsersByRole(role: String!): [User]
+  
+  # Course queries
+  getCoursesByCategory(category: String!): [Course]
+  getCoursesByInstructor(instructorId: ID!): [Course]
+  getPublishedCourses: [Course]
+  
+  # Enrollment queries
+  getUserEnrollments(userId: ID!): [CourseEnrollment]
+  getCourseEnrollments(courseId: ID!): [CourseEnrollment]
+  
+  # Assignment queries
+  getAssignmentsByCourse(courseId: ID!): [Assignment]
+  getSubmissionsByUser(userId: ID!): [AssignmentSubmission]
+  getSubmissionsByAssignment(assignmentId: ID!): [AssignmentSubmission]
+  
+  # Progress queries
+  getStudentProgress(studentId: ID!, courseId: ID!): [StudentProgress]
+  getCourseProgress(courseId: ID!): [StudentProgress]
+  
+  # Application queries
+  getPendingApplications: [InstructorApplication]
+  getPendingMentorApplications: [MentorApplication]
+  getPendingInvestorApplications: [InvestorApplication]
+  getPendingKSMPApplications: [KSMPApplication]
+  
+  # Analytics queries
+  getCourseMetrics(courseId: ID!, period: String!): CourseMetrics
+  getRevenueAnalytics(period: String!, startDate: AWSDate!, endDate: AWSDate!): [RevenueAnalytics]
+  getStudentAnalytics(studentId: ID!): StudentAnalytics
+  getTopPerformingCourses(limit: Int!, period: String!): [CourseMetrics]
+  getDropOffAnalysis(courseId: ID!): AWSJSON
+  getEnrollmentTrends(startDate: AWSDate!, endDate: AWSDate!): AWSJSON
+  
+  # Notes System queries
+  getNotesByLesson(lessonId: ID!, studentId: ID!): [Note]
+  
+  # Q&A System queries
+  getQuestionsByLesson(lessonId: ID!): [Question]
+  getQuestionsByStudent(studentId: ID!): [Question]
+  getPendingQuestions(mentorId: ID!): [Question]
+  
+  # Discussion Forum queries
+  getDiscussionsByLesson(lessonId: ID!): [Discussion]
+  getDiscussionReplies(discussionId: ID!): [DiscussionReply]
+  
+  # Assignment System queries
+  getAssignmentsByCourse(courseId: ID!): [Assignment]
+  getSubmissionsByUser(userId: ID!): [AssignmentSubmission]
+  getSubmissionsByAssignment(assignmentId: ID!): [AssignmentSubmission]
+  getPendingSubmissions(mentorId: ID!): [AssignmentSubmission]
+  
+  # Profile queries
+  getUserProfile(id: ID!): User
+  getStudentProfile(userId: ID!): StudentProfile
+  getMentorProfile(userId: ID!): MentorProfile
+  
+  # Transcript queries
+  getTranscript(studentId: ID!): Transcript
+  
+  # Application queries
+  getKSMPApplication(id: ID!): KSMPApplication
+  getInvestorApplication(id: ID!): InvestorApplication
+  getMentorApplicationDetails(id: ID!): MentorApplication
+  listPendingApplications: PendingApplicationsResponse
+}
+
+# Additional Models for TODO Items
+type Note @model @auth(rules: [
+  { allow: owner, operations: [read, create, update, delete] },
+  { allow: groups, groups: ["Admin", "Mentor"], operations: [read] }
+]) {
+  id: ID!
+  studentId: ID! @index(name: "byStudent")
+  student: User! @belongsTo(fields: ["studentId"])
+  lessonId: ID! @index(name: "byLesson")
+  lesson: Lesson! @belongsTo(fields: ["lessonId"])
+  
+  content: String!
+  timestamp: Float! # timestamp in seconds within the video
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Question @model @auth(rules: [
+  { allow: owner, operations: [read, create, update] },
+  { allow: groups, groups: ["Admin", "Mentor"], operations: [read, update] }
+]) {
+  id: ID!
+  studentId: ID! @index(name: "byStudent")
+  student: User! @belongsTo(fields: ["studentId"])
+  lessonId: ID! @index(name: "byLesson")
+  lesson: Lesson! @belongsTo(fields: ["lessonId"])
+  
+  question: String!
+  status: QuestionStatus!
+  
+  # Answers
+  answers: [Answer!] @hasMany(indexName: "byQuestion")
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Answer @model @auth(rules: [
+  { allow: owner, operations: [read, create, update, delete] },
+  { allow: groups, groups: ["Admin"], operations: [read, create, update, delete] }
+]) {
+  id: ID!
+  questionId: ID! @index(name: "byQuestion")
+  question: Question! @belongsTo(fields: ["questionId"])
+  mentorId: ID! @index(name: "byMentor")
+  mentor: MentorProfile! @belongsTo(fields: ["mentorId"])
+  
+  answer: String!
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Discussion @model @auth(rules: [
+  { allow: owner, operations: [read, create, update, delete] },
+  { allow: groups, groups: ["Admin", "Mentor"], operations: [read] }
+]) {
+  id: ID!
+  studentId: ID! @index(name: "byStudent")
+  student: User! @belongsTo(fields: ["studentId"])
+  lessonId: ID! @index(name: "byLesson")
+  lesson: Lesson! @belongsTo(fields: ["lessonId"])
+  
+  title: String!
+  content: String!
+  likes: Int!
+  
+  # Replies
+  replies: [DiscussionReply!] @hasMany(indexName: "byDiscussion")
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type DiscussionReply @model @auth(rules: [
+  { allow: owner, operations: [read, create, update, delete] },
+  { allow: groups, groups: ["Admin", "Mentor"], operations: [read] }
+]) {
+  id: ID!
+  discussionId: ID! @index(name: "byDiscussion")
+  discussion: Discussion! @belongsTo(fields: ["discussionId"])
+  userId: ID! @index(name: "byUser")
+  user: User! @belongsTo(fields: ["userId"])
+  
+  content: String!
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Transcript @model @auth(rules: [
+  { allow: owner, operations: [read] },
+  { allow: groups, groups: ["Admin"], operations: [read, create, update, delete] }
+]) {
+  id: ID!
+  studentId: ID! @index(name: "byStudent")
+  student: User! @belongsTo(fields: ["studentId"])
+  
+  transcriptUrl: String!
+  generatedAt: AWSDateTime!
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type VideoEvent @model @auth(rules: [
+  { allow: owner, operations: [read, create] },
+  { allow: groups, groups: ["Admin"], operations: [read, create, update, delete] }
+]) {
+  id: ID!
+  studentId: ID! @index(name: "byStudent")
+  student: User! @belongsTo(fields: ["studentId"])
+  lessonId: ID! @index(name: "byLesson")
+  lesson: Lesson! @belongsTo(fields: ["lessonId"])
+  
+  eventType: VideoEventType!
+  timestamp: Float!
+  duration: Float
+  position: Float
+  
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+# Additional Enums
+enum QuestionStatus {
+  PENDING
+  ANSWERED
+  RESOLVED
+}
+
+enum VideoEventType {
+  START
+  PAUSE
+  RESUME
+  END
+  SEEK
+  COMPLETE
+}
+
+# Custom Mutations
+type Mutation {
+  # User management
+  updateUserRole(userId: ID!, role: String!): User
+  suspendUser(userId: ID!, reason: String!): User
+  activateUser(userId: ID!): User
+  
+  # Course management
+  createCourseDraft(input: CourseDraftInput!): Course
+  updateCourseStructure(courseId: ID!, sections: [CourseSectionInput!]!): Course
+  submitCourseForReview(courseId: ID!): Course
+  approveCourse(courseId: ID!, reviewNotes: String): Course
+  rejectCourse(courseId: ID!, rejectionReason: String): Course
+  publishCourse(courseId: ID!): Course
+  
+  # Enrollment management
+  enrollInCourse(userId: ID!, courseId: ID!): CourseEnrollment
+  completeCourse(userId: ID!, courseId: ID!): CourseEnrollment
+  
+  # Assignment management
+  submitAssignment(assignmentId: ID!, input: AssignmentSubmissionInput!): AssignmentSubmission
+  gradeAssignment(submissionId: ID!, grade: Float!, feedback: String!): AssignmentSubmission
+  
+  # Progress tracking
+  updateStudentProgress(input: StudentProgressInput!): StudentProgress
+  markLessonComplete(studentId: ID!, lessonId: ID!): StudentProgress
+  
+  # Video Analytics
+  trackVideoStart(input: VideoEventInput!): VideoEvent
+  trackVideoEnd(input: VideoEventInput!): VideoEvent
+  
+  # Notes System
+  createNote(input: CreateNoteInput!): Note
+  updateNote(input: UpdateNoteInput!): Note
+  deleteNote(id: ID!): Note
+  
+  # Q&A System
+  createQuestion(input: CreateQuestionInput!): Question
+  createAnswer(input: CreateAnswerInput!): Answer
+  updateQuestionStatus(id: ID!, status: QuestionStatus!): Question
+  
+  # Discussion Forum
+  createDiscussion(input: CreateDiscussionInput!): Discussion
+  createDiscussionReply(input: CreateDiscussionReplyInput!): DiscussionReply
+  likeDiscussion(discussionId: ID!, userId: ID!): Discussion
+  
+  # Profile Management
+  updateUserProfile(input: UpdateUserProfileInput!): User
+  updateStudentProfile(input: UpdateStudentProfileInput!): StudentProfile
+  updateMentorProfile(input: UpdateMentorProfileInput!): MentorProfile
+  
+  # Transcript Generation
+  generateTranscript(studentId: ID!): Transcript
+  
+  # Application management
+  approveInstructorApplication(applicationId: ID!, reviewNotes: String): InstructorApplication
+  rejectInstructorApplication(applicationId: ID!, rejectionReason: String): InstructorApplication
+  approveMentorApplication(applicationId: ID!, reviewNotes: String): MentorApplication
+  rejectMentorApplication(applicationId: ID!, rejectionReason: String): MentorApplication
+  approveInvestorApplication(applicationId: ID!, reviewNotes: String): InvestorApplication
+  rejectInvestorApplication(applicationId: ID!, rejectionReason: String): InvestorApplication
+  approveKSMPApplication(applicationId: ID!, reviewNotes: String): KSMPApplication
+  rejectKSMPApplication(applicationId: ID!, rejectionReason: String): KSMPApplication
+  
+  # Analytics
+  updateCourseMetrics(input: CourseMetricsInput!): CourseMetrics
+  updateRevenueAnalytics(input: RevenueAnalyticsInput!): RevenueAnalytics
+  updateStudentAnalytics(studentId: ID!): StudentAnalytics
+  processAnalyticsData(period: String!, date: AWSDate!): Boolean
+}
+
+# Input Types
+input CourseDraftInput {
+  title: String!
+  description: String!
+  category: String!
+  subcategory: String
+  difficulty: String!
+  language: String!
+  prerequisites: [String!]
+  learningOutcomes: [String!]
+  price: Float!
+  currency: String!
+  thumbnail: String
+}
+
+input CourseSectionInput {
+  courseId: ID!
+  title: String!
+  description: String
+  order: Int!
+  isPreview: Boolean!
+}
+
+input AssignmentSubmissionInput {
+  assignmentId: ID!
+  textSubmission: String
+  fileSubmission: String
+  linkSubmission: String
+}
+
+input StudentProgressInput {
+  studentId: ID!
+  courseId: ID!
+  lessonId: ID!
+  lastPosition: Float!
+  duration: Float!
+  percentWatched: Float!
+  completed: Boolean!
+  device: String
+  sessionId: String
+}
+
+input CourseMetricsInput {
+  courseId: ID!
+  enrolledCount: Int!
+  completedCount: Int!
+  averageCompletionRate: Float!
+  dropOffLessonId: ID
+  averageTimeSpent: Float!
+  lastUpdated: AWSDateTime!
+}
+
+input RevenueAnalyticsInput {
+  period: String! # daily, weekly, monthly
+  totalRevenue: Float!
+  totalTransactions: Int!
+  successfulTransactions: Int!
+  failedTransactions: Int!
+  averageTransactionValue: Float!
+  topCourses: [String!]
+  date: AWSDate!
+}
+
+# Additional Input Types for TODO Items
+input VideoEventInput {
+  studentId: ID!
+  lessonId: ID!
+  eventType: VideoEventType!
+  timestamp: Float!
+  duration: Float
+  position: Float
+}
+
+input CreateNoteInput {
+  studentId: ID!
+  lessonId: ID!
+  content: String!
+  timestamp: Float!
+}
+
+input UpdateNoteInput {
+  id: ID!
+  content: String!
+}
+
+input CreateQuestionInput {
+  studentId: ID!
+  lessonId: ID!
+  question: String!
+}
+
+input CreateAnswerInput {
+  questionId: ID!
+  mentorId: ID!
+  answer: String!
+}
+
+input CreateDiscussionInput {
+  studentId: ID!
+  lessonId: ID!
+  title: String!
+  content: String!
+}
+
+input CreateDiscussionReplyInput {
+  discussionId: ID!
+  userId: ID!
+  content: String!
+}
+
+input UpdateUserProfileInput {
+  id: ID!
+  firstName: String
+  lastName: String
+  profilePicture: String
+  bio: String
+}
+
+input UpdateStudentProfileInput {
+  id: ID!
+  bio: String
+  interests: [String!]
+  goals: String
+  education: String
+  experience: String
+  skills: [String!]
+}
+
+input UpdateMentorProfileInput {
+  id: ID!
+  bio: String
+  expertise: [String!]
+  experience: String
+  education: String
+  certifications: [String!]
+  portfolio: String
+  linkedinProfile: String
+  website: String
+}
+
+input CreateKSMPApplicationInput {
+  userId: ID!
+  startupIdea: String!
+  teamSize: Int!
+  currentPhase: String!
+  fundingRaised: Float
+  businessModel: String!
+  targetMarket: String!
+  competitiveAdvantage: String!
+}
+
+input CreateInvestorApplicationInput {
+  userId: ID!
+  company: String!
+  position: String!
+  investmentFocus: [String!]!
+  portfolioSize: String!
+  website: String
+  linkedinProfile: String
+}
+
+input CreateMentorApplicationInput {
+  userId: ID!
+  bio: String!
+  expertise: [String!]!
+  experience: String!
+  education: String!
+  certifications: [String!]
+  portfolio: String
+  linkedinProfile: String
+  website: String
+  documents: [String!]
+}
+
+# Response Types
+type PendingApplicationsResponse {
+  ksmpApplications: [KSMPApplication!]
+  investorApplications: [InvestorApplication!]
+  mentorApplications: [MentorApplication!]
+}

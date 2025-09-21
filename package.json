@@ -6,22 +6,44 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "amplify:init": "npx @aws-amplify/cli@latest init",
+    "amplify:add-auth": "npx @aws-amplify/cli@latest add auth",
+    "amplify:add-api": "npx @aws-amplify/cli@latest add api",
+    "amplify:push": "npx @aws-amplify/cli@latest push",
+    "amplify:pull": "npx @aws-amplify/cli@latest pull",
+    "amplify:status": "npx @aws-amplify/cli@latest status",
+    "amplify:console": "npx @aws-amplify/cli@latest console",
+    "amplify:publish": "npx @aws-amplify/cli@latest publish",
+    "setup": "npm install && npm run amplify:init && npm run amplify:add-auth && npm run amplify:add-api && npm run amplify:push"
   },
   "dependencies": {
+    "@aws-amplify/ui-react": "^6.12.0",
+    "@aws-amplify/ui-react-auth": "^0.0.0-next-release-2c7a887-20230924174347",
+    "@aws-amplify/ui-react-notifications": "^2.2.10",
+    "@aws-amplify/ui-react-storage": "^3.12.1",
+    "@headlessui/react": "^2.2.8",
+    "@heroicons/react": "^2.2.0",
+    "aws-amplify": "^6.15.6",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.544.0",
+    "next": "15.5.3",
     "react": "19.1.0",
+    "react-beautiful-dnd": "^13.1.1",
     "react-dom": "19.1.0",
-    "next": "15.5.3"
+    "recharts": "^3.2.1",
+    "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.5.3",
-    "@eslint/eslintrc": "^3"
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
