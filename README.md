@@ -40,7 +40,7 @@ A comprehensive educational platform built with Next.js, TypeScript, and AWS Amp
 - **Amazon IVS** for live streaming (planned)
 
 ### Payment Integration
-- **Razorpay** for payment processing
+- **PayU** for payment processing
 - **AWS Lambda webhooks** for payment handling
 
 ## 📁 Project Structure
@@ -76,7 +76,7 @@ src/
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/Kalplaoffice/kalpla-platform.git
    cd kalpla-platform
    ```
 
