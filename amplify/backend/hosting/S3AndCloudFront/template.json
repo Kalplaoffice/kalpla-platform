@@ -192,6 +192,50 @@
               "ResponseCode": 200,
               "ResponsePagePath": "/"
             }
+          ],
+          "CacheBehaviors": [
+            {
+              "PathPattern": "*.js",
+              "TargetOriginId": "hostingS3Bucket",
+              "ViewerProtocolPolicy": "redirect-to-https",
+              "AllowedMethods": ["GET", "HEAD"],
+              "CachedMethods": ["GET", "HEAD"],
+              "ForwardedValues": {
+                "QueryString": false
+              },
+              "DefaultTTL": 86400,
+              "MaxTTL": 31536000,
+              "MinTTL": 0,
+              "Compress": true
+            },
+            {
+              "PathPattern": "*.css",
+              "TargetOriginId": "hostingS3Bucket",
+              "ViewerProtocolPolicy": "redirect-to-https",
+              "AllowedMethods": ["GET", "HEAD"],
+              "CachedMethods": ["GET", "HEAD"],
+              "ForwardedValues": {
+                "QueryString": false
+              },
+              "DefaultTTL": 86400,
+              "MaxTTL": 31536000,
+              "MinTTL": 0,
+              "Compress": true
+            },
+            {
+              "PathPattern": "chunks/*",
+              "TargetOriginId": "hostingS3Bucket",
+              "ViewerProtocolPolicy": "redirect-to-https",
+              "AllowedMethods": ["GET", "HEAD"],
+              "CachedMethods": ["GET", "HEAD"],
+              "ForwardedValues": {
+                "QueryString": false
+              },
+              "DefaultTTL": 86400,
+              "MaxTTL": 31536000,
+              "MinTTL": 0,
+              "Compress": true
+            }
           ]
         }
       }
