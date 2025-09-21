@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AmplifyProvider } from '@/components/providers/AmplifyProvider';
 import { NotificationProvider } from '@/components/notifications/NotificationProvider';
+import { UserProvider } from '@/contexts/UserContext';
 import { Navbar } from '@/components/layout/Navbar';
 
 const geistSans = Geist({
@@ -31,14 +32,16 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AmplifyProvider>
-          <NotificationProvider>
-            <div className="min-h-screen bg-gray-50">
-              <Navbar />
-              <main className="container mx-auto px-4 py-8">
-                {children}
-              </main>
-            </div>
-          </NotificationProvider>
+          <UserProvider>
+            <NotificationProvider>
+              <div className="min-h-screen bg-gray-50">
+                <Navbar />
+                <main className="container mx-auto px-4 py-8">
+                  {children}
+                </main>
+              </div>
+            </NotificationProvider>
+          </UserProvider>
         </AmplifyProvider>
       </body>
     </html>
