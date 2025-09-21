@@ -1,13 +1,14 @@
 import { generateClient } from 'aws-amplify/api';
-import { 
-  CREATE_NOTE, 
-  UPDATE_NOTE, 
-  DELETE_NOTE 
-} from '../graphql/mutations';
-import { 
-  GET_NOTES_BY_LESSON, 
-  LIST_NOTES 
-} from '../graphql/queries';
+// TODO: These operations need to be added to the GraphQL schema
+// import {
+//   CREATE_NOTE,
+//   UPDATE_NOTE,
+//   DELETE_NOTE
+// } from '../graphql/mutations';
+// import {
+//   GET_NOTES_BY_LESSON,
+//   LIST_NOTES
+// } from '../graphql/queries';
 
 const client = generateClient();
 

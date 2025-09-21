@@ -1,10 +1,11 @@
 import { generateClient } from 'aws-amplify/api';
-import { 
-  MARK_LESSON_COMPLETE, 
-  TRACK_VIDEO_START, 
-  TRACK_VIDEO_END,
-  UPDATE_STUDENT_PROGRESS 
-} from '../graphql/mutations';
+// TODO: These operations need to be added to the GraphQL schema
+// import {
+//   MARK_LESSON_COMPLETE,
+//   TRACK_VIDEO_START,
+//   TRACK_VIDEO_END,
+//   UPDATE_STUDENT_PROGRESS
+// } from '../graphql/mutations';
 
 const client = generateClient();
 

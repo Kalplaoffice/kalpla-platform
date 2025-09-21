@@ -1,14 +1,15 @@
 import { generateClient } from 'aws-amplify/api';
-import { 
-  SUBMIT_ASSIGNMENT, 
-  GRADE_ASSIGNMENT 
-} from '../graphql/mutations';
-import { 
-  GET_ASSIGNMENTS_BY_COURSE, 
-  GET_SUBMISSIONS_BY_USER, 
-  GET_SUBMISSIONS_BY_ASSIGNMENT, 
-  GET_PENDING_SUBMISSIONS 
-} from '../graphql/queries';
+// TODO: These operations need to be added to the GraphQL schema
+// import {
+//   SUBMIT_ASSIGNMENT,
+//   GRADE_ASSIGNMENT
+// } from '../graphql/mutations';
+// import {
+//   GET_ASSIGNMENTS_BY_COURSE,
+//   GET_SUBMISSIONS_BY_USER,
+//   GET_SUBMISSIONS_BY_ASSIGNMENT,
+//   GET_PENDING_SUBMISSIONS
+// } from '../graphql/queries';
 
 const client = generateClient();
 

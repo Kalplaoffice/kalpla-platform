@@ -1,13 +1,14 @@
 import { generateClient } from 'aws-amplify/api';
-import { 
-  CREATE_DISCUSSION, 
-  CREATE_DISCUSSION_REPLY, 
-  LIKE_DISCUSSION 
-} from '../graphql/mutations';
-import { 
-  GET_DISCUSSIONS_BY_LESSON, 
-  GET_DISCUSSION_REPLIES 
-} from '../graphql/queries';
+// TODO: These operations need to be added to the GraphQL schema
+// import {
+//   CREATE_DISCUSSION,
+//   CREATE_DISCUSSION_REPLY,
+//   LIKE_DISCUSSION
+// } from '../graphql/mutations';
+// import {
+//   GET_DISCUSSIONS_BY_LESSON,
+//   GET_DISCUSSION_REPLIES
+// } from '../graphql/queries';
 
 const client = generateClient();
 
