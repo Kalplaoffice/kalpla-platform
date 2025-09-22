@@ -3,7 +3,7 @@
     "kalpla": {
       "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
       "output": {
-        "GraphQLAPIEndpointOutput": "https://graphql-api-id.appsync-api.us-east-1.amazonaws.com/graphql",
+        "GraphQLAPIEndpointOutput": "https://byvfvux4hrbjfdrork2awunxem.appsync-api.ap-south-1.amazonaws.com/graphql",
         "GraphQLAPIIdOutput": "kalpla",
         "GraphQLAPIKeyOutput": "da2-api-key",
         "authConfig": {
@@ -81,10 +81,10 @@
       ],
       "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
       "output": {
-        "Arn": "arn:aws:lambda:us-east-1:123456789012:function:analyticsProcessor",
+        "Arn": "arn:aws:lambda:ap-south-1:112914241644:function:analyticsProcessor",
         "LambdaExecutionRole": "amplify-kalplaplatform-dev-737da-lambdaRole",
-        "LambdaExecutionRoleArn": "arn:aws:iam::123456789012:role/amplify-kalplaplatform-dev-737da-lambdaRole",
-        "Region": "us-east-1"
+        "LambdaExecutionRoleArn": "arn:aws:iam::112914241644:role/amplify-kalplaplatform-dev-737da-lambdaRole",
+        "Region": "ap-south-1"
       },
       "providerPlugin": "awscloudformation",
       "service": "Lambda"
@@ -102,10 +102,10 @@
       ],
       "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
       "output": {
-        "Arn": "arn:aws:lambda:us-east-1:123456789012:function:kalplaAuthPostConfirmation",
+        "Arn": "arn:aws:lambda:ap-south-1:112914241644:function:kalplaAuthPostConfirmation",
         "LambdaExecutionRole": "amplify-kalplaplatform-dev-737da-lambdaRole",
-        "LambdaExecutionRoleArn": "arn:aws:iam::123456789012:role/amplify-kalplaplatform-dev-737da-lambdaRole",
-        "Region": "us-east-1"
+        "LambdaExecutionRoleArn": "arn:aws:iam::112914241644:role/amplify-kalplaplatform-dev-737da-lambdaRole",
+        "Region": "ap-south-1"
       },
       "providerPlugin": "awscloudformation",
       "service": "Lambda"
@@ -123,10 +123,10 @@
       ],
       "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
       "output": {
-        "Arn": "arn:aws:lambda:us-east-1:123456789012:function:kalplaAuthPreTokenGeneration",
+        "Arn": "arn:aws:lambda:ap-south-1:112914241644:function:kalplaAuthPreTokenGeneration",
         "LambdaExecutionRole": "amplify-kalplaplatform-dev-737da-lambdaRole",
-        "LambdaExecutionRoleArn": "arn:aws:iam::123456789012:role/amplify-kalplaplatform-dev-737da-lambdaRole",
-        "Region": "us-east-1"
+        "LambdaExecutionRoleArn": "arn:aws:iam::112914241644:role/amplify-kalplaplatform-dev-737da-lambdaRole",
+        "Region": "ap-south-1"
       },
       "providerPlugin": "awscloudformation",
       "service": "Lambda"
@@ -144,10 +144,10 @@
       ],
       "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
       "output": {
-        "Arn": "arn:aws:lambda:us-east-1:123456789012:function:paymentProcessor",
+        "Arn": "arn:aws:lambda:ap-south-1:112914241644:function:paymentProcessor",
         "LambdaExecutionRole": "amplify-kalplaplatform-dev-737da-lambdaRole",
-        "LambdaExecutionRoleArn": "arn:aws:iam::123456789012:role/amplify-kalplaplatform-dev-737da-lambdaRole",
-        "Region": "us-east-1"
+        "LambdaExecutionRoleArn": "arn:aws:iam::112914241644:role/amplify-kalplaplatform-dev-737da-lambdaRole",
+        "Region": "ap-south-1"
       },
       "providerPlugin": "awscloudformation",
       "service": "Lambda"
@@ -165,10 +165,10 @@
       ],
       "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
       "output": {
-        "Arn": "arn:aws:lambda:us-east-1:123456789012:function:paymentWebhook",
+        "Arn": "arn:aws:lambda:ap-south-1:112914241644:function:paymentWebhook",
         "LambdaExecutionRole": "amplify-kalplaplatform-dev-737da-lambdaRole",
-        "LambdaExecutionRoleArn": "arn:aws:iam::123456789012:role/amplify-kalplaplatform-dev-737da-lambdaRole",
-        "Region": "us-east-1"
+        "LambdaExecutionRoleArn": "arn:aws:iam::112914241644:role/amplify-kalplaplatform-dev-737da-lambdaRole",
+        "Region": "ap-south-1"
       },
       "providerPlugin": "awscloudformation",
       "service": "Lambda"
@@ -186,10 +186,10 @@
       ],
       "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
       "output": {
-        "Arn": "arn:aws:lambda:us-east-1:123456789012:function:videoSignedUrlGenerator",
+        "Arn": "arn:aws:lambda:ap-south-1:112914241644:function:videoSignedUrlGenerator",
         "LambdaExecutionRole": "amplify-kalplaplatform-dev-737da-lambdaRole",
-        "LambdaExecutionRoleArn": "arn:aws:iam::123456789012:role/amplify-kalplaplatform-dev-737da-lambdaRole",
-        "Region": "us-east-1"
+        "LambdaExecutionRoleArn": "arn:aws:iam::112914241644:role/amplify-kalplaplatform-dev-737da-lambdaRole",
+        "Region": "ap-south-1"
       },
       "providerPlugin": "awscloudformation",
       "service": "Lambda"
@@ -207,10 +207,10 @@
       ],
       "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
       "output": {
-        "Arn": "arn:aws:lambda:us-east-1:123456789012:function:videoUploadProcessor",
+        "Arn": "arn:aws:lambda:ap-south-1:112914241644:function:videoUploadProcessor",
         "LambdaExecutionRole": "amplify-kalplaplatform-dev-737da-lambdaRole",
-        "LambdaExecutionRoleArn": "arn:aws:iam::123456789012:role/amplify-kalplaplatform-dev-737da-lambdaRole",
-        "Region": "us-east-1"
+        "LambdaExecutionRoleArn": "arn:aws:iam::112914241644:role/amplify-kalplaplatform-dev-737da-lambdaRole",
+        "Region": "ap-south-1"
       },
       "providerPlugin": "awscloudformation",
       "service": "Lambda"
@@ -345,7 +345,7 @@
       "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
       "output": {
         "BucketName": "kalpla-documents-dev",
-        "Region": "us-east-1"
+        "Region": "ap-south-1"
       },
       "providerPlugin": "awscloudformation",
       "service": "S3"
@@ -363,7 +363,7 @@
       "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
       "output": {
         "BucketName": "kalpla-storage-dev",
-        "Region": "us-east-1"
+        "Region": "ap-south-1"
       },
       "providerPlugin": "awscloudformation",
       "service": "S3"
@@ -381,7 +381,7 @@
       "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
       "output": {
         "BucketName": "kalpla-videos-dev",
-        "Region": "us-east-1"
+        "Region": "ap-south-1"
       },
       "providerPlugin": "awscloudformation",
       "service": "S3"
