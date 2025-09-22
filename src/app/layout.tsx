@@ -8,6 +8,9 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ClientOnly } from '@/components/layout/ClientOnly';
 
+// Force dynamic rendering for all pages
+export const dynamic = 'force-dynamic';
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],

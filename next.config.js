@@ -1,9 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable Turbopack for faster development
-  experimental: {
-    turbo: true,
-  },
   // Configure images for external domains
   images: {
     remotePatterns: [
@@ -29,10 +25,14 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Force dynamic rendering for all pages
+  // Force dynamic rendering for all pages to prevent prerendering issues
   output: 'standalone',
-  // Disable static generation
+  // Disable static generation globally
   trailingSlash: false,
+  // Force all pages to be dynamic
+  experimental: {
+    serverComponentsExternalPackages: ['aws-amplify'],
+  },
 };
 
 module.exports = nextConfig;
