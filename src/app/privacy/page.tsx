@@ -226,7 +226,7 @@ export default function PrivacyPage() {
                   <li><strong>Withdraw Consent:</strong> Withdraw consent for consent-based processing</li>
                 </ul>
                 <p className="text-gray-700">
-                  To exercise these rights, please contact us at privacy@kalpla.com. We will respond to your request within 30 days.
+                  To exercise these rights, please contact us at support@kalpla.in. We will respond to your request within 30 days.
                 </p>
               </section>
 
@@ -337,16 +337,16 @@ export default function PrivacyPage() {
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-2">General Privacy Inquiries</h3>
                       <p className="text-gray-700">
-                        <strong>Email:</strong> privacy@kalpla.com<br />
-                        <strong>Phone:</strong> +91 9876543210
+                        <strong>Email:</strong> support@kalpla.in<br />
+                        <strong>Phone:</strong> +91 8660200835
                       </p>
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-2">Data Protection Officer</h3>
                       <p className="text-gray-700">
-                        <strong>Email:</strong> dpo@kalpla.com<br />
-                        <strong>Address:</strong> Kalpla Technologies Pvt Ltd<br />
-                        Bangalore, India
+                        <strong>Email:</strong> support@kalpla.in<br />
+                        <strong>Address:</strong> Kalpla<br />
+                        Udupi, Karnataka, India
                       </p>
                     </div>
                   </div>

@@ -114,109 +114,186 @@ export default function InvestorsPage() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Investor Portal</h1>
-        <p className="text-gray-600">
-          Discover investment opportunities from our network of innovative startups and entrepreneurs.
-        </p>
+    <div className="bg-white">
+      {/* Hero Section */}
+      <div className="relative bg-gradient-to-r from-blue-600 to-purple-600">
+        <div className="absolute inset-0 bg-black opacity-20"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+              Investor <span className="text-yellow-300">Portal</span>
+            </h1>
+            <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
+              Discover investment opportunities from our network of innovative startups and entrepreneurs.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Public Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {publicStats.map((stat) => (
-          <div key={stat.name} className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <stat.icon className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">{stat.name}</p>
+      <div className="py-24 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+            {publicStats.map((stat) => (
+              <div key={stat.name} className="bg-white p-6 rounded-lg shadow-md text-center">
+                <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                  <stat.icon className="h-8 w-8 text-blue-600" />
+                </div>
+                <p className="text-sm font-medium text-gray-500 mb-2">{stat.name}</p>
                 <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
               </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* Public Content */}
-      <div className="space-y-8">
-        {/* Upcoming Demo Days */}
-        <div className="bg-white p-8 rounded-lg shadow">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Upcoming Demo Days</h2>
-          <div className="space-y-4">
-            {upcomingDemoDays.map((event) => (
-              <div key={event.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{event.title}</h3>
-                    <p className="text-gray-600 mb-4">{event.description}</p>
-                    <div className="flex flex-wrap gap-4 text-sm text-gray-500">
-                      <div className="flex items-center">
-                        <CalendarIcon className="h-4 w-4 mr-1" />
-                        {new Date(event.date).toLocaleDateString()} at {event.time}
-                      </div>
-                      <div className="flex items-center">
-                        <UserGroupIcon className="h-4 w-4 mr-1" />
-                        {event.startups} startups
-                      </div>
-                      <div className="flex items-center">
-                        <BuildingOfficeIcon className="h-4 w-4 mr-1" />
-                        {event.location}
+          {/* Upcoming Demo Days */}
+          <div className="bg-white rounded-lg shadow-md p-8 mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-6">Upcoming Demo Days</h2>
+            <div className="space-y-6">
+              {upcomingDemoDays.map((event) => (
+                <div key={event.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">{event.title}</h3>
+                      <p className="text-gray-600 mb-4">{event.description}</p>
+                      <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                        <div className="flex items-center">
+                          <CalendarIcon className="h-4 w-4 mr-1" />
+                          {new Date(event.date).toLocaleDateString()} at {event.time}
+                        </div>
+                        <div className="flex items-center">
+                          <UserGroupIcon className="h-4 w-4 mr-1" />
+                          {event.startups} startups
+                        </div>
+                        <div className="flex items-center">
+                          <BuildingOfficeIcon className="h-4 w-4 mr-1" />
+                          {event.location}
+                        </div>
                       </div>
                     </div>
+                    <div className="mt-4 lg:mt-0 lg:ml-6">
+                      <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">
+                        Register to Attend
+                      </button>
+                    </div>
                   </div>
-                  <div className="mt-4 lg:mt-0 lg:ml-6">
-                    <button className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors">
-                      Register to Attend
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Featured Startups */}
+          <div className="bg-white rounded-lg shadow-md p-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-6">Featured Startups</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {featuredStartups.map((startup) => (
+                <div key={startup.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{startup.name}</h3>
+                    <p className="text-gray-600 text-sm mb-3">{startup.description}</p>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                        {startup.sector}
+                      </span>
+                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full">
+                        {startup.stage}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <div>Funding: <span className="font-medium">{startup.funding}</span></div>
+                    <div>Cohort: <span className="font-medium">{startup.cohort}</span></div>
+                    <div>Status: <span className={`font-medium ${
+                      startup.status === 'Funded' ? 'text-green-600' : 'text-yellow-600'
+                    }`}>{startup.status}</span></div>
+                  </div>
+                  <div className="mt-4">
+                    <button className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                      View Details
                     </button>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Featured Startups */}
-        <div className="bg-white p-8 rounded-lg shadow">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Featured Startups</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {featuredStartups.map((startup) => (
-              <div key={startup.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{startup.name}</h3>
-                  <p className="text-gray-600 text-sm mb-3">{startup.description}</p>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                      {startup.sector}
-                    </span>
-                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full">
-                      {startup.stage}
-                    </span>
-                  </div>
-                </div>
-                <div className="space-y-2 text-sm text-gray-600">
-                  <div>Funding: <span className="font-medium">{startup.funding}</span></div>
-                  <div>Cohort: <span className="font-medium">{startup.cohort}</span></div>
-                  <div>Status: <span className={`font-medium ${
-                    startup.status === 'Funded' ? 'text-green-600' : 'text-yellow-600'
-                  }`}>{startup.status}</span></div>
-                </div>
-                <div className="mt-4">
-                  <button className="w-full bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors">
-                    View Details
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Investor Access Section */}
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-8 rounded-lg mt-8">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Get Exclusive Investor Access</h2>
-          <p className="text-purple-100 mb-6">
+      {/* Investor Benefits */}
+      <div className="py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Investor Benefits</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Join our investor network to access detailed startup profiles, financials, and exclusive investment opportunities.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <EyeIcon className="h-8 w-8 text-blue-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Early Access</h3>
+              <p className="text-gray-600">
+                Get first look at promising startups before they hit the market
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <ChartBarIcon className="h-8 w-8 text-green-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Detailed Analytics</h3>
+              <p className="text-gray-600">
+                Access comprehensive financials, metrics, and growth projections
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="bg-purple-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <UserGroupIcon className="h-8 w-8 text-purple-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Network Access</h3>
+              <p className="text-gray-600">
+                Connect with other investors and industry experts
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="bg-orange-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <CalendarIcon className="h-8 w-8 text-orange-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Exclusive Events</h3>
+              <p className="text-gray-600">
+                Attend private demo days and networking events
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="bg-red-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <TrophyIcon className="h-8 w-8 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Track Record</h3>
+              <p className="text-gray-600">
+                Invest in startups with proven mentorship and support
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <LockClosedIcon className="h-8 w-8 text-gray-600" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Confidentiality</h3>
+              <p className="text-gray-600">
+                Secure platform with NDA-protected information
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Section */}
+      <div className="bg-blue-600 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold text-white mb-4">
+            Get Exclusive Investor Access
+          </h2>
+          <p className="text-xl text-blue-100 mb-8">
             Join our investor network to access detailed startup profiles, financials, and exclusive investment opportunities.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -226,7 +303,7 @@ export default function InvestorsPage() {
                   return (
                     <Link
                       href="/investors/dashboard"
-                      className="bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+                      className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
                     >
                       Access Investor Portal
                     </Link>
@@ -235,7 +312,7 @@ export default function InvestorsPage() {
                 return (
                   <Link
                     href="/auth/signup?role=Investor"
-                    className="bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+                    className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
                   >
                     Become an Investor
                   </Link>
@@ -244,59 +321,10 @@ export default function InvestorsPage() {
             </Authenticator>
             <Link
               href="/investors/apply"
-              className="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-600 transition-colors"
+              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors"
             >
               Apply for Access
             </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Investor Benefits */}
-      <div className="bg-white p-8 rounded-lg shadow mt-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Investor Benefits</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="text-center">
-            <EyeIcon className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Early Access</h3>
-            <p className="text-gray-600">
-              Get first look at promising startups before they hit the market
-            </p>
-          </div>
-          <div className="text-center">
-            <ChartBarIcon className="h-12 w-12 text-green-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Detailed Analytics</h3>
-            <p className="text-gray-600">
-              Access comprehensive financials, metrics, and growth projections
-            </p>
-          </div>
-          <div className="text-center">
-            <UserGroupIcon className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Network Access</h3>
-            <p className="text-gray-600">
-              Connect with other investors and industry experts
-            </p>
-          </div>
-          <div className="text-center">
-            <CalendarIcon className="h-12 w-12 text-orange-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Exclusive Events</h3>
-            <p className="text-gray-600">
-              Attend private demo days and networking events
-            </p>
-          </div>
-          <div className="text-center">
-            <TrophyIcon className="h-12 w-12 text-red-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Track Record</h3>
-            <p className="text-gray-600">
-              Invest in startups with proven mentorship and support
-            </p>
-          </div>
-          <div className="text-center">
-            <LockClosedIcon className="h-12 w-12 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Confidentiality</h3>
-            <p className="text-gray-600">
-              Secure platform with NDA-protected information
-            </p>
           </div>
         </div>
       </div>

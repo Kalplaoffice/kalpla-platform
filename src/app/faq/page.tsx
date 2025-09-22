@@ -468,7 +468,7 @@ export default function FAQPage() {
                 Contact Support
               </Link>
               <a
-                href="tel:+91-9876543210"
+                href="tel:+91-8660200835"
                 className="bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center"
               >
                 <PhoneIcon className="h-5 w-5 mr-2" />

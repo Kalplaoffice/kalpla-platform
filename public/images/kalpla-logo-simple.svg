@@ -1,0 +1,11 @@
+<svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+  <!-- Orange Symbol -->
+  <g id="symbol">
+    <!-- Upper curved lines forming V shape -->
+    <path d="M8 6 Q16 14 24 6" stroke="#FF6B35" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <path d="M24 6 Q16 14 8 6" stroke="#FF6B35" stroke-width="3" stroke-linecap="round" fill="none"/>
+    
+    <!-- Lower horizontal bar -->
+    <rect x="6" y="14" width="20" height="3" rx="1.5" fill="#FF6B35"/>
+  </g>
+</svg>

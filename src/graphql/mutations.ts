@@ -641,3 +641,100 @@ export const SUBMIT_MENTOR_APPLICATION = `
     }
   }
 `;
+
+// Degree Program Mutations
+export const createDegreeProgram = `
+  mutation CreateDegreeProgram(
+    $input: CreateDegreeProgramInput!
+    $condition: ModelDegreeProgramConditionInput
+  ) {
+    createDegreeProgram(input: $input, condition: $condition) {
+      id
+      name
+      specialization
+      duration
+      mode
+      schedule
+      description
+      features
+      advantages
+      eligibility
+      targetAudience
+      registrationLink
+      image
+      status
+      totalStudents
+      revenue
+      createdAt
+      updatedAt
+      _version
+      _deleted
+      _lastChangedAt
+      __typename
+    }
+  }
+`;
+
+export const updateDegreeProgram = `
+  mutation UpdateDegreeProgram(
+    $input: UpdateDegreeProgramInput!
+    $condition: ModelDegreeProgramConditionInput
+  ) {
+    updateDegreeProgram(input: $input, condition: $condition) {
+      id
+      name
+      specialization
+      duration
+      mode
+      schedule
+      description
+      features
+      advantages
+      eligibility
+      targetAudience
+      registrationLink
+      image
+      status
+      totalStudents
+      revenue
+      createdAt
+      updatedAt
+      _version
+      _deleted
+      _lastChangedAt
+      __typename
+    }
+  }
+`;
+
+export const deleteDegreeProgram = `
+  mutation DeleteDegreeProgram(
+    $input: DeleteDegreeProgramInput!
+    $condition: ModelDegreeProgramConditionInput
+  ) {
+    deleteDegreeProgram(input: $input, condition: $condition) {
+      id
+      name
+      specialization
+      duration
+      mode
+      schedule
+      description
+      features
+      advantages
+      eligibility
+      targetAudience
+      registrationLink
+      image
+      status
+      totalStudents
+      revenue
+      createdAt
+      updatedAt
+      _version
+      _deleted
+      _lastChangedAt
+      __typename
+    }
+  }
+`;

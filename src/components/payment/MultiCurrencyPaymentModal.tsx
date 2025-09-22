@@ -34,7 +34,7 @@ export function MultiCurrencyPaymentModal({
   courseTitle,
   courseType,
   baseAmount,
-  baseCurrency = 'USD',
+  baseCurrency = 'INR',
   onPaymentSuccess,
   onPaymentFailure
 }: MultiCurrencyPaymentModalProps) {

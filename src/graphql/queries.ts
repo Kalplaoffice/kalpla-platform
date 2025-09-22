@@ -1004,3 +1004,71 @@ export const LIST_PENDING_APPLICATIONS = `
     }
   }
 `;
+
+// Degree Program Queries
+export const getDegreeProgram = `
+  query GetDegreeProgram($id: ID!) {
+    getDegreeProgram(id: $id) {
+      id
+      name
+      specialization
+      duration
+      mode
+      schedule
+      description
+      features
+      advantages
+      eligibility
+      targetAudience
+      registrationLink
+      image
+      status
+      totalStudents
+      revenue
+      createdAt
+      updatedAt
+      _version
+      _deleted
+      _lastChangedAt
+      __typename
+    }
+  }
+`;
+
+export const listDegreePrograms = `
+  query ListDegreePrograms(
+    $filter: ModelDegreeProgramFilterInput
+    $limit: Int
+    $nextToken: String
+  ) {
+    listDegreePrograms(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        name
+        specialization
+        duration
+        mode
+        schedule
+        description
+        features
+        advantages
+        eligibility
+        targetAudience
+        registrationLink
+        image
+        status
+        totalStudents
+        revenue
+        createdAt
+        updatedAt
+        _version
+        _deleted
+        _lastChangedAt
+        __typename
+      }
+      nextToken
+      startedAt
+      __typename
+    }
+  }
+`;

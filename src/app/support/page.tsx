@@ -253,8 +253,8 @@ export default function SupportPage() {
             <PhoneIcon className="h-12 w-12 text-green-600 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Phone Support</h3>
             <p className="text-gray-600 mb-4">Call us for immediate assistance</p>
-            <a href="tel:+919876543210" className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors inline-block">
-              +91 9876543210
+            <a href="tel:+918660200835" className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors inline-block">
+              +91 8660200835
             </a>
           </div>
           
@@ -262,8 +262,8 @@ export default function SupportPage() {
             <EnvelopeIcon className="h-12 w-12 text-purple-600 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Email Support</h3>
             <p className="text-gray-600 mb-4">Send us a detailed message</p>
-            <a href="mailto:support@kalpla.com" className="bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors inline-block">
-              support@kalpla.com
+            <a href="mailto:support@kalpla.in" className="bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700 transition-colors inline-block">
+              support@kalpla.in
             </a>
           </div>
         </div>
@@ -452,7 +452,7 @@ export default function SupportPage() {
                         <EnvelopeIcon className="h-6 w-6 text-blue-600 mr-3 mt-1" />
                         <div>
                           <h4 className="font-medium text-gray-900">Email Support</h4>
-                          <p className="text-gray-600">support@kalpla.com</p>
+                          <p className="text-gray-600">support@kalpla.in</p>
                           <p className="text-sm text-gray-500">We typically respond within 24 hours</p>
                         </div>
                       </div>
@@ -461,7 +461,7 @@ export default function SupportPage() {
                         <PhoneIcon className="h-6 w-6 text-green-600 mr-3 mt-1" />
                         <div>
                           <h4 className="font-medium text-gray-900">Phone Support</h4>
-                          <p className="text-gray-600">+91 9876543210</p>
+                          <p className="text-gray-600">+91 8660200835</p>
                           <p className="text-sm text-gray-500">Available during business hours</p>
                         </div>
                       </div>

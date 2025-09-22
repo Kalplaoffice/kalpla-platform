@@ -1,412 +1,205 @@
 'use client';
 
-import { useUser } from '@/contexts/UserContext';
-import { Authenticator } from '@aws-amplify/ui-react';
-import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
-
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@/contexts/UserContext';
+import useRoleBasedAccess from '@/hooks/useRoleBasedAccess';
+import { useAuthRedirect } from '@/hooks/useAuthRedirect';
+import AuthDebug from '@/components/debug/AuthDebug';
 import { 
-  AcademicCapIcon, 
-  BookOpenIcon, 
-  ChartBarIcon, 
   UserGroupIcon,
-  ClockIcon,
-  TrophyIcon,
+  AcademicCapIcon,
+  ChartBarIcon,
   CalendarIcon,
-  DocumentTextIcon
+  BellIcon,
+  CogIcon,
+  BookOpenIcon,
+  TrophyIcon,
+  CurrencyDollarIcon,
+  RocketLaunchIcon,
+  StarIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 
-import Link from 'next/link';
-
 export default function DashboardPage() {
-  const { user } = useUser();
-  const { getDashboardRoute } = useRoleBasedAccess();
-  const router = useRouter();
+  const { role } = useRoleBasedAccess();
+  const { user, loading } = useAuthRedirect();
 
-  useEffect(() => {
-    if (user) {
-      const dashboardRoute = getDashboardRoute();
-      if (dashboardRoute !== '/dashboard') {
-        router.push(dashboardRoute);
-      }
-    }
-  }, [user, getDashboardRoute, router]);
 
-  const getRoleDashboard = (role: string) => {
-    switch (role) {
-      case 'Student':
-        return <StudentDashboard />;
-      case 'Instructor':
-        return <InstructorDashboard />;
-      case 'Mentor':
-        return <MentorDashboard />;
-      case 'Admin':
-        return <AdminDashboard />;
-      case 'Investor':
-        return <InvestorDashboard />;
-      default:
-        return <GuestDashboard />;
-    }
-  };
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
-  return (
-    <Authenticator>
-      {({ signOut, user: authUser }) => {
-        if (!authUser) return null;
-        
-        const userRole = authUser.signInDetails?.loginId || 'Guest';
-        
-        return (
-          <div className="max-w-7xl mx-auto">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900">
-                Welcome back, {authUser.signInDetails?.loginId || 'User'}!
-              </h1>
-              <p className="text-gray-600 mt-2">
-                Here's what's happening with your {userRole.toLowerCase()} account.
-              </p>
-            </div>
-
-            {getRoleDashboard(userRole)}
-          </div>
-        );
-      }}
-    </Authenticator>
-  );
-}
-
-function StudentDashboard() {
   const stats = [
-    { name: 'Courses Enrolled', value: '5', icon: BookOpenIcon },
-    { name: 'Programs Completed', value: '2', icon: AcademicCapIcon },
-    { name: 'Assignments Submitted', value: '12', icon: DocumentTextIcon },
-    { name: 'Current KSMP Phase', value: 'Phase 3', icon: TrophyIcon },
+    { name: 'Active Courses', value: '3', icon: BookOpenIcon, color: 'blue' },
+    { name: 'Completed Assignments', value: '12', icon: CheckCircleIcon, color: 'green' },
+    { name: 'Upcoming Deadlines', value: '2', icon: CalendarIcon, color: 'yellow' },
+    { name: 'Achievements', value: '5', icon: TrophyIcon, color: 'purple' }
   ];
 
   const recentActivity = [
-    { title: 'Completed "React Fundamentals"', time: '2 hours ago', type: 'course' },
-    { title: 'Submitted Assignment: Project Proposal', time: '1 day ago', type: 'assignment' },
-    { title: 'Attended Live Session: Startup Funding', time: '2 days ago', type: 'session' },
+    { id: 1, action: 'Completed assignment', course: 'React Development', time: '2 hours ago', type: 'success' },
+    { id: 2, action: 'New course enrolled', course: 'Advanced JavaScript', time: '1 day ago', type: 'info' },
+    { id: 3, action: 'Assignment due', course: 'Node.js Backend', time: '2 days ago', type: 'warning' },
+    { id: 4, action: 'Certificate earned', course: 'Web Development Basics', time: '3 days ago', type: 'success' }
   ];
 
+  const upcomingEvents = [
+    { id: 1, title: 'Live Coding Session', time: 'Today, 2:00 PM', type: 'live' },
+    { id: 2, title: 'Assignment Deadline', time: 'Tomorrow, 11:59 PM', type: 'deadline' },
+    { id: 3, title: 'Mentor Meeting', time: 'Friday, 3:00 PM', type: 'meeting' }
+  ];
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900">Loading...</h2>
+          <p className="text-gray-600">Please wait while we load your dashboard.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8">
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => (
-          <div key={stat.name} className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <stat.icon className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">{stat.name}</p>
-                <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
-              </div>
+    <div className="min-h-screen bg-gray-50">
+      <AuthDebug />
+      {/* Header */}
+      <div className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Welcome back, {user.name || user.email}!
+              </h1>
+              <p className="text-gray-600">Here's what's happening with your {role.toLowerCase()} account.</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <button className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100">
+                <BellIcon className="h-6 w-6" />
+              </button>
+              <button className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100">
+                <CogIcon className="h-6 w-6" />
+              </button>
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link
-            href="/courses"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <BookOpenIcon className="h-6 w-6 text-blue-600 mr-3" />
-            <span>Browse Courses</span>
-          </Link>
-          <Link
-            href="/assignments"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <DocumentTextIcon className="h-6 w-6 text-green-600 mr-3" />
-            <span>View Assignments</span>
-          </Link>
-          <Link
-            href="/gradebook"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <ChartBarIcon className="h-6 w-6 text-purple-600 mr-3" />
-            <span>View Gradebook</span>
-          </Link>
-          <Link
-            href="/ksmp"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <TrophyIcon className="h-6 w-6 text-purple-600 mr-3" />
-            <span>KSMP Progress</span>
-          </Link>
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
-        <div className="space-y-4">
-          {recentActivity.map((activity, index) => (
-            <div key={index} className="flex items-center justify-between py-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Role-based Dashboard Selection */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Access Your Dashboard</h2>
+          <p className="text-gray-600 mb-4">
+            You're currently logged in as a <span className="font-medium text-blue-600">{role}</span>. 
+            Click below to access your role-specific dashboard.
+          </p>
+          <button
+            onClick={handleRoleRedirect}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+          >
+            Go to {role} Dashboard
+          </button>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {stats.map((stat) => (
+            <div key={stat.name} className="bg-white rounded-lg shadow p-6">
               <div className="flex items-center">
-                <div className="h-2 w-2 bg-blue-600 rounded-full mr-3"></div>
-                <span className="text-gray-900">{activity.title}</span>
+                <div className={`bg-${stat.color}-100 rounded-lg p-3`}>
+                  <stat.icon className={`h-6 w-6 text-${stat.color}-600`} />
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">{stat.name}</p>
+                  <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
+                </div>
               </div>
-              <span className="text-sm text-gray-500">{activity.time}</span>
             </div>
           ))}
         </div>
-      </div>
-    </div>
-  );
-}
 
-function InstructorDashboard() {
-  const stats = [
-    { name: 'Courses Created', value: '8', icon: BookOpenIcon },
-    { name: 'Total Students', value: '245', icon: UserGroupIcon },
-    { name: 'Monthly Earnings', value: '$2,450', icon: ChartBarIcon },
-    { name: 'Average Rating', value: '4.8', icon: TrophyIcon },
-  ];
-
-  return (
-    <div className="space-y-8">
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => (
-          <div key={stat.name} className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <stat.icon className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">{stat.name}</p>
-                <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Recent Activity */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                {recentActivity.map((activity) => (
+                  <div key={activity.id} className="flex items-start space-x-3">
+                    <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${
+                      activity.type === 'success' ? 'bg-green-500' :
+                      activity.type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+                    }`}></div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900">{activity.action}</p>
+                      <p className="text-sm text-gray-600">{activity.course}</p>
+                      <p className="text-xs text-gray-500">{activity.time}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link
-            href="/instructor/courses/create"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <BookOpenIcon className="h-6 w-6 text-blue-600 mr-3" />
-            <span>Create Course</span>
-          </Link>
-          <Link
-            href="/instructor/analytics"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <ChartBarIcon className="h-6 w-6 text-green-600 mr-3" />
-            <span>View Analytics</span>
-          </Link>
-          <Link
-            href="/instructor/earnings"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <TrophyIcon className="h-6 w-6 text-purple-600 mr-3" />
-            <span>Earnings</span>
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function MentorDashboard() {
-  const stats = [
-    { name: 'Active Cohorts', value: '3', icon: UserGroupIcon },
-    { name: 'Total Mentees', value: '45', icon: UserGroupIcon },
-    { name: 'Live Sessions', value: '12', icon: CalendarIcon },
-    { name: 'KSMP Phase', value: 'Phase 8', icon: TrophyIcon },
-  ];
-
-  return (
-    <div className="space-y-8">
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => (
-          <div key={stat.name} className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <stat.icon className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">{stat.name}</p>
-                <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
+          {/* Upcoming Events */}
+          <div className="bg-white rounded-lg shadow">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Upcoming Events</h3>
+            </div>
+            <div className="p-6">
+              <div className="space-y-4">
+                {upcomingEvents.map((event) => (
+                  <div key={event.id} className="flex items-center space-x-3">
+                    <div className={`flex-shrink-0 w-3 h-3 rounded-full ${
+                      event.type === 'live' ? 'bg-red-500' :
+                      event.type === 'deadline' ? 'bg-yellow-500' : 'bg-blue-500'
+                    }`}></div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900">{event.title}</p>
+                      <p className="text-sm text-gray-600">{event.time}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link
-            href="/mentor/cohorts"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <UserGroupIcon className="h-6 w-6 text-blue-600 mr-3" />
-            <span>Manage Cohorts</span>
-          </Link>
-          <Link
-            href="/mentor/sessions"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <CalendarIcon className="h-6 w-6 text-green-600 mr-3" />
-            <span>Schedule Session</span>
-          </Link>
-          <Link
-            href="/mentor/grading"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <DocumentTextIcon className="h-6 w-6 text-purple-600 mr-3" />
-            <span>Grade Assignments</span>
-          </Link>
         </div>
-      </div>
-    </div>
-  );
-}
 
-function AdminDashboard() {
-  const stats = [
-    { name: 'Total Users', value: '1,250', icon: UserGroupIcon },
-    { name: 'Pending Approvals', value: '8', icon: ClockIcon },
-    { name: 'Active Courses', value: '156', icon: BookOpenIcon },
-    { name: 'Revenue', value: '$45,230', icon: ChartBarIcon },
-  ];
-
-  return (
-    <div className="space-y-8">
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => (
-          <div key={stat.name} className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <stat.icon className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">{stat.name}</p>
-                <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
-              </div>
-            </div>
+        {/* Quick Actions */}
+        <div className="mt-8 bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <button className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <BookOpenIcon className="h-6 w-6 text-blue-600 mr-3" />
+              <span className="text-sm font-medium text-gray-900">Browse Courses</span>
+            </button>
+            <button className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <UserGroupIcon className="h-6 w-6 text-green-600 mr-3" />
+              <span className="text-sm font-medium text-gray-900">Find Mentors</span>
+            </button>
+            <button className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <ChartBarIcon className="h-6 w-6 text-purple-600 mr-3" />
+              <span className="text-sm font-medium text-gray-900">View Progress</span>
+            </button>
+            <button className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+              <CalendarIcon className="h-6 w-6 text-orange-600 mr-3" />
+              <span className="text-sm font-medium text-gray-900">Schedule Meeting</span>
+            </button>
           </div>
-        ))}
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Admin Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link
-            href="/admin/approvals"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <ClockIcon className="h-6 w-6 text-blue-600 mr-3" />
-            <span>Pending Approvals</span>
-          </Link>
-          <Link
-            href="/admin/programs"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <AcademicCapIcon className="h-6 w-6 text-green-600 mr-3" />
-            <span>Manage Programs</span>
-          </Link>
-          <Link
-            href="/admin/analytics"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <ChartBarIcon className="h-6 w-6 text-purple-600 mr-3" />
-            <span>Platform Analytics</span>
-          </Link>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function InvestorDashboard() {
-  const stats = [
-    { name: 'Active Cohorts', value: '12', icon: UserGroupIcon },
-    { name: 'Investment Opportunities', value: '8', icon: ChartBarIcon },
-    { name: 'Demo Days Attended', value: '3', icon: CalendarIcon },
-    { name: 'Portfolio Companies', value: '5', icon: TrophyIcon },
-  ];
-
-  return (
-    <div className="space-y-8">
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat) => (
-          <div key={stat.name} className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <stat.icon className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">{stat.name}</p>
-                <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Investment Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link
-            href="/investor/opportunities"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <ChartBarIcon className="h-6 w-6 text-blue-600 mr-3" />
-            <span>Investment Opportunities</span>
-          </Link>
-          <Link
-            href="/investor/demo-days"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <CalendarIcon className="h-6 w-6 text-green-600 mr-3" />
-            <span>Demo Days</span>
-          </Link>
-          <Link
-            href="/investor/portfolio"
-            className="flex items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
-          >
-            <TrophyIcon className="h-6 w-6 text-purple-600 mr-3" />
-            <span>Portfolio</span>
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function GuestDashboard() {
-  return (
-    <div className="text-center py-12">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">
-        Welcome to Kalpla!
-      </h2>
-      <p className="text-gray-600 mb-8">
-        Sign up or sign in to access your personalized dashboard.
-      </p>
-      <div className="flex justify-center space-x-4">
-        <Link
-          href="/auth/signup"
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700"
-        >
-          Sign Up
-        </Link>
-        <Link
-          href="/auth/signin"
-          className="border border-blue-600 text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50"
-        >
-          Sign In
-        </Link>
       </div>
     </div>
   );

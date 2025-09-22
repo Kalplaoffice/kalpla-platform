@@ -1,180 +1,130 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { paymentService } from '@/lib/paymentService';
-import { 
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  ClockIcon,
-  ArrowRightIcon
-} from '@heroicons/react/24/outline';
+import { useEffect, useState } from 'react';
+import { CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 
-function PaymentSuccessContent() {
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [paymentData, setPaymentData] = useState<any>(null);
+export default function PaymentSuccessPage() {
+  const [paymentDetails, setPaymentDetails] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const handlePaymentSuccess = async () => {
-      try {
-        // Get transaction ID from URL parameters
-        const transactionId = searchParams.get('txnid') || searchParams.get('transaction_id');
-        
-        if (!transactionId) {
-          throw new Error('Transaction ID not found');
-        }
-
-        // Handle payment success
-        await paymentService.handlePaymentSuccess(transactionId);
-        
-        // Get payment details
-        const paymentStatus = await paymentService.checkPaymentStatus(transactionId);
-        setPaymentData(paymentStatus);
-
-        setLoading(false);
-      } catch (error) {
-        console.error('Payment success handling error:', error);
-        setError(error instanceof Error ? error.message : 'Payment verification failed');
-        setLoading(false);
-      }
+    // Get payment details from URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentData = {
+      txnid: urlParams.get('txnid'),
+      amount: urlParams.get('amount'),
+      productinfo: urlParams.get('productinfo'),
+      firstname: urlParams.get('firstname'),
+      email: urlParams.get('email'),
+      status: urlParams.get('status'),
+      hash: urlParams.get('hash'),
+      key: urlParams.get('key'),
+      udf1: urlParams.get('udf1'),
+      udf2: urlParams.get('udf2'),
+      udf3: urlParams.get('udf3'),
+      udf4: urlParams.get('udf4')
     };
 
-    handlePaymentSuccess();
-  }, [searchParams]);
+    setPaymentDetails(paymentData);
+    setIsLoading(false);
 
-  if (loading) {
+    // Log payment success
+    console.log('Payment Success:', paymentData);
+  }, []);
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <ClockIcon className="h-16 w-16 text-blue-500 animate-spin mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Verifying Payment
-          </h2>
-          <p className="text-gray-600">
-            Please wait while we verify your payment...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-          <ExclamationTriangleIcon className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Payment Verification Failed
-          </h2>
-          <p className="text-gray-600 mb-6">
-            {error}
-          </p>
-          <div className="space-y-3">
-            <Link
-              href="/dashboard"
-              className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors inline-block"
-            >
-              Go to Dashboard
-            </Link>
-            <Link
-              href="/support"
-              className="w-full border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors inline-block"
-            >
-              Contact Support
-            </Link>
-          </div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Processing payment details...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
-        <CheckCircleIcon className="h-16 w-16 text-green-500 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">
-          Payment Successful!
-        </h2>
-        <p className="text-gray-600 mb-6">
-          Your payment has been processed successfully. You now have access to your course.
-        </p>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="bg-white rounded-lg shadow-md p-8">
+          <div className="text-center mb-8">
+            <CheckCircleIcon className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Payment Successful! 🎉
+            </h1>
+            <p className="text-lg text-gray-600">
+              Your payment has been processed successfully
+            </p>
+          </div>
 
-        {paymentData && (
-          <div className="bg-gray-50 rounded-lg p-4 mb-6 text-left">
-            <h3 className="font-medium text-gray-900 mb-3">Payment Details</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Transaction ID:</span>
-                <span className="font-medium">{paymentData.transactionId}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Amount:</span>
-                <span className="font-medium">
-                  {paymentService.formatAmount(paymentData.amount)}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Status:</span>
-                <span className="font-medium text-green-600 capitalize">
-                  {paymentData.status}
-                </span>
-              </div>
-              {paymentData.paymentDate && (
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Date:</span>
-                  <span className="font-medium">
-                    {new Date(paymentData.paymentDate).toLocaleDateString()}
-                  </span>
+          {paymentDetails && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
+              <h2 className="text-xl font-semibold text-green-900 mb-4">
+                Payment Details
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-green-700 mb-1">
+                    Transaction ID
+                  </label>
+                  <p className="text-green-900 font-mono">{paymentDetails.txnid}</p>
                 </div>
-              )}
+                <div>
+                  <label className="block text-sm font-medium text-green-700 mb-1">
+                    Amount
+                  </label>
+                  <p className="text-green-900 font-semibold">₹{paymentDetails.amount}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-green-700 mb-1">
+                    Product
+                  </label>
+                  <p className="text-green-900">{paymentDetails.productinfo}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-green-700 mb-1">
+                    Customer Name
+                  </label>
+                  <p className="text-green-900">{paymentDetails.firstname}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-green-700 mb-1">
+                    Email
+                  </label>
+                  <p className="text-green-900">{paymentDetails.email}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-green-700 mb-1">
+                    Status
+                  </label>
+                  <p className="text-green-900 font-semibold">{paymentDetails.status}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="text-center space-y-4">
+            <p className="text-gray-600">
+              Thank you for your payment! You will receive a confirmation email shortly.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/payment-test"
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                Back to Payment Test
+              </Link>
+              <Link
+                href="/"
+                className="bg-gray-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-700 transition-colors"
+              >
+                Go to Home
+              </Link>
             </div>
           </div>
-        )}
-
-        <div className="space-y-3">
-          <Link
-            href="/dashboard"
-            className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors inline-flex items-center justify-center"
-          >
-            Go to Dashboard
-            <ArrowRightIcon className="h-4 w-4 ml-2" />
-          </Link>
-          <Link
-            href="/courses"
-            className="w-full border border-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors inline-block"
-          >
-            Browse More Courses
-          </Link>
-        </div>
-
-        <div className="mt-6 text-xs text-gray-500">
-          <p>A confirmation email has been sent to your registered email address.</p>
         </div>
       </div>
     </div>
-  );
-}
-
-export default function PaymentSuccessPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <ClockIcon className="h-16 w-16 text-blue-500 animate-spin mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Loading...
-          </h2>
-          <p className="text-gray-600">
-            Please wait...
-          </p>
-        </div>
-      </div>
-    }>
-      <PaymentSuccessContent />
-    </Suspense>
   );
 }

@@ -1,0 +1,9 @@
+{
+  "bucketName": "kalplastorage",
+  "authPolicyName": "kalplastorage",
+  "unauthPolicyName": "kalplastorage",
+  "authRoleName": "kalplastorage",
+  "unauthRoleName": "kalplastorage",
+  "authRoleArn": "arn:aws:iam::123456789012:role/kalplastorage",
+  "unauthRoleArn": "arn:aws:iam::123456789012:role/kalplastorage"
+}

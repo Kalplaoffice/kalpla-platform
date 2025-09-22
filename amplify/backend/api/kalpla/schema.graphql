@@ -19,3 +19,158 @@ type Course @model @auth(rules: [{allow: public, operations: [read]}, {allow: ow
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
 }
+
+type DegreeProgram @model @auth(rules: [{allow: public, operations: [read, create, update, delete]}]) {
+  id: ID!
+  title: String!
+  slug: String! @index(name: "bySlug", queryField: "getDegreeProgramBySlug")
+  description: String!
+  shortDescription: String
+  duration: String!
+  mode: String!
+  schedule: String!
+  price: Float!
+  currency: String!
+  thumbnail: String
+  gallery: [String]
+  syllabus: [SyllabusSection] @hasMany
+  instructors: [Instructor] @manyToMany(relationName: "ProgramInstructors")
+  features: [String!]!
+  advantages: [String!]!
+  eligibility: String!
+  targetAudience: String!
+  prerequisites: [String]
+  learningOutcomes: [String]
+  certification: String
+  status: ProgramStatus!
+  totalStudents: Int
+  revenue: String
+  enrollmentCount: Int
+  rating: Float
+  reviews: [Review] @hasMany
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type SyllabusSection @model @auth(rules: [{allow: public, operations: [read, create, update, delete]}]) {
+  id: ID!
+  title: String!
+  description: String
+  order: Int!
+  duration: String
+  lessons: [Lesson] @hasMany
+  degreeProgramID: ID! @index(name: "byDegreeProgram")
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Lesson @model @auth(rules: [{allow: public, operations: [read, create, update, delete]}]) {
+  id: ID!
+  title: String!
+  description: String
+  content: String
+  videoUrl: String
+  duration: String
+  order: Int!
+  isPreview: Boolean
+  resources: [String]
+  syllabusSectionID: ID! @index(name: "bySyllabusSection")
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Instructor @model @auth(rules: [{allow: public, operations: [read, create, update, delete]}]) {
+  id: ID!
+  name: String!
+  bio: String
+  profileImage: String
+  email: String
+  phone: String
+  expertise: [String]
+  experience: String
+  education: String
+  certifications: [String]
+  linkedinProfile: String
+  website: String
+  rating: Float
+  programs: [DegreeProgram] @manyToMany(relationName: "ProgramInstructors")
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Enrollment @model @auth(rules: [{allow: owner}, {allow: public, operations: [read, create, update]}]) {
+  id: ID!
+  studentID: ID! @index(name: "byStudent")
+  degreeProgramID: ID! @index(name: "byDegreeProgram")
+  paymentStatus: PaymentStatus!
+  transactionId: String
+  amount: Float!
+  currency: String!
+  paymentMethod: String
+  enrollmentDate: AWSDateTime!
+  completionDate: AWSDateTime
+  progress: Float
+  certificateIssued: Boolean
+  certificateUrl: String
+  refundRequested: Boolean
+  refundStatus: RefundStatus
+  refundAmount: Float
+  refundDate: AWSDateTime
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Review @model @auth(rules: [{allow: owner}, {allow: public, operations: [read, create]}]) {
+  id: ID!
+  studentID: ID!
+  degreeProgramID: ID! @index(name: "byDegreeProgram")
+  rating: Int!
+  title: String
+  comment: String
+  isVerified: Boolean
+  helpful: Int
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Payment @model @auth(rules: [{allow: owner}, {allow: public, operations: [read, create, update]}]) {
+  id: ID!
+  enrollmentID: ID! @index(name: "byEnrollment")
+  amount: Float!
+  currency: String!
+  paymentMethod: String!
+  transactionId: String!
+  status: PaymentStatus!
+  gateway: String!
+  gatewayOrderId: String
+  gatewayPaymentId: String
+  gatewaySignature: String
+  refundAmount: Float
+  refundStatus: RefundStatus
+  refundDate: AWSDateTime
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+enum ProgramStatus {
+  active
+  inactive
+  draft
+  archived
+}
+
+enum PaymentStatus {
+  pending
+  success
+  failed
+  cancelled
+  refunded
+}
+
+enum RefundStatus {
+  none
+  requested
+  processing
+  completed
+  rejected
+}

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { authService, User } from '@/lib/authService';
+import MockAuthService from '@/lib/mockAuthService';
 
 interface UserContextType {
   user: User | null;
@@ -38,8 +39,21 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const initializeAuth = async () => {
     try {
+      // Try real Cognito auth first
       const currentUser = await authService.getCurrentUser();
-      setUser(currentUser);
+      if (currentUser) {
+        setUser(currentUser);
+        setLoading(false);
+        return;
+      }
+
+      // If no Cognito user, check mock auth
+      const mockUser = await MockAuthService.getCurrentUser();
+      if (mockUser) {
+        setUser(mockUser);
+        setLoading(false);
+        return;
+      }
     } catch (error) {
       console.log('No authenticated user');
     } finally {
@@ -57,11 +71,41 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (username: string, password: string) => {
     try {
-      const user = await authService.signIn({ username, password });
-      setUser(user);
-    } catch (error) {
-      console.error('Sign in error:', error);
-      throw error;
+      // For Cognito users, try Cognito first
+      const cognitoUsers = [
+        'learncapacademy@gmail.com',
+        'jnaneshshetty08@gmail.com',
+        'jnaneshshetty09@gmail.com',
+        'jnaneshshetty512@gmail.com'
+      ];
+      
+      if (cognitoUsers.includes(username)) {
+        try {
+          const user = await authService.signIn({ username, password });
+          setUser(user);
+          return;
+        } catch (cognitoError) {
+          console.error('Cognito sign in error:', cognitoError);
+          throw cognitoError;
+        }
+      }
+
+      // For other users, try mock auth first
+      const mockResult = await MockAuthService.signIn(username, password);
+      if (mockResult.isSignedIn) {
+        const mockUser = await MockAuthService.getCurrentUser();
+        setUser(mockUser);
+        return;
+      }
+    } catch (mockError) {
+      // If mock auth fails, try real Cognito auth
+      try {
+        const user = await authService.signIn({ username, password });
+        setUser(user);
+      } catch (cognitoError) {
+        console.error('Sign in error:', cognitoError);
+        throw cognitoError;
+      }
     }
   };
 
@@ -92,6 +136,10 @@ export function UserProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
+      // Sign out from mock auth
+      await MockAuthService.signOut();
+      
+      // Sign out from real Cognito
       await authService.signOut();
       setUser(null);
     } catch (error) {

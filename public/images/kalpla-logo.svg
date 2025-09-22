@@ -1,0 +1,20 @@
+<svg width="200" height="60" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <!-- Orange Symbol -->
+  <g id="symbol">
+    <!-- Upper curved lines forming V shape -->
+    <path d="M20 15 Q30 25 40 15" stroke="#FF6B35" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <path d="M40 15 Q30 25 20 15" stroke="#FF6B35" stroke-width="8" stroke-linecap="round" fill="none"/>
+    
+    <!-- Lower horizontal bar -->
+    <rect x="15" y="25" width="30" height="8" rx="4" fill="#FF6B35"/>
+  </g>
+  
+  <!-- Text "Kalpla" -->
+  <g id="text">
+    <!-- "Kal" in dark gray -->
+    <text x="60" y="35" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#2D3748">Kal</text>
+    
+    <!-- "pla" in orange -->
+    <text x="105" y="35" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#FF6B35">pla</text>
+  </g>
+</svg>

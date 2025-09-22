@@ -138,218 +138,225 @@ export default function KSMPPage() {
   const completedPhases = phases.filter(phase => phase.status === 'completed');
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="bg-white">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-lg p-8 mb-8">
-        <div className="max-w-3xl">
-          <h1 className="text-4xl font-bold mb-4">
-            Kalpla Startup Mentorship Program (KSMP)
-          </h1>
-          <p className="text-xl mb-6">
-            A comprehensive 12-month program designed to transform your startup idea into a successful business.
-            Join our cohort-based learning experience with expert mentors and industry leaders.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <Link
-              href="/ksmp/apply"
-              className="bg-white text-purple-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-            >
-              Apply Now
-            </Link>
-            <Link
-              href="/ksmp/cohorts"
-              className="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-purple-600 transition-colors"
-            >
-              View Cohorts
-            </Link>
+      <div className="relative bg-gradient-to-r from-blue-600 to-purple-600">
+        <div className="absolute inset-0 bg-black opacity-20"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+              Kalpla Startup Mentorship Program <span className="text-yellow-300">(KSMP)</span>
+            </h1>
+            <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
+              A comprehensive 12-month program designed to transform your startup idea into a successful business.
+              Join our cohort-based learning experience with expert mentors and industry leaders.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/ksmp/apply"
+                className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+              >
+                Apply Now
+              </Link>
+              <Link
+                href="/ksmp/cohorts"
+                className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors"
+              >
+                View Cohorts
+              </Link>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat) => (
-          <div key={stat.name} className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <stat.icon className="h-8 w-8 text-purple-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">{stat.name}</p>
+      <div className="py-24 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+            {stats.map((stat) => (
+              <div key={stat.name} className="bg-white p-6 rounded-lg shadow-md text-center">
+                <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                  <stat.icon className="h-8 w-8 text-blue-600" />
+                </div>
+                <p className="text-sm font-medium text-gray-500 mb-2">{stat.name}</p>
                 <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
               </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {/* Program Overview */}
-      <div className="bg-white p-8 rounded-lg shadow mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Program Overview</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">What You'll Learn</h3>
-            <ul className="space-y-2">
-              <li className="flex items-center">
-                <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
-                <span>Business model development and validation</span>
-              </li>
-              <li className="flex items-center">
-                <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
-                <span>Product development and market fit</span>
-              </li>
-              <li className="flex items-center">
-                <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
-                <span>Marketing and sales strategies</span>
-              </li>
-              <li className="flex items-center">
-                <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
-                <span>Fundraising and investor relations</span>
-              </li>
-              <li className="flex items-center">
-                <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
-                <span>Leadership and team management</span>
-              </li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Program Benefits</h3>
-            <ul className="space-y-2">
-              <li className="flex items-center">
-                <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
-                <span>Expert mentorship from industry leaders</span>
-              </li>
-              <li className="flex items-center">
-                <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
-                <span>Access to investor network</span>
-              </li>
-              <li className="flex items-center">
-                <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
-                <span>Peer learning and networking</span>
-              </li>
-              <li className="flex items-center">
-                <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
-                <span>Demo day presentation opportunity</span>
-              </li>
-              <li className="flex items-center">
-                <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
-                <span>Lifetime access to alumni network</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* Current Phase Highlight */}
-      {currentPhase && (
-        <div className="bg-blue-50 border border-blue-200 p-6 rounded-lg mb-8">
-          <div className="flex items-center mb-4">
-            <ClockIcon className="h-6 w-6 text-blue-600 mr-2" />
-            <h2 className="text-xl font-bold text-blue-900">Current Phase</h2>
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Phase {currentPhase.number}: {currentPhase.title}
-          </h3>
-          <p className="text-gray-700 mb-4">{currentPhase.description}</p>
-          <div className="flex items-center text-sm text-gray-600">
-            <CalendarIcon className="h-4 w-4 mr-1" />
-            Duration: {currentPhase.duration}
-          </div>
-        </div>
-      )}
-
-      {/* Program Phases */}
-      <div className="bg-white p-8 rounded-lg shadow">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">12-Phase Program Structure</h2>
-        <div className="space-y-4">
-          {phases.map((phase) => (
-            <div
-              key={phase.number}
-              className={`border rounded-lg p-6 cursor-pointer transition-colors ${
-                phase.status === 'current'
-                  ? 'border-blue-500 bg-blue-50'
-                  : phase.status === 'completed'
-                  ? 'border-green-500 bg-green-50'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
-              onClick={() => setSelectedPhase(phase.number)}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                      phase.status === 'current'
-                        ? 'bg-blue-600 text-white'
-                        : phase.status === 'completed'
-                        ? 'bg-green-600 text-white'
-                        : 'bg-gray-300 text-gray-700'
-                    }`}
-                  >
-                    {phase.status === 'completed' ? (
-                      <CheckCircleIcon className="h-5 w-5" />
-                    ) : (
-                      phase.number
-                    )}
-                  </div>
-                  <div className="ml-4">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Phase {phase.number}: {phase.title}
-                    </h3>
-                    <p className="text-sm text-gray-600">{phase.description}</p>
-                  </div>
-                </div>
-                <div className="flex items-center text-sm text-gray-500">
-                  <CalendarIcon className="h-4 w-4 mr-1" />
-                  {phase.duration}
-                </div>
+          {/* Program Overview */}
+          <div className="bg-white rounded-lg shadow-md p-8 mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-6">Program Overview</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">What You'll Learn</h3>
+                <ul className="space-y-2">
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
+                    <span>Business model development and validation</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
+                    <span>Product development and market fit</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
+                    <span>Marketing and sales strategies</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
+                    <span>Fundraising and investor relations</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
+                    <span>Leadership and team management</span>
+                  </li>
+                </ul>
               </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Program Benefits</h3>
+                <ul className="space-y-2">
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
+                    <span>Expert mentorship from industry leaders</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
+                    <span>Access to investor network</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
+                    <span>Peer learning and networking</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
+                    <span>Demo day presentation opportunity</span>
+                  </li>
+                  <li className="flex items-center">
+                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2" />
+                    <span>Lifetime access to alumni network</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
 
-              {selectedPhase === phase.number && (
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">Key Topics</h4>
-                      <ul className="space-y-1">
-                        {phase.topics.map((topic, index) => (
-                          <li key={index} className="text-sm text-gray-600">
-                            • {topic}
-                          </li>
-                        ))}
-                      </ul>
+          {/* Current Phase Highlight */}
+          {currentPhase && (
+            <div className="bg-blue-50 border border-blue-200 p-6 rounded-lg mb-8">
+              <div className="flex items-center mb-4">
+                <ClockIcon className="h-6 w-6 text-blue-600 mr-2" />
+                <h2 className="text-xl font-bold text-blue-900">Current Phase</h2>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Phase {currentPhase.number}: {currentPhase.title}
+              </h3>
+              <p className="text-gray-700 mb-4">{currentPhase.description}</p>
+              <div className="flex items-center text-sm text-gray-600">
+                <CalendarIcon className="h-4 w-4 mr-1" />
+                Duration: {currentPhase.duration}
+              </div>
+            </div>
+          )}
+
+          {/* Program Phases */}
+          <div className="bg-white rounded-lg shadow-md p-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-6">12-Phase Program Structure</h2>
+            <div className="space-y-4">
+              {phases.map((phase) => (
+                <div
+                  key={phase.number}
+                  className={`border rounded-lg p-6 cursor-pointer transition-colors ${
+                    phase.status === 'current'
+                      ? 'border-blue-500 bg-blue-50'
+                      : phase.status === 'completed'
+                      ? 'border-green-500 bg-green-50'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                  onClick={() => setSelectedPhase(phase.number)}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center">
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                          phase.status === 'current'
+                            ? 'bg-blue-600 text-white'
+                            : phase.status === 'completed'
+                            ? 'bg-green-600 text-white'
+                            : 'bg-gray-300 text-gray-700'
+                        }`}
+                      >
+                        {phase.status === 'completed' ? (
+                          <CheckCircleIcon className="h-5 w-5" />
+                        ) : (
+                          phase.number
+                        )}
+                      </div>
+                      <div className="ml-4">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Phase {phase.number}: {phase.title}
+                        </h3>
+                        <p className="text-sm text-gray-600">{phase.description}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-2">Deliverables</h4>
-                      <ul className="space-y-1">
-                        {phase.deliverables.map((deliverable, index) => (
-                          <li key={index} className="text-sm text-gray-600">
-                            • {deliverable}
-                          </li>
-                        ))}
-                      </ul>
+                    <div className="flex items-center text-sm text-gray-500">
+                      <CalendarIcon className="h-4 w-4 mr-1" />
+                      {phase.duration}
                     </div>
                   </div>
+
+                  {selectedPhase === phase.number && (
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <h4 className="font-semibold text-gray-900 mb-2">Key Topics</h4>
+                          <ul className="space-y-1">
+                            {phase.topics.map((topic, index) => (
+                              <li key={index} className="text-sm text-gray-600">
+                                • {topic}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-900 mb-2">Deliverables</h4>
+                          <ul className="space-y-1">
+                            {phase.deliverables.map((deliverable, index) => (
+                              <li key={index} className="text-sm text-gray-600">
+                                • {deliverable}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
 
       {/* CTA Section */}
-      <div className="bg-gray-900 text-white p-8 rounded-lg mt-8">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Ready to Start Your Startup Journey?</h2>
-          <p className="text-gray-300 mb-6">
+      <div className="bg-blue-600 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold text-white mb-4">
+            Ready to Start Your Startup Journey?
+          </h2>
+          <p className="text-xl text-blue-100 mb-8">
             Join the next cohort and transform your idea into a successful business.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/ksmp/apply"
-              className="bg-purple-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-colors"
+              className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
             >
               Apply to KSMP
             </Link>
             <Link
               href="/mentors"
-              className="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-gray-900 transition-colors"
+              className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors"
             >
               Meet Our Mentors
             </Link>

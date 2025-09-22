@@ -32,23 +32,23 @@ export interface PaymentMethod {
 }
 
 class CurrencyService {
-  private baseCurrency = 'USD';
+  private baseCurrency = 'INR';
   private exchangeRates: Map<string, number> = new Map();
   private lastUpdate: Date | null = null;
   private updateInterval = 30 * 60 * 1000; // 30 minutes
 
   // Supported currencies
   private currencies: Currency[] = [
-    { code: 'USD', name: 'US Dollar', symbol: '$', rate: 1, decimalPlaces: 2, isActive: true },
-    { code: 'INR', name: 'Indian Rupee', symbol: '₹', rate: 83.5, decimalPlaces: 2, isActive: true },
-    { code: 'EUR', name: 'Euro', symbol: '€', rate: 0.92, decimalPlaces: 2, isActive: true },
-    { code: 'GBP', name: 'British Pound', symbol: '£', rate: 0.79, decimalPlaces: 2, isActive: true },
-    { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$', rate: 1.36, decimalPlaces: 2, isActive: true },
-    { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', rate: 1.52, decimalPlaces: 2, isActive: true },
-    { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$', rate: 1.35, decimalPlaces: 2, isActive: true },
-    { code: 'JPY', name: 'Japanese Yen', symbol: '¥', rate: 150, decimalPlaces: 0, isActive: true },
-    { code: 'CNY', name: 'Chinese Yuan', symbol: '¥', rate: 7.2, decimalPlaces: 2, isActive: true },
-    { code: 'AED', name: 'UAE Dirham', symbol: 'د.إ', rate: 3.67, decimalPlaces: 2, isActive: true }
+    { code: 'INR', name: 'Indian Rupee', symbol: '₹', rate: 1, decimalPlaces: 2, isActive: true },
+    { code: 'USD', name: 'US Dollar', symbol: '$', rate: 0.012, decimalPlaces: 2, isActive: true },
+    { code: 'EUR', name: 'Euro', symbol: '€', rate: 0.011, decimalPlaces: 2, isActive: true },
+    { code: 'GBP', name: 'British Pound', symbol: '£', rate: 0.0095, decimalPlaces: 2, isActive: true },
+    { code: 'CAD', name: 'Canadian Dollar', symbol: 'C$', rate: 0.016, decimalPlaces: 2, isActive: true },
+    { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', rate: 0.018, decimalPlaces: 2, isActive: true },
+    { code: 'SGD', name: 'Singapore Dollar', symbol: 'S$', rate: 0.016, decimalPlaces: 2, isActive: true },
+    { code: 'JPY', name: 'Japanese Yen', symbol: '¥', rate: 1.8, decimalPlaces: 0, isActive: true },
+    { code: 'CNY', name: 'Chinese Yuan', symbol: '¥', rate: 0.086, decimalPlaces: 2, isActive: true },
+    { code: 'AED', name: 'UAE Dirham', symbol: 'د.إ', rate: 0.044, decimalPlaces: 2, isActive: true }
   ];
 
   // Payment methods by region

@@ -65,19 +65,19 @@ export default function ContactPage() {
     {
       icon: EnvelopeIcon,
       title: 'Email',
-      details: ['hello@kalpla.com', 'support@kalpla.com', 'mentors@kalpla.com'],
+      details: ['support@kalpla.in'],
       description: 'Send us an email anytime'
     },
     {
       icon: PhoneIcon,
       title: 'Phone',
-      details: ['+1 (555) 123-4567', '+1 (555) 987-6543'],
+      details: ['+91 8660200835'],
       description: 'Call us during business hours'
     },
     {
       icon: MapPinIcon,
       title: 'Office',
-      details: ['123 Innovation Street', 'Tech City, TC 12345', 'United States'],
+      details: ['Kalpla', 'Udupi, Karnataka', 'India'],
       description: 'Visit our headquarters'
     },
     {

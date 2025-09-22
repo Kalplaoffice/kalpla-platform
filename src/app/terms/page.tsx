@@ -282,9 +282,9 @@ export default function TermsPage() {
               </p>
               <div className="bg-gray-50 rounded-lg p-4">
                 <p className="text-gray-700">
-                  <strong>Email:</strong> legal@kalpla.com<br />
-                  <strong>Phone:</strong> +91 9876543210<br />
-                  <strong>Address:</strong> Kalpla Technologies Pvt Ltd, Bangalore, India
+                  <strong>Email:</strong> support@kalpla.in<br />
+                  <strong>Phone:</strong> +91 8660200835<br />
+                  <strong>Address:</strong> Kalpla, Udupi, Karnataka, India
                 </p>
               </div>
             </div>

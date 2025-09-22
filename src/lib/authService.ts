@@ -11,6 +11,11 @@ export interface User {
   phoneNumber?: string;
   profilePicture?: string;
   isVerified: boolean;
+  signInDetails?: {
+    loginId: string;
+    groups?: string[];
+    authFlowType?: string;
+  };
 }
 
 export interface SignUpData {
@@ -335,16 +340,37 @@ class AuthService {
     const email = user.signInDetails?.loginId || '';
     const firstName = email.split('@')[0] || '';
     
+    // Determine role based on email (fallback for specific users)
+    let role = 'Student';
+    if (email === 'learncapacademy@gmail.com') {
+      role = 'Admin';
+    } else if (email === 'jnaneshshetty08@gmail.com') {
+      role = 'Student';
+    } else if (email === 'jnaneshshetty09@gmail.com') {
+      role = 'Mentor';
+    } else if (email === 'jnaneshshetty512@gmail.com') {
+      role = 'StudentKSMP';
+    }
+    
+    // TODO: In the future, we should get groups from Cognito tokens
+    // For now, we'll use email-based role detection
+    const groups = [role];
+    
     return {
       id: userId,
       email: email,
       firstName: firstName,
       lastName: '',
-      role: 'Student',
-      groups: [],
+      role: role,
+      groups: groups,
       phoneNumber: undefined,
       profilePicture: undefined,
-      isVerified: true
+      isVerified: true,
+      signInDetails: {
+        loginId: email,
+        groups: groups,
+        authFlowType: user.signInDetails?.authFlowType || 'USER_SRP_AUTH'
+      }
     };
   }
 

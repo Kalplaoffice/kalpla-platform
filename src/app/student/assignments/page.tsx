@@ -1,628 +1,502 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@/contexts/UserContext';
+import useRoleBasedAccess from '@/hooks/useRoleBasedAccess';
 import Link from 'next/link';
-import { StudentLayout } from '@/components/student/StudentLayout';
-import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
-
 import { 
+  ClipboardDocumentListIcon,
   DocumentTextIcon,
   ClockIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
   ArrowUpTrayIcon,
   EyeIcon,
+  StarIcon,
   CalendarIcon,
   AcademicCapIcon,
-  UserGroupIcon,
-  ArrowRightIcon
+  MagnifyingGlassIcon,
+  FunnelIcon,
+  PlusIcon,
+  DocumentIcon,
+  VideoCameraIcon,
+  PhotoIcon
 } from '@heroicons/react/24/outline';
 
-
-interface Assignment {
-  id: string;
-  title: string;
-  description: string;
-  course: string;
-  courseId: string;
-  phase?: number;
-  dueDate: string;
-  maxMarks: number;
-  status: 'not_submitted' | 'submitted' | 'graded' | 'late';
-  submission?: {
-    id: string;
-    submittedAt: string;
-    fileUrl: string;
-    fileName: string;
-    fileSize: string;
-    textSubmission?: string;
-    linkSubmission?: string;
-  };
-  grade?: {
-    score: number;
-    feedback: string;
-    gradedAt: string;
-    gradedBy: string;
-  };
-  instructions: string;
-  allowedFileTypes: string[];
-  maxFileSize: string;
-  createdAt: string;
-}
-
-export default function StudentAssignments() {
-  const { hasRole } = useRoleBasedAccess();
-  
-  // Check if user is student
-  const isStudent = hasRole('Student');
-  const [assignments, setAssignments] = useState<Assignment[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'pending' | 'submitted' | 'graded'>('all');
-  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
-  const [showSubmissionModal, setShowSubmissionModal] = useState(false);
-  const [submissionType, setSubmissionType] = useState<'file' | 'text' | 'link'>('file');
-  const [submissionFile, setSubmissionFile] = useState<File | null>(null);
-  const [submissionText, setSubmissionText] = useState('');
-  const [submissionLink, setSubmissionLink] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+export default function StudentAssignmentsPage() {
+  const { user, loading } = useUser();
+  const router = useRouter();
+  const { isAuthenticated } = useRoleBasedAccess();
+  const [hasRedirected, setHasRedirected] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterCourse, setFilterCourse] = useState('all');
 
   useEffect(() => {
-    // Mock data - replace with actual API calls
-    const mockAssignments: Assignment[] = [
-      {
-        id: '1',
-        title: 'Financial Model Assignment',
-        description: 'Create a comprehensive financial model for your startup idea',
-        course: 'KSMP Phase 3',
-        courseId: 'ksmp',
-        phase: 3,
-        dueDate: '2024-01-25T23:59:00Z',
-        maxMarks: 100,
-        status: 'not_submitted',
-        instructions: 'Create a 3-year financial projection model including revenue, expenses, and cash flow. Use Excel or Google Sheets.',
-        allowedFileTypes: ['xlsx', 'xls', 'pdf'],
-        maxFileSize: '10MB',
-        createdAt: '2024-01-15T10:00:00Z'
-      },
-      {
-        id: '2',
-        title: 'Data Visualization Project',
-        description: 'Create interactive visualizations using Python libraries',
-        course: 'Python for Data Science',
-        courseId: 'python-ds',
-        dueDate: '2024-01-28T23:59:00Z',
-        maxMarks: 100,
-        status: 'submitted',
-        submission: {
-          id: 'sub1',
-          submittedAt: '2024-01-26T14:30:00Z',
-          fileUrl: '#',
-          fileName: 'data_viz_project.ipynb',
-          fileSize: '2.3 MB'
-        },
-        instructions: 'Create at least 3 different types of visualizations using matplotlib, seaborn, or plotly. Include insights and analysis.',
-        allowedFileTypes: ['ipynb', 'py', 'pdf'],
-        maxFileSize: '5MB',
-        createdAt: '2024-01-20T09:00:00Z'
-      },
-      {
-        id: '3',
-        title: 'React Component Library',
-        description: 'Build a reusable component library using React',
-        course: 'React Development',
-        courseId: 'react-dev',
-        dueDate: '2024-01-30T23:59:00Z',
-        maxMarks: 100,
-        status: 'not_submitted',
-        instructions: 'Create a component library with at least 5 reusable components. Include documentation and examples.',
-        allowedFileTypes: ['zip', 'rar'],
-        maxFileSize: '20MB',
-        createdAt: '2024-01-22T11:00:00Z'
-      },
-      {
-        id: '4',
-        title: 'Market Research Report',
-        description: 'Conduct market research and create a comprehensive report',
-        course: 'KSMP Phase 1',
-        courseId: 'ksmp',
-        phase: 1,
-        dueDate: '2024-01-15T23:59:00Z',
-        maxMarks: 100,
-        status: 'graded',
-        submission: {
-          id: 'sub2',
-          submittedAt: '2024-01-14T16:45:00Z',
-          fileUrl: '#',
-          fileName: 'market_research_report.pdf',
-          fileSize: '4.1 MB'
-        },
-        grade: {
-          score: 85,
-          feedback: 'Excellent market analysis with comprehensive data. Good use of primary and secondary research. Consider adding more competitor analysis in future assignments.',
-          gradedAt: '2024-01-16T10:30:00Z',
-          gradedBy: 'John Doe'
-        },
-        instructions: 'Research your target market and create a detailed report covering market size, trends, competition, and opportunities.',
-        allowedFileTypes: ['pdf', 'doc', 'docx'],
-        maxFileSize: '10MB',
-        createdAt: '2024-01-10T14:00:00Z'
-      },
-      {
-        id: '5',
-        title: 'Business Model Canvas',
-        description: 'Create a business model canvas for your startup',
-        course: 'KSMP Phase 2',
-        courseId: 'ksmp',
-        phase: 2,
-        dueDate: '2024-01-20T23:59:00Z',
-        maxMarks: 100,
-        status: 'graded',
-        submission: {
-          id: 'sub3',
-          submittedAt: '2024-01-19T20:15:00Z',
-          fileUrl: '#',
-          fileName: 'business_model_canvas.pdf',
-          fileSize: '1.8 MB'
-        },
-        grade: {
-          score: 92,
-          feedback: 'Outstanding business model canvas! Clear value proposition and well-defined customer segments. Revenue streams are well thought out.',
-          gradedAt: '2024-01-21T09:15:00Z',
-          gradedBy: 'Jane Smith'
-        },
-        instructions: 'Complete the business model canvas template with detailed information about your startup idea.',
-        allowedFileTypes: ['pdf', 'png', 'jpg'],
-        maxFileSize: '5MB',
-        createdAt: '2024-01-12T16:00:00Z'
-      }
-    ];
+    if (loading) return;
+    if (hasRedirected) return;
 
-    // Simulate API call
-    setTimeout(() => {
-      setAssignments(mockAssignments);
-      setLoading(false);
-    }, 1000);
-  }, []);
+    if (!isAuthenticated()) {
+      router.push('/auth/signin');
+      setHasRedirected(true);
+      return;
+    }
+
+    if (user?.role && !['student', 'learner'].includes(user.role.toLowerCase())) {
+      router.push('/dashboard');
+      setHasRedirected(true);
+    }
+  }, [user, loading, router, isAuthenticated, hasRedirected]);
+
+  // Mock assignments data
+  const assignments = [
+    {
+      id: 1,
+      title: 'React Portfolio Website',
+      course: 'Web Development Fundamentals',
+      instructor: 'Sarah Johnson',
+      dueDate: '2024-01-20',
+      dueTime: '23:59',
+      status: 'pending',
+      priority: 'high',
+      description: 'Create a responsive portfolio website using React, showcasing your projects and skills. Include components for About, Projects, Skills, and Contact sections.',
+      requirements: [
+        'Use React functional components with hooks',
+        'Implement responsive design with CSS Grid/Flexbox',
+        'Include at least 3 project showcases',
+        'Add smooth animations and transitions',
+        'Deploy to Netlify or Vercel'
+      ],
+      submissionType: 'file',
+      maxFileSize: '50MB',
+      allowedFormats: ['zip', 'pdf', 'docx'],
+      points: 100,
+      submittedAt: null,
+      grade: null,
+      feedback: null,
+      attachments: []
+    },
+    {
+      id: 2,
+      title: 'Data Analysis Report',
+      course: 'Data Science Bootcamp',
+      instructor: 'Dr. Michael Chen',
+      dueDate: '2024-01-18',
+      dueTime: '17:00',
+      status: 'submitted',
+      priority: 'medium',
+      description: 'Analyze the provided dataset and create a comprehensive report with visualizations and insights.',
+      requirements: [
+        'Clean and preprocess the data',
+        'Perform exploratory data analysis',
+        'Create at least 5 meaningful visualizations',
+        'Write a detailed analysis report',
+        'Include recommendations based on findings'
+      ],
+      submissionType: 'file',
+      maxFileSize: '25MB',
+      allowedFormats: ['pdf', 'docx', 'ipynb'],
+      points: 150,
+      submittedAt: '2024-01-17T16:30:00Z',
+      grade: 92,
+      feedback: 'Excellent analysis! Your visualizations are clear and insightful. Consider adding more statistical tests to strengthen your conclusions.',
+      attachments: ['data_analysis_report.pdf']
+    },
+    {
+      id: 3,
+      title: 'UI/UX Design Critique',
+      course: 'Digital Marketing Mastery',
+      instructor: 'Emily Rodriguez',
+      dueDate: '2024-01-15',
+      dueTime: '12:00',
+      status: 'overdue',
+      priority: 'high',
+      description: 'Review and critique a mobile app interface, providing detailed feedback on usability and design principles.',
+      requirements: [
+        'Choose a mobile app to analyze',
+        'Document usability issues with screenshots',
+        'Apply UX design principles in your critique',
+        'Provide specific recommendations for improvement',
+        'Create a presentation of your findings'
+      ],
+      submissionType: 'file',
+      maxFileSize: '30MB',
+      allowedFormats: ['pdf', 'pptx', 'zip'],
+      points: 80,
+      submittedAt: null,
+      grade: null,
+      feedback: null,
+      attachments: []
+    },
+    {
+      id: 4,
+      title: 'JavaScript Algorithms',
+      course: 'Web Development Fundamentals',
+      instructor: 'Sarah Johnson',
+      dueDate: '2024-01-25',
+      dueTime: '23:59',
+      status: 'pending',
+      priority: 'medium',
+      description: 'Solve 5 algorithmic problems using JavaScript. Focus on efficiency and clean code practices.',
+      requirements: [
+        'Solve all 5 problems correctly',
+        'Include time and space complexity analysis',
+        'Write clean, readable code with comments',
+        'Test your solutions with provided test cases',
+        'Submit as a single JavaScript file'
+      ],
+      submissionType: 'file',
+      maxFileSize: '10MB',
+      allowedFormats: ['js', 'txt'],
+      points: 120,
+      submittedAt: null,
+      grade: null,
+      feedback: null,
+      attachments: []
+    },
+    {
+      id: 5,
+      title: 'Marketing Campaign Proposal',
+      course: 'Digital Marketing Mastery',
+      instructor: 'Emily Rodriguez',
+      dueDate: '2024-01-12',
+      dueTime: '17:00',
+      status: 'graded',
+      priority: 'low',
+      description: 'Create a comprehensive marketing campaign proposal for a new product launch.',
+      requirements: [
+        'Define target audience and personas',
+        'Develop campaign messaging and positioning',
+        'Create a multi-channel marketing strategy',
+        'Include budget allocation and timeline',
+        'Define success metrics and KPIs'
+      ],
+      submissionType: 'file',
+      maxFileSize: '20MB',
+      allowedFormats: ['pdf', 'docx', 'pptx'],
+      points: 100,
+      submittedAt: '2024-01-11T16:45:00Z',
+      grade: 88,
+      feedback: 'Great strategic thinking! Your target audience analysis is thorough. Consider adding more specific budget breakdowns and competitor analysis.',
+      attachments: ['marketing_proposal.pdf']
+    }
+  ];
+
+  const courses = ['Web Development Fundamentals', 'Data Science Bootcamp', 'Digital Marketing Mastery'];
 
   const filteredAssignments = assignments.filter(assignment => {
-    if (filter === 'all') return true;
-    if (filter === 'pending') return assignment.status === 'not_submitted';
-    if (filter === 'submitted') return assignment.status === 'submitted';
-    if (filter === 'graded') return assignment.status === 'graded';
-    return true;
+    const matchesSearch = assignment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         assignment.course.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         assignment.instructor.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = filterStatus === 'all' || assignment.status === filterStatus;
+    const matchesCourse = filterCourse === 'all' || assignment.course === filterCourse;
+    
+    return matchesSearch && matchesStatus && matchesCourse;
   });
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const getDaysUntilDue = (dueDate: string) => {
-    const now = new Date();
-    const due = new Date(dueDate);
-    const diffTime = due.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'not_submitted':
-        return 'text-red-600 bg-red-100';
+      case 'pending':
+        return 'text-blue-600 bg-blue-100';
       case 'submitted':
         return 'text-yellow-600 bg-yellow-100';
       case 'graded':
         return 'text-green-600 bg-green-100';
-      case 'late':
+      case 'overdue':
         return 'text-red-600 bg-red-100';
       default:
         return 'text-gray-600 bg-gray-100';
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'not_submitted':
-        return <ExclamationTriangleIcon className="h-4 w-4" />;
-      case 'submitted':
-        return <ClockIcon className="h-4 w-4" />;
-      case 'graded':
-        return <CheckCircleIcon className="h-4 w-4" />;
-      case 'late':
-        return <ExclamationTriangleIcon className="h-4 w-4" />;
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high':
+        return 'text-red-600 bg-red-100';
+      case 'medium':
+        return 'text-yellow-600 bg-yellow-100';
+      case 'low':
+        return 'text-green-600 bg-green-100';
       default:
-        return <ClockIcon className="h-4 w-4" />;
+        return 'text-gray-600 bg-gray-100';
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSubmissionFile(file);
-    }
+  const isOverdue = (dueDate: string, dueTime: string) => {
+    const due = new Date(`${dueDate}T${dueTime}:00`);
+    return new Date() > due;
   };
-
-  const handleSubmitAssignment = async () => {
-    if (!selectedAssignment) return;
-
-    setSubmitting(true);
-    try {
-      // TODO: Implement actual submission API call
-      console.log('Submitting assignment:', selectedAssignment.id);
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Update local state
-      setAssignments(prev => prev.map(assignment => 
-        assignment.id === selectedAssignment.id 
-          ? { 
-              ...assignment, 
-              status: 'submitted',
-              submission: {
-                id: `sub${Date.now()}`,
-                submittedAt: new Date().toISOString(),
-                fileUrl: '#',
-                fileName: submissionFile?.name || 'text_submission.txt',
-                fileSize: submissionFile ? `${(submissionFile.size / 1024 / 1024).toFixed(1)} MB` : '1 KB',
-                textSubmission: submissionText,
-                linkSubmission: submissionLink
-              }
-            }
-          : assignment
-      ));
-      
-      setShowSubmissionModal(false);
-      setSelectedAssignment(null);
-      setSubmissionFile(null);
-      setSubmissionText('');
-      setSubmissionLink('');
-    } catch (error) {
-      console.error('Submission error:', error);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  if (!isStudent()) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <ExclamationTriangleIcon className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">You don't have permission to access the student dashboard.</p>
-        </div>
-      </div>
-    );
-  }
 
   if (loading) {
     return (
-      <StudentLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading assignments...</p>
         </div>
-      </StudentLayout>
+      </div>
     );
   }
 
   return (
-    <StudentLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Assignments</h1>
-            <p className="text-gray-600">Track and submit your course assignments</p>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Assignments</h1>
+              <p className="mt-2 text-gray-600">
+                Track your assignments, submit work, and view feedback from instructors
+              </p>
+            </div>
+            <Link
+              href="/student/dashboard"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Back to Dashboard
+            </Link>
           </div>
         </div>
+      </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <DocumentTextIcon className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Total Assignments</p>
-                <p className="text-2xl font-semibold text-gray-900">{assignments.length}</p>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Search and Filter */}
+        <div className="mb-8">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search assignments, courses, or instructors..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
               </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <ExclamationTriangleIcon className="h-8 w-8 text-red-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Pending</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {assignments.filter(a => a.status === 'not_submitted').length}
-                </p>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center">
+                  <FunnelIcon className="h-5 w-5 text-gray-400 mr-2" />
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="submitted">Submitted</option>
+                    <option value="graded">Graded</option>
+                    <option value="overdue">Overdue</option>
+                  </select>
+                </div>
+                <select
+                  value={filterCourse}
+                  onChange={(e) => setFilterCourse(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">All Courses</option>
+                  {courses.map(course => (
+                    <option key={course} value={course}>{course}</option>
+                  ))}
+                </select>
               </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <ClockIcon className="h-8 w-8 text-yellow-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Submitted</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {assignments.filter(a => a.status === 'submitted').length}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <CheckCircleIcon className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-500">Graded</p>
-                <p className="text-2xl font-semibold text-gray-900">
-                  {assignments.filter(a => a.status === 'graded').length}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex flex-wrap gap-2">
-            {[
-              { key: 'all', label: 'All Assignments', count: assignments.length },
-              { key: 'pending', label: 'Pending', count: assignments.filter(a => a.status === 'not_submitted').length },
-              { key: 'submitted', label: 'Submitted', count: assignments.filter(a => a.status === 'submitted').length },
-              { key: 'graded', label: 'Graded', count: assignments.filter(a => a.status === 'graded').length }
-            ].map((filterOption) => (
-              <button
-                key={filterOption.key}
-                onClick={() => setFilter(filterOption.key as any)}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  filter === filterOption.key
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {filterOption.label} ({filterOption.count})
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Assignments List */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="p-6">
-            <div className="space-y-4">
-              {filteredAssignments.map((assignment) => {
-                const daysUntilDue = getDaysUntilDue(assignment.dueDate);
-                return (
-                  <div key={assignment.id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">{assignment.title}</h3>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(assignment.status)}`}>
-                            {getStatusIcon(assignment.status)}
-                            <span className="ml-1">{assignment.status.replace('_', ' ')}</span>
-                          </span>
-                          {assignment.phase && (
-                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
-                              Phase {assignment.phase}
-                            </span>
-                          )}
-                        </div>
-                        
-                        <p className="text-gray-600 mb-3">{assignment.description}</p>
-                        
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-500">
-                          <div className="flex items-center">
-                            <AcademicCapIcon className="h-4 w-4 mr-2" />
-                            {assignment.course}
-                          </div>
-                          <div className="flex items-center">
-                            <CalendarIcon className="h-4 w-4 mr-2" />
-                            Due: {formatDate(assignment.dueDate)}
-                          </div>
-                          <div className="flex items-center">
-                            <DocumentTextIcon className="h-4 w-4 mr-2" />
-                            {assignment.maxMarks} marks
-                          </div>
-                          <div className="flex items-center">
-                            <ClockIcon className="h-4 w-4 mr-2" />
-                            {daysUntilDue > 0 ? `${daysUntilDue} days left` : 'Overdue'}
-                          </div>
-                        </div>
-
-                        {assignment.submission && (
-                          <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                            <h4 className="text-sm font-medium text-gray-900 mb-1">Submission Details</h4>
-                            <div className="text-sm text-gray-600">
-                              <p>Submitted: {formatDate(assignment.submission.submittedAt)}</p>
-                              <p>File: {assignment.submission.fileName} ({assignment.submission.fileSize})</p>
-                            </div>
-                          </div>
-                        )}
-
-                        {assignment.grade && (
-                          <div className="mt-3 p-3 bg-green-50 rounded-lg">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="text-sm font-medium text-gray-900">Grade & Feedback</h4>
-                              <span className="text-lg font-bold text-green-600">
-                                {assignment.grade.score}/{assignment.maxMarks}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-700 mb-1">{assignment.grade.feedback}</p>
-                            <p className="text-xs text-gray-500">
-                              Graded by {assignment.grade.gradedBy} on {formatDate(assignment.grade.gradedAt)}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex flex-col space-y-2 ml-4">
-                        <button
-                          onClick={() => {
-                            setSelectedAssignment(assignment);
-                            setShowSubmissionModal(true);
-                          }}
-                          disabled={assignment.status === 'graded'}
-                          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                            assignment.status === 'not_submitted'
-                              ? 'bg-blue-600 text-white hover:bg-blue-700'
-                              : assignment.status === 'submitted'
-                              ? 'bg-gray-100 text-gray-700 cursor-not-allowed'
-                              : 'bg-green-100 text-green-700 cursor-not-allowed'
-                          }`}
-                        >
-                          {assignment.status === 'not_submitted' ? (
-                            <>
-                              <ArrowUpTrayIcon className="h-4 w-4 mr-2 inline" />
-                              Submit
-                            </>
-                          ) : assignment.status === 'submitted' ? (
-                            'Submitted'
-                          ) : (
-                            'Graded'
-                          )}
-                        </button>
-                        
-                        <button className="text-blue-600 hover:text-blue-800 text-sm">
-                          <EyeIcon className="h-4 w-4 mr-1 inline" />
-                          View Details
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
             </div>
           </div>
         </div>
 
-        {/* Submission Modal */}
-        {showSubmissionModal && selectedAssignment && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex min-h-screen items-center justify-center p-4">
-              <div className="fixed inset-0 bg-black bg-opacity-50" onClick={() => setShowSubmissionModal(false)} />
-              <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full">
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    Submit Assignment: {selectedAssignment.title}
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="text-md font-medium text-gray-700 mb-2">Instructions</h4>
-                      <p className="text-sm text-gray-600">{selectedAssignment.instructions}</p>
-                    </div>
-
-                    <div>
-                      <h4 className="text-md font-medium text-gray-700 mb-2">Submission Type</h4>
-                      <div className="flex space-x-4">
-                        {['file', 'text', 'link'].map((type) => (
-                          <button
-                            key={type}
-                            onClick={() => setSubmissionType(type as any)}
-                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                              submissionType === type
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                          >
-                            {type.charAt(0).toUpperCase() + type.slice(1)}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {submissionType === 'file' && (
-                      <div>
-                        <h4 className="text-md font-medium text-gray-700 mb-2">Upload File</h4>
-                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                          <input
-                            type="file"
-                            onChange={handleFileUpload}
-                            accept={selectedAssignment.allowedFileTypes.map(type => `.${type}`).join(',')}
-                            className="hidden"
-                            id="file-upload"
-                          />
-                          <label htmlFor="file-upload" className="cursor-pointer">
-                            <ArrowUpTrayIcon className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                            <p className="text-sm text-gray-600">
-                              Click to upload or drag and drop
-                            </p>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Allowed types: {selectedAssignment.allowedFileTypes.join(', ')} • 
-                              Max size: {selectedAssignment.maxFileSize}
-                            </p>
-                          </label>
-                        </div>
-                        {submissionFile && (
-                          <div className="mt-2 p-2 bg-gray-50 rounded-lg">
-                            <p className="text-sm text-gray-900">{submissionFile.name}</p>
-                            <p className="text-xs text-gray-500">
-                              {(submissionFile.size / 1024 / 1024).toFixed(1)} MB
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {submissionType === 'text' && (
-                      <div>
-                        <h4 className="text-md font-medium text-gray-700 mb-2">Text Submission</h4>
-                        <textarea
-                          value={submissionText}
-                          onChange={(e) => setSubmissionText(e.target.value)}
-                          placeholder="Enter your submission text here..."
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                          rows={6}
-                        />
-                      </div>
-                    )}
-
-                    {submissionType === 'link' && (
-                      <div>
-                        <h4 className="text-md font-medium text-gray-700 mb-2">Link Submission</h4>
-                        <input
-                          type="url"
-                          value={submissionLink}
-                          onChange={(e) => setSubmissionLink(e.target.value)}
-                          placeholder="https://example.com/your-submission"
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-                    )}
-
-                    <div className="flex justify-end space-x-3 pt-4">
-                      <button
-                        onClick={() => setShowSubmissionModal(false)}
-                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        onClick={handleSubmitAssignment}
-                        disabled={submitting || (
-                          submissionType === 'file' && !submissionFile ||
-                          submissionType === 'text' && !submissionText.trim() ||
-                          submissionType === 'link' && !submissionLink.trim()
-                        )}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {submitting ? 'Submitting...' : 'Submit Assignment'}
-                      </button>
-                    </div>
-                  </div>
+        {/* Assignment Statistics */}
+        <div className="mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center">
+                <ClipboardDocumentListIcon className="h-8 w-8 text-blue-600" />
+                <div className="ml-4">
+                  <p className="text-2xl font-bold text-gray-900">{assignments.length}</p>
+                  <p className="text-sm text-gray-600">Total Assignments</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center">
+                <ExclamationTriangleIcon className="h-8 w-8 text-red-600" />
+                <div className="ml-4">
+                  <p className="text-2xl font-bold text-gray-900">
+                    {assignments.filter(a => a.status === 'overdue').length}
+                  </p>
+                  <p className="text-sm text-gray-600">Overdue</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center">
+                <ClockIcon className="h-8 w-8 text-yellow-600" />
+                <div className="ml-4">
+                  <p className="text-2xl font-bold text-gray-900">
+                    {assignments.filter(a => a.status === 'pending').length}
+                  </p>
+                  <p className="text-sm text-gray-600">Pending</p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center">
+                <CheckCircleIcon className="h-8 w-8 text-green-600" />
+                <div className="ml-4">
+                  <p className="text-2xl font-bold text-gray-900">
+                    {assignments.filter(a => a.status === 'graded').length}
+                  </p>
+                  <p className="text-sm text-gray-600">Graded</p>
                 </div>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Assignments List */}
+        <div className="space-y-6">
+          {filteredAssignments.map((assignment) => (
+            <div key={assignment.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <h3 className="text-xl font-semibold text-gray-900">{assignment.title}</h3>
+                    <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(assignment.status)}`}>
+                      {assignment.status}
+                    </span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${getPriorityColor(assignment.priority)}`}>
+                      {assignment.priority} priority
+                    </span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-600 mb-2">
+                    <AcademicCapIcon className="h-4 w-4 mr-1" />
+                    <span>{assignment.course}</span>
+                    <span className="mx-2">•</span>
+                    <span>{assignment.instructor}</span>
+                    <span className="mx-2">•</span>
+                    <span>{assignment.points} points</span>
+                  </div>
+                  <p className="text-gray-700 mb-3">{assignment.description}</p>
+                </div>
+              </div>
+
+              {/* Due Date */}
+              <div className="mb-4">
+                <div className="flex items-center text-sm">
+                  <CalendarIcon className="h-4 w-4 mr-2 text-gray-500" />
+                  <span className="text-gray-600">Due:</span>
+                  <span className={`ml-1 font-medium ${
+                    isOverdue(assignment.dueDate, assignment.dueTime) && assignment.status !== 'graded'
+                      ? 'text-red-600'
+                      : 'text-gray-900'
+                  }`}>
+                    {assignment.dueDate} at {assignment.dueTime}
+                  </span>
+                  {isOverdue(assignment.dueDate, assignment.dueTime) && assignment.status !== 'graded' && (
+                    <ExclamationTriangleIcon className="h-4 w-4 ml-2 text-red-500" />
+                  )}
+                </div>
+              </div>
+
+              {/* Requirements */}
+              <div className="mb-4">
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Requirements:</h4>
+                <ul className="text-sm text-gray-700 space-y-1">
+                  {assignment.requirements.slice(0, 3).map((req, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="text-blue-500 mr-2">•</span>
+                      <span>{req}</span>
+                    </li>
+                  ))}
+                  {assignment.requirements.length > 3 && (
+                    <li className="text-blue-600 text-sm">
+                      +{assignment.requirements.length - 3} more requirements
+                    </li>
+                  )}
+                </ul>
+              </div>
+
+              {/* Submission Info */}
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center space-x-4">
+                    <span className="text-gray-600">
+                      <strong>Submission:</strong> {assignment.submissionType}
+                    </span>
+                    <span className="text-gray-600">
+                      <strong>Max Size:</strong> {assignment.maxFileSize}
+                    </span>
+                    <span className="text-gray-600">
+                      <strong>Formats:</strong> {assignment.allowedFormats.join(', ')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grade and Feedback */}
+              {assignment.grade && (
+                <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-green-900">Grade & Feedback</h4>
+                    <div className="flex items-center">
+                      <StarIcon className="h-4 w-4 text-yellow-400 mr-1" />
+                      <span className="text-lg font-bold text-green-900">{assignment.grade}/100</span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-green-800">{assignment.feedback}</p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex items-center space-x-3">
+                {assignment.status === 'pending' && (
+                  <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <ArrowUpTrayIcon className="h-4 w-4 mr-2" />
+                    Submit Assignment
+                  </button>
+                )}
+                {assignment.status === 'submitted' && (
+                  <span className="flex items-center px-4 py-2 bg-yellow-100 text-yellow-800 rounded-lg">
+                    <CheckCircleIcon className="h-4 w-4 mr-2" />
+                    Submitted on {new Date(assignment.submittedAt!).toLocaleDateString()}
+                  </span>
+                )}
+                <button className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                  <EyeIcon className="h-4 w-4 mr-2" />
+                  View Details
+                </button>
+                {assignment.attachments.length > 0 && (
+                  <button className="flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                    <DocumentIcon className="h-4 w-4 mr-2" />
+                    Download ({assignment.attachments.length})
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Empty State */}
+        {filteredAssignments.length === 0 && (
+          <div className="text-center py-12">
+            <ClipboardDocumentListIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No assignments found</h3>
+            <p className="text-gray-600 mb-6">
+              {searchQuery ? 'Try adjusting your search criteria.' : 'You don\'t have any assignments yet.'}
+            </p>
+            <Link
+              href="/student/courses"
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              View My Courses
+            </Link>
+          </div>
         )}
       </div>
-    </StudentLayout>
+    </div>
   );
 }
