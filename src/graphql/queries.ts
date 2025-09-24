@@ -1606,3 +1606,72 @@ export const LIST_LEADERS = `
     }
   }
 `;
+
+// Application Queries
+export const GET_KSMP_APPLICATION = `
+  query GetKSMPApplication($id: ID!) {
+    getKSMPApplication(id: $id) {
+      id
+      studentId
+      studentName
+      studentEmail
+      programId
+      programName
+      applicationStatus
+      submittedAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const GET_INVESTOR_APPLICATION = `
+  query GetInvestorApplication($id: ID!) {
+    getInvestorApplication(id: $id) {
+      id
+      investorId
+      investorName
+      investorEmail
+      applicationType
+      applicationStatus
+      submittedAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const GET_MENTOR_APPLICATION_DETAILS = `
+  query GetMentorApplicationDetails($id: ID!) {
+    getMentorApplication(id: $id) {
+      id
+      mentorId
+      mentorName
+      mentorEmail
+      applicationType
+      applicationStatus
+      submittedAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const LIST_PENDING_APPLICATIONS = `
+  query ListPendingApplications($filter: ModelApplicationFilterInput, $limit: Int, $nextToken: String) {
+    listApplications(filter: $filter, limit: $limit, nextToken: $nextToken) {
+      items {
+        id
+        applicantId
+        applicantName
+        applicantEmail
+        applicationType
+        applicationStatus
+        submittedAt
+        createdAt
+        updatedAt
+      }
+      nextToken
+    }
+  }
+`;

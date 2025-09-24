@@ -1,3 +1,7 @@
+import React, { useState } from 'react';
+import { XCircleIcon, UserPlusIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { contactService, ContactRequest, ContactMessage, ContactSettings } from '@/lib/contactService';
+
 // Contact Request Modal
 function ContactRequestModal({ 
   onClose, 
@@ -706,3 +710,7 @@ function RequestDetailsModal({
     </div>
   );
 }
+
+
+// Export all modals
+export { ContactRequestModal, MessageModal, SettingsModal, RequestDetailsModal };

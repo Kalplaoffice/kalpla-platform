@@ -1,3 +1,15 @@
+import React, { useState } from 'react';
+import {
+  XCircleIcon,
+  CurrencyDollarIcon,
+  BuildingOfficeIcon,
+  CalendarIcon,
+  DocumentTextIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon
+} from '@heroicons/react/24/outline';
+import { investmentTrackingService, Investment, FundingRound } from '@/lib/investmentTrackingService';
+
 // Investment Modal
 function InvestmentModal({ 
   onClose, 
@@ -984,3 +996,7 @@ function RoundDetailsModal({
     </div>
   );
 }
+
+
+// Export all modals
+export { InvestmentModal, FundingRoundModal, InvestmentDetailsModal, RoundDetailsModal };

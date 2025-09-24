@@ -666,3 +666,7 @@ function SettingsTab({
     </div>
   );
 }
+
+
+// Export all components
+export { ContactRequestsTab, MessagesTab, NotificationsTab, SettingsTab };

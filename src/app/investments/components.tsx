@@ -1,9 +1,31 @@
+import React from 'react';
+import {
+  ChartPieIcon,
+  ChartBarIcon,
+  ArrowTrendingUpIcon,
+  CurrencyDollarIcon,
+  BuildingOfficeIcon,
+  EyeIcon,
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  ExclamationTriangleIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  ArrowRightIcon,
+  BanknotesIcon,
+  LineChartIcon
+} from '@heroicons/react/24/outline';
+import { investmentTrackingService, Investment, FundingRound, InvestmentPortfolio, InvestmentAnalytics } from '@/lib/investmentTrackingService';
+
 // Portfolio Tab Component
 function PortfolioTab({ portfolio }: { portfolio: InvestmentPortfolio | null }) {
   if (!portfolio) {
     return (
       <div className="text-center py-12">
-        <PieChartIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+        <ChartPieIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
         <h3 className="text-lg font-medium text-gray-900 mb-2">No Portfolio Data</h3>
         <p className="text-gray-600">Portfolio data could not be loaded.</p>
       </div>
@@ -492,3 +514,7 @@ function AnalyticsTab({ analytics }: { analytics: InvestmentAnalytics[] }) {
     </div>
   );
 }
+
+
+// Export all components
+export { PortfolioTab, InvestmentsTab, RoundsTab, AnalyticsTab };

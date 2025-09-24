@@ -1403,3 +1403,53 @@ export const DELETE_LEADER = `
     }
   }
 `;
+
+// Application Mutations
+export const SUBMIT_KSMP_APPLICATION = `
+  mutation SubmitKSMPApplication($input: CreateKSMPApplicationInput!) {
+    createKSMPApplication(input: $input) {
+      id
+      studentId
+      studentName
+      studentEmail
+      programId
+      programName
+      applicationStatus
+      submittedAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const SUBMIT_INVESTOR_APPLICATION = `
+  mutation SubmitInvestorApplication($input: CreateInvestorApplicationInput!) {
+    createInvestorApplication(input: $input) {
+      id
+      investorId
+      investorName
+      investorEmail
+      applicationType
+      applicationStatus
+      submittedAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const SUBMIT_MENTOR_APPLICATION = `
+  mutation SubmitMentorApplication($input: CreateMentorApplicationInput!) {
+    createMentorApplication(input: $input) {
+      id
+      mentorId
+      mentorName
+      mentorEmail
+      applicationType
+      applicationStatus
+      submittedAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
