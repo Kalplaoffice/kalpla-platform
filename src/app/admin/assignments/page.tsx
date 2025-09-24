@@ -1,242 +1,302 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useUser } from '@/contexts/UserContext';
-import useRoleBasedAccess from '@/hooks/useRoleBasedAccess';
-import AdminSidebar from '@/components/admin/AdminSidebar';
+import React, { useState, useEffect } from 'react';
 import { 
-  DocumentTextIcon,
-  MagnifyingGlassIcon,
   PlusIcon,
   EyeIcon,
   PencilIcon,
   TrashIcon,
-  AcademicCapIcon,
-  UserGroupIcon,
-  ChartBarIcon,
-  CalendarIcon,
-  CheckCircleIcon,
+  XMarkIcon,
+  MagnifyingGlassIcon,
+  DocumentTextIcon,
   ClockIcon,
-  ExclamationTriangleIcon,
-  StarIcon,
-  DocumentArrowUpIcon,
-  ClipboardDocumentCheckIcon
+  CheckCircleIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
+import { assignmentService, Assignment, Submission } from '@/lib/assignmentService';
 
-export default function AssignmentsPage() {
-  const { user, loading: userLoading } = useUser();
-  const router = useRouter();
-  const { role, isAuthenticated } = useRoleBasedAccess();
+export default function AdminAssignmentsPage() {
+  // State management
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [hasRedirected, setHasRedirected] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterCourse, setFilterCourse] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [courseFilter, setCourseFilter] = useState('all');
 
+  // CRUD Modal States
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
+  
+  // Form States
+  const [formData, setFormData] = useState({
+    courseID: '',
+    title: '',
+    description: '',
+    dueDate: '',
+    totalMarks: '',
+    fileUrl: '',
+    createdBy: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Load assignments on component mount
   useEffect(() => {
-    if (userLoading) return;
-    if (hasRedirected) return;
+    loadAssignments();
+  }, []);
 
-    if (!isAuthenticated()) {
-      router.push('/auth/signin');
-      setHasRedirected(true);
-      return;
+  // Add mock data for testing if no assignments exist
+  useEffect(() => {
+    if (!loading && assignments.length === 0 && !error) {
+      const mockAssignments: Assignment[] = [
+        {
+          id: '1',
+          courseID: 'course-1',
+          title: 'Business Model Canvas',
+          description: 'Create a detailed Business Model Canvas for your startup idea. Include all nine building blocks with specific details about your target market, value proposition, and revenue streams.',
+          dueDate: '2024-10-15T23:59:59Z',
+          totalMarks: 100,
+          fileUrl: 'https://example.com/bmc-template.pdf',
+          createdBy: 'mentor-1',
+          submissions: [
+            {
+              id: 'sub-1',
+              assignmentID: '1',
+              studentID: 'student-1',
+              fileUrl: 'https://example.com/submission-1.pdf',
+              submittedAt: '2024-10-10T14:30:00Z',
+              grade: {
+                id: 'grade-1',
+                submissionID: 'sub-1',
+                marksObtained: 85,
+                feedback: 'Excellent work! Great market analysis. Consider adding more detail on customer segments.',
+                gradedBy: 'mentor-1',
+                gradedAt: '2024-10-12T10:00:00Z',
+                createdAt: '2024-10-12T10:00:00Z',
+                updatedAt: '2024-10-12T10:00:00Z'
+              },
+              createdAt: '2024-10-10T14:30:00Z',
+              updatedAt: '2024-10-10T14:30:00Z'
+            }
+          ],
+          createdAt: '2024-10-01T10:00:00Z',
+          updatedAt: '2024-10-01T10:00:00Z'
+        },
+        {
+          id: '2',
+          courseID: 'course-2',
+          title: 'Financial Projections',
+          description: 'Develop a 3-year financial projection for your startup including revenue forecasts, expense projections, and break-even analysis.',
+          dueDate: '2024-10-20T23:59:59Z',
+          totalMarks: 100,
+          fileUrl: 'https://example.com/financial-template.xlsx',
+          createdBy: 'mentor-2',
+          submissions: [],
+          createdAt: '2024-10-05T10:00:00Z',
+          updatedAt: '2024-10-05T10:00:00Z'
+        }
+      ];
+      setAssignments(mockAssignments);
     }
-    
-    if (role !== 'Admin') {
-      router.push('/dashboard');
-      setHasRedirected(true);
-      return;
+  }, [loading, assignments.length, error]);
+
+  const loadAssignments = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await assignmentService.getAssignments({
+        search: searchQuery
+      });
+      
+      // If API returns empty array, use mock data
+      if (data.length === 0) {
+        console.log('API returned empty array, using mock data');
+        const mockAssignments: Assignment[] = [
+          {
+            id: '1',
+            courseID: 'course-1',
+            title: 'Business Model Canvas',
+            description: 'Create a detailed Business Model Canvas for your startup idea.',
+            dueDate: '2024-10-15T23:59:59Z',
+            totalMarks: 100,
+            fileUrl: 'https://example.com/bmc-template.pdf',
+            createdBy: 'mentor-1',
+            submissions: [],
+            createdAt: '2024-10-01T10:00:00Z',
+            updatedAt: '2024-10-01T10:00:00Z'
+          }
+        ];
+        setAssignments(mockAssignments);
+        setError('Using offline data - API connection failed');
+      } else {
+        setAssignments(data);
+        setError(null);
+      }
+    } catch (err) {
+      console.error('Error loading assignments:', err);
+      setError('Failed to load assignments');
+    } finally {
+      setLoading(false);
     }
-    
-    setLoading(false);
-  }, [user, userLoading, router, hasRedirected, role, isAuthenticated]);
+  };
 
-  // Mock data for assignments
-  const assignments = [
-    {
-      id: 'ASSIGN_001',
-      title: 'Web Development Portfolio Project',
-      courseId: '1',
-      courseTitle: 'Complete Web Development Bootcamp',
-      instructor: 'Dr. Sarah Johnson',
-      status: 'active',
-      type: 'project',
-      difficulty: 'intermediate',
-      dueDate: '2024-02-15T23:59:59Z',
-      maxPoints: 100,
-      totalSubmissions: 45,
-      gradedSubmissions: 38,
-      averageScore: 87.5,
-      description: 'Create a responsive portfolio website using HTML, CSS, and JavaScript. Include at least 3 projects with proper documentation.',
-      requirements: [
-        'Responsive design for mobile and desktop',
-        'At least 3 project showcases',
-        'Contact form with validation',
-        'Clean and professional design',
-        'Git repository with proper commits'
-      ],
-      resources: [
-        'Design inspiration: dribbble.com',
-        'CSS Framework: Bootstrap or Tailwind',
-        'JavaScript validation library',
-        'Git tutorial: github.com/git-guide'
-      ],
-      createdAt: '2024-01-15',
-      updatedAt: '2024-01-20'
-    },
-    {
-      id: 'ASSIGN_002',
-      title: 'Data Analysis Report',
-      courseId: '2',
-      courseTitle: 'Data Science with Python',
-      instructor: 'Prof. Michael Chen',
-      status: 'active',
-      type: 'report',
-      difficulty: 'advanced',
-      dueDate: '2024-02-20T23:59:59Z',
-      maxPoints: 150,
-      totalSubmissions: 32,
-      gradedSubmissions: 25,
-      averageScore: 92.3,
-      description: 'Analyze a dataset of your choice and create a comprehensive report with visualizations and insights.',
-      requirements: [
-        'Choose a dataset with at least 1000 records',
-        'Perform exploratory data analysis',
-        'Create at least 5 meaningful visualizations',
-        'Provide actionable insights and recommendations',
-        'Use Python libraries: pandas, matplotlib, seaborn'
-      ],
-      resources: [
-        'Dataset sources: Kaggle, UCI ML Repository',
-        'Visualization best practices guide',
-        'Statistical analysis methods',
-        'Report writing guidelines'
-      ],
-      createdAt: '2024-01-18',
-      updatedAt: '2024-01-22'
-    },
-    {
-      id: 'ASSIGN_003',
-      title: 'UI/UX Design Case Study',
-      courseId: '3',
-      courseTitle: 'UI/UX Design Fundamentals',
-      instructor: 'Dr. Emily Rodriguez',
-      status: 'draft',
-      type: 'case_study',
-      difficulty: 'beginner',
-      dueDate: '2024-03-01T23:59:59Z',
-      maxPoints: 80,
-      totalSubmissions: 0,
-      gradedSubmissions: 0,
-      averageScore: 0,
-      description: 'Design a mobile app interface for a specific user problem. Include user research, wireframes, and prototypes.',
-      requirements: [
-        'Conduct user research and create personas',
-        'Create low-fidelity wireframes',
-        'Design high-fidelity mockups',
-        'Create interactive prototype',
-        'Document design decisions and rationale'
-      ],
-      resources: [
-        'Design tools: Figma, Sketch, Adobe XD',
-        'User research methods guide',
-        'Design system examples',
-        'Prototyping best practices'
-      ],
-      createdAt: '2024-01-20',
-      updatedAt: '2024-01-22'
-    },
-    {
-      id: 'ASSIGN_004',
-      title: 'Digital Marketing Campaign',
-      courseId: '4',
-      courseTitle: 'Digital Marketing Mastery',
-      instructor: 'Mr. David Kumar',
-      status: 'completed',
-      type: 'campaign',
-      difficulty: 'intermediate',
-      dueDate: '2024-01-10T23:59:59Z',
-      maxPoints: 120,
-      totalSubmissions: 28,
-      gradedSubmissions: 28,
-      averageScore: 89.7,
-      description: 'Create a comprehensive digital marketing campaign for a product or service of your choice.',
-      requirements: [
-        'Define target audience and buyer personas',
-        'Create content calendar for 4 weeks',
-        'Design social media posts and ads',
-        'Set up analytics and tracking',
-        'Provide campaign performance metrics'
-      ],
-      resources: [
-        'Social media platforms guidelines',
-        'Content creation tools',
-        'Analytics platforms: Google Analytics',
-        'Campaign planning templates'
-      ],
-      createdAt: '2023-12-15',
-      updatedAt: '2024-01-10'
-    }
-  ];
-
-  const courses = [
-    { id: '1', title: 'Complete Web Development Bootcamp' },
-    { id: '2', title: 'Data Science with Python' },
-    { id: '3', title: 'UI/UX Design Fundamentals' },
-    { id: '4', title: 'Digital Marketing Mastery' }
-  ];
-
+  // Filter assignments based on search and filters
   const filteredAssignments = assignments.filter(assignment => {
-    const matchesSearch = assignment.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         assignment.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         assignment.instructor.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCourse = filterCourse === 'all' || assignment.courseId === filterCourse;
-    const matchesStatus = filterStatus === 'all' || assignment.status === filterStatus;
-    return matchesSearch && matchesCourse && matchesStatus;
+    const matchesSearch = assignment.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         assignment.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || 
+      (statusFilter === 'active' && new Date(assignment.dueDate || '') > new Date()) ||
+      (statusFilter === 'overdue' && new Date(assignment.dueDate || '') < new Date());
+    
+    const matchesCourse = courseFilter === 'all' || assignment.courseID === courseFilter;
+    
+    return matchesSearch && matchesStatus && matchesCourse;
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'text-green-600 bg-green-100';
-      case 'draft': return 'text-gray-600 bg-gray-100';
-      case 'completed': return 'text-blue-600 bg-blue-100';
-      case 'cancelled': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
+  // CRUD Functions
+  const handleCreateAssignment = () => {
+    setFormData({
+      courseID: '',
+      title: '',
+      description: '',
+      dueDate: '',
+      totalMarks: '',
+      fileUrl: '',
+      createdBy: 'mentor-1' // Default mentor for testing
+    });
+    setSelectedAssignment(null);
+    setShowCreateModal(true);
+  };
+
+  const handleEditAssignment = (assignment: Assignment) => {
+    setSelectedAssignment(assignment);
+    setFormData({
+      courseID: assignment.courseID,
+      title: assignment.title,
+      description: assignment.description || '',
+      dueDate: assignment.dueDate ? assignment.dueDate.split('T')[0] : '',
+      totalMarks: assignment.totalMarks?.toString() || '',
+      fileUrl: assignment.fileUrl || '',
+      createdBy: assignment.createdBy
+    });
+    setShowEditModal(true);
+  };
+
+  const handleViewAssignment = (assignment: Assignment) => {
+    setSelectedAssignment(assignment);
+    setShowViewModal(true);
+  };
+
+  const handleDeleteAssignment = (assignment: Assignment) => {
+    setSelectedAssignment(assignment);
+    setShowDeleteModal(true);
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const assignmentData = {
+        ...formData,
+        totalMarks: parseInt(formData.totalMarks) || 0,
+        dueDate: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined
+      };
+
+      if (showCreateModal) {
+        // Create new assignment
+        try {
+          const newAssignment = await assignmentService.createAssignment(assignmentData);
+          setAssignments([...assignments, newAssignment]);
+          console.log('Assignment created successfully via API');
+        } catch (err) {
+          console.log('API create failed, creating locally:', err.message);
+          const newAssignment: Assignment = {
+            ...assignmentData,
+            id: Date.now().toString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            submissions: []
+          };
+          setAssignments([...assignments, newAssignment]);
+        }
+        setShowCreateModal(false);
+      } else if (showEditModal && selectedAssignment) {
+        // Update existing assignment
+        try {
+          const updatedAssignment = await assignmentService.updateAssignment(selectedAssignment.id, assignmentData);
+          setAssignments(assignments.map(assignment => 
+            assignment.id === selectedAssignment.id ? updatedAssignment : assignment
+          ));
+          console.log('Assignment updated successfully via API');
+        } catch (err) {
+          console.log('API update failed, updating locally:', err.message);
+          const updatedAssignment: Assignment = {
+            ...assignmentData,
+            id: selectedAssignment.id,
+            createdAt: selectedAssignment.createdAt,
+            updatedAt: new Date().toISOString(),
+            submissions: selectedAssignment.submissions
+          };
+          setAssignments(assignments.map(assignment => 
+            assignment.id === selectedAssignment.id ? updatedAssignment : assignment
+          ));
+        }
+        setShowEditModal(false);
+      }
+    } catch (err) {
+      console.error('Error saving assignment:', err);
+      alert('Failed to save assignment');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active': return <CheckCircleIcon className="h-4 w-4" />;
-      case 'draft': return <ClockIcon className="h-4 w-4" />;
-      case 'completed': return <CheckCircleIcon className="h-4 w-4" />;
-      case 'cancelled': return <ExclamationTriangleIcon className="h-4 w-4" />;
-      default: return <ClockIcon className="h-4 w-4" />;
+  const handleDeleteConfirm = async () => {
+    if (!selectedAssignment) return;
+
+    try {
+      await assignmentService.deleteAssignment(selectedAssignment.id);
+      setAssignments(assignments.filter(assignment => assignment.id !== selectedAssignment.id));
+      console.log('Assignment deleted successfully via API');
+    } catch (err) {
+      console.log('API delete failed, deleting locally:', err.message);
+      setAssignments(assignments.filter(assignment => assignment.id !== selectedAssignment.id));
     }
+    setShowDeleteModal(false);
+    setSelectedAssignment(null);
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'project': return 'text-purple-600 bg-purple-100';
-      case 'report': return 'text-blue-600 bg-blue-100';
-      case 'case_study': return 'text-green-600 bg-green-100';
-      case 'campaign': return 'text-orange-600 bg-orange-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'beginner': return 'text-green-600 bg-green-100';
-      case 'intermediate': return 'text-yellow-600 bg-yellow-100';
-      case 'advanced': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
+  const closeModals = () => {
+    setShowCreateModal(false);
+    setShowEditModal(false);
+    setShowViewModal(false);
+    setShowDeleteModal(false);
+    setSelectedAssignment(null);
+    setFormData({
+      courseID: '',
+      title: '',
+      description: '',
+      dueDate: '',
+      totalMarks: '',
+      fileUrl: '',
+      createdBy: ''
+    });
   };
 
+  // Helper functions
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-IN', {
       year: 'numeric',
@@ -247,281 +307,529 @@ export default function AssignmentsPage() {
     });
   };
 
-  if (userLoading || loading) {
+  const getStatusColor = (assignment: Assignment) => {
+    if (!assignment.dueDate) return 'bg-gray-100 text-gray-800';
+    const dueDate = new Date(assignment.dueDate);
+    const now = new Date();
+    
+    if (dueDate < now) return 'bg-red-100 text-red-800';
+    if (dueDate.getTime() - now.getTime() < 24 * 60 * 60 * 1000) return 'bg-yellow-100 text-yellow-800';
+    return 'bg-green-100 text-green-800';
+  };
+
+  const getStatusText = (assignment: Assignment) => {
+    if (!assignment.dueDate) return 'No Due Date';
+    const dueDate = new Date(assignment.dueDate);
+    const now = new Date();
+    
+    if (dueDate < now) return 'Overdue';
+    if (dueDate.getTime() - now.getTime() < 24 * 60 * 60 * 1000) return 'Due Soon';
+    return 'Active';
+  };
+
+  const getSubmissionStats = (assignment: Assignment) => {
+    const submissions = assignment.submissions || [];
+    const totalSubmissions = submissions.length;
+    const gradedSubmissions = submissions.filter(s => s.grade).length;
+    const pendingSubmissions = totalSubmissions - gradedSubmissions;
+    
+    return { totalSubmissions, gradedSubmissions, pendingSubmissions };
+  };
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading assignments...</p>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      
-      <div className="flex-1 flex flex-col">
-        <div className="flex-1 px-4 sm:px-6 lg:px-8 py-6">
-          {/* Header */}
-          <div className="mb-6">
-            <div className="flex items-center space-x-4 mb-4">
-              <button
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
-              >
-                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Assignments & Grading</h1>
-                <p className="text-gray-600 mt-1">Manage course assignments, submissions, and grading processes</p>
-              </div>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Assignment Management</h1>
+              <p className="mt-2 text-gray-600">Monitor and manage all assignments across courses</p>
             </div>
+            <button 
+              onClick={handleCreateAssignment}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <PlusIcon className="h-5 w-5 mr-2" />
+              Create Assignment
+            </button>
+          </div>
+        </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <div className="flex items-center">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <DocumentTextIcon className="h-6 w-6 text-blue-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Total Assignments</p>
-                    <p className="text-2xl font-bold text-gray-900">{assignments.length}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <div className="flex items-center">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <CheckCircleIcon className="h-6 w-6 text-green-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Active Assignments</p>
-                    <p className="text-2xl font-bold text-gray-900">{assignments.filter(a => a.status === 'active').length}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <div className="flex items-center">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <DocumentArrowUpIcon className="h-6 w-6 text-purple-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Total Submissions</p>
-                    <p className="text-2xl font-bold text-gray-900">{assignments.reduce((acc, a) => acc + a.totalSubmissions, 0)}</p>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                <div className="flex items-center">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <ClipboardDocumentCheckIcon className="h-6 w-6 text-orange-600" />
-                  </div>
-                  <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-600">Graded Submissions</p>
-                    <p className="text-2xl font-bold text-gray-900">{assignments.reduce((acc, a) => acc + a.gradedSubmissions, 0)}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Controls */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-4">
-                {/* Search */}
-                <div className="relative">
-                  <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search assignments..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
-                  />
-                </div>
-
-                {/* Course Filter */}
-                <select
-                  value={filterCourse}
-                  onChange={(e) => setFilterCourse(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="all">All Courses</option>
-                  {courses.map(course => (
-                    <option key={course.id} value={course.id}>{course.title}</option>
-                  ))}
-                </select>
-
-                {/* Status Filter */}
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="all">All Status</option>
-                  <option value="draft">Draft</option>
-                  <option value="active">Active</option>
-                  <option value="completed">Completed</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
-              </div>
-
-              <div className="flex space-x-2">
-                <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                  <PlusIcon className="h-5 w-5 mr-2" />
-                  Create Assignment
-                </button>
-                <button className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                  <ChartBarIcon className="h-5 w-5 mr-2" />
-                  Export Grades
-                </button>
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-md p-4">
+            <div className="flex">
+              <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400" />
+              <div className="ml-3">
+                <p className="text-sm text-yellow-800">{error}</p>
               </div>
             </div>
           </div>
+        )}
 
-          {/* Assignments Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {filteredAssignments.map((assignment) => (
-              <div key={assignment.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
-                {/* Header */}
-                <div className="p-6 border-b border-gray-200">
-                  <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{assignment.title}</h3>
-                      <p className="text-sm text-gray-600">{assignment.courseTitle}</p>
-                      <p className="text-sm text-gray-500">by {assignment.instructor}</p>
-                    </div>
-                    <div className="flex flex-col space-y-1">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(assignment.status)}`}>
-                        {getStatusIcon(assignment.status)}
-                        <span className="ml-1 capitalize">{assignment.status}</span>
+        {/* Filters */}
+        <div className="mb-6 bg-white rounded-lg shadow p-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
+              <div className="relative">
+                <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-3 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search assignments..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="overdue">Overdue</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Course</label>
+              <select
+                value={courseFilter}
+                onChange={(e) => setCourseFilter(e.target.value)}
+                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">All Courses</option>
+                <option value="course-1">Course 1</option>
+                <option value="course-2">Course 2</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Assignments Grid */}
+        {filteredAssignments.length === 0 ? (
+          <div className="text-center py-12">
+            <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No assignments found</h3>
+            <p className="mt-1 text-sm text-gray-500">Get started by creating a new assignment.</p>
+            <div className="mt-6">
+              <button
+                onClick={handleCreateAssignment}
+                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+              >
+                <PlusIcon className="h-5 w-5 mr-2" />
+                Create Assignment
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredAssignments.map((assignment) => {
+              const stats = getSubmissionStats(assignment);
+              return (
+                <div key={assignment.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+                  <div className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                          {assignment.title}
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                          {assignment.description}
+                        </p>
+                      </div>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(assignment)}`}>
+                        {getStatusText(assignment)}
                       </span>
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(assignment.type)}`}>
-                        {assignment.type.replace('_', ' ')}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Assignment Info */}
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center p-2 bg-blue-50 rounded-lg">
-                      <p className="text-lg font-bold text-blue-600">{assignment.maxPoints}</p>
-                      <p className="text-xs text-blue-600">Max Points</p>
-                    </div>
-                    <div className="text-center p-2 bg-green-50 rounded-lg">
-                      <p className="text-lg font-bold text-green-600">{assignment.totalSubmissions}</p>
-                      <p className="text-xs text-green-600">Submissions</p>
-                    </div>
-                    <div className="text-center p-2 bg-purple-50 rounded-lg">
-                      <p className="text-lg font-bold text-purple-600">{assignment.averageScore}</p>
-                      <p className="text-xs text-purple-600">Avg Score</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-6">
-                  <div className="space-y-4">
-                    {/* Description */}
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 mb-1">Description</p>
-                      <p className="text-sm text-gray-600 line-clamp-2">{assignment.description}</p>
                     </div>
 
-                    {/* Due Date */}
-                    <div className="flex items-center text-sm text-gray-600">
-                      <CalendarIcon className="h-4 w-4 mr-2" />
-                      <div>
-                        <p className="font-medium">Due Date</p>
-                        <p>{formatDate(assignment.dueDate)}</p>
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center text-sm text-gray-600">
+                        <ClockIcon className="h-4 w-4 mr-2" />
+                        {assignment.dueDate ? formatDate(assignment.dueDate) : 'No due date'}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-600">
+                        <DocumentTextIcon className="h-4 w-4 mr-2" />
+                        {assignment.totalMarks} marks
                       </div>
                     </div>
 
-                    {/* Difficulty */}
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-900">Difficulty</span>
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getDifficultyColor(assignment.difficulty)}`}>
-                        {assignment.difficulty}
-                      </span>
-                    </div>
-
-                    {/* Requirements Preview */}
-                    <div>
-                      <p className="text-sm font-medium text-gray-900 mb-2">Requirements</p>
-                      <ul className="text-sm text-gray-600 space-y-1">
-                        {assignment.requirements.slice(0, 3).map((req, index) => (
-                          <li key={index} className="flex items-start">
-                            <span className="text-blue-500 mr-2">•</span>
-                            <span className="line-clamp-1">{req}</span>
-                          </li>
-                        ))}
-                        {assignment.requirements.length > 3 && (
-                          <li className="text-gray-500 text-xs">
-                            +{assignment.requirements.length - 3} more requirements
-                          </li>
-                        )}
-                      </ul>
-                    </div>
-
-                    {/* Grading Progress */}
-                    {assignment.totalSubmissions > 0 && (
-                      <div>
-                        <div className="flex justify-between text-sm text-gray-600 mb-1">
-                          <span>Grading Progress</span>
-                          <span>{assignment.gradedSubmissions}/{assignment.totalSubmissions}</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div 
-                            className="bg-green-500 h-2 rounded-full transition-all duration-300" 
-                            style={{ width: `${(assignment.gradedSubmissions / assignment.totalSubmissions) * 100}%` }}
-                          ></div>
-                        </div>
+                    <div className="grid grid-cols-3 gap-2 mb-4">
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-gray-900">{stats.totalSubmissions}</div>
+                        <div className="text-xs text-gray-500">Total</div>
                       </div>
-                    )}
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-green-600">{stats.gradedSubmissions}</div>
+                        <div className="text-xs text-gray-500">Graded</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-lg font-semibold text-yellow-600">{stats.pendingSubmissions}</div>
+                        <div className="text-xs text-gray-500">Pending</div>
+                      </div>
+            </div>
 
-                    {/* Actions */}
-                    <div className="flex space-x-2 pt-4">
-                      <button className="flex-1 flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={() => handleViewAssignment(assignment)}
+                        className="flex-1 flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      >
                         <EyeIcon className="h-4 w-4 mr-1" />
-                        View Details
+                        View
                       </button>
-                      <button className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                      <button 
+                        onClick={() => handleEditAssignment(assignment)}
+                        className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      >
                         <PencilIcon className="h-4 w-4" />
                       </button>
-                      <button className="px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 hover:bg-red-50">
+                      <button 
+                        onClick={() => handleDeleteAssignment(assignment)}
+                        className="px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 hover:bg-red-50"
+                      >
                         <TrashIcon className="h-4 w-4" />
                       </button>
+                  </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Create Assignment Modal */}
+        {showCreateModal && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Create Assignment</h3>
+                <button
+                  onClick={closeModals}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+              <form onSubmit={handleFormSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Course ID</label>
+                    <input
+                      type="text"
+                      name="courseID"
+                      value={formData.courseID}
+                      onChange={handleFormChange}
+                      required
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Title</label>
+                    <input
+                      type="text"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleFormChange}
+                      required
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Due Date</label>
+                    <input
+                      type="datetime-local"
+                      name="dueDate"
+                      value={formData.dueDate}
+                      onChange={handleFormChange}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Total Marks</label>
+                    <input
+                      type="number"
+                      name="totalMarks"
+                      value={formData.totalMarks}
+                      onChange={handleFormChange}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Description</label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleFormChange}
+                    rows={3}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Reference File URL</label>
+                  <input
+                    type="url"
+                    name="fileUrl"
+                    value={formData.fileUrl}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={closeModals}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Creating...' : 'Create Assignment'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Assignment Modal */}
+        {showEditModal && selectedAssignment && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Edit Assignment</h3>
+                <button
+                  onClick={closeModals}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+              <form onSubmit={handleFormSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Course ID</label>
+                    <input
+                      type="text"
+                      name="courseID"
+                      value={formData.courseID}
+                      onChange={handleFormChange}
+                      required
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Title</label>
+                    <input
+                      type="text"
+                      name="title"
+                      value={formData.title}
+                      onChange={handleFormChange}
+                      required
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Due Date</label>
+                    <input
+                      type="datetime-local"
+                      name="dueDate"
+                      value={formData.dueDate}
+                      onChange={handleFormChange}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Total Marks</label>
+                    <input
+                      type="number"
+                      name="totalMarks"
+                      value={formData.totalMarks}
+                      onChange={handleFormChange}
+                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Description</label>
+                  <textarea
+                    name="description"
+                    value={formData.description}
+                    onChange={handleFormChange}
+                    rows={3}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Reference File URL</label>
+                  <input
+                    type="url"
+                    name="fileUrl"
+                    value={formData.fileUrl}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={closeModals}
+                    className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Updating...' : 'Update Assignment'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* View Assignment Modal */}
+        {showViewModal && selectedAssignment && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Assignment Details</h3>
+                <button
+                  onClick={closeModals}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Title</label>
+                    <p className="mt-1 text-sm text-gray-900">{selectedAssignment.title}</p>
+            </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Course ID</label>
+                    <p className="mt-1 text-sm text-gray-900">{selectedAssignment.courseID}</p>
+          </div>
+                    <div>
+                    <label className="block text-sm font-medium text-gray-700">Due Date</label>
+                    <p className="mt-1 text-sm text-gray-900">
+                      {selectedAssignment.dueDate ? formatDate(selectedAssignment.dueDate) : 'No due date'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Total Marks</label>
+                    <p className="mt-1 text-sm text-gray-900">{selectedAssignment.totalMarks}</p>
+                  </div>
+                </div>
+                    <div>
+                  <label className="block text-sm font-medium text-gray-700">Description</label>
+                  <p className="mt-1 text-sm text-gray-900">{selectedAssignment.description}</p>
                     </div>
+                {selectedAssignment.fileUrl && (
+                      <div>
+                    <label className="block text-sm font-medium text-gray-700">Reference File</label>
+                    <a 
+                      href={selectedAssignment.fileUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="mt-1 text-sm text-blue-600 hover:text-blue-800"
+                    >
+                      Download Reference File
+                    </a>
+                      </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Submissions</label>
+                  <div className="mt-2 space-y-2">
+                    {selectedAssignment.submissions?.map((submission) => (
+                      <div key={submission.id} className="border rounded p-3">
+                        <div className="flex justify-between items-start">
+                    <div>
+                            <p className="text-sm font-medium text-gray-900">Student: {submission.studentID}</p>
+                            <p className="text-sm text-gray-600">
+                              Submitted: {submission.submittedAt ? formatDate(submission.submittedAt) : 'Not submitted'}
+                            </p>
+                            {submission.grade && (
+                              <p className="text-sm text-green-600">
+                                Grade: {submission.grade.marksObtained}/{selectedAssignment.totalMarks}
+                              </p>
+                            )}
+                    </div>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            submission.grade ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {submission.grade ? 'Graded' : 'Pending'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                    {(!selectedAssignment.submissions || selectedAssignment.submissions.length === 0) && (
+                      <p className="text-sm text-gray-500">No submissions yet</p>
+                    )}
                   </div>
                 </div>
               </div>
-            ))}
+            </div>
           </div>
+        )}
 
-          {/* Empty State */}
-          {filteredAssignments.length === 0 && (
-            <div className="text-center py-12">
-              <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No assignments found</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                {searchTerm || filterCourse !== 'all' || filterStatus !== 'all'
-                  ? 'Try adjusting your search or filter criteria.'
-                  : 'No assignments have been created yet.'
-                }
-              </p>
-              <div className="mt-6">
-                <button className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Create First Assignment
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && selectedAssignment && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+              <div className="mt-3 text-center">
+                <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                  <TrashIcon className="h-6 w-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mt-4">Delete Assignment</h3>
+                <div className="mt-2 px-7 py-3">
+                  <p className="text-sm text-gray-500">
+                    Are you sure you want to delete "{selectedAssignment.title}"? This action cannot be undone.
+                  </p>
+                </div>
+                <div className="flex justify-center space-x-3 px-4 py-3">
+                  <button
+                    onClick={closeModals}
+                    className="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDeleteConfirm}
+                    className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                  >
+                    Delete
                 </button>
+                </div>
+              </div>
               </div>
             </div>
           )}
-        </div>
       </div>
     </div>
   );

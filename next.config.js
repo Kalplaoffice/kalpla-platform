@@ -29,10 +29,8 @@ const nextConfig = {
   output: 'standalone',
   // Disable static generation globally
   trailingSlash: false,
-  // Force all pages to be dynamic
-  experimental: {
-    serverComponentsExternalPackages: ['aws-amplify'],
-  },
+  // External packages for server components
+  serverExternalPackages: ['aws-amplify'],
 };
 
 module.exports = nextConfig;

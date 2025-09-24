@@ -20,7 +20,8 @@ import {
   ClockIcon,
   StarIcon,
   BriefcaseIcon,
-  BanknotesIcon
+  BanknotesIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 
 export default function InvestorsPage() {
@@ -33,6 +34,30 @@ export default function InvestorsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [selectedInvestors, setSelectedInvestors] = useState<string[]>([]);
+  
+  // CRUD Modal States
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedInvestor, setSelectedInvestor] = useState<any>(null);
+  const [investors, setInvestors] = useState<any[]>([]);
+  
+  // Form States
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    type: 'angel',
+    company: '',
+    investmentRange: '',
+    sectors: [],
+    status: 'active',
+    experience: '',
+    location: '',
+    portfolio: []
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (userLoading) return;
@@ -53,89 +78,92 @@ export default function InvestorsPage() {
     setLoading(false);
   }, [user, userLoading, router, hasRedirected, role, isAuthenticated]);
 
-  // Mock data for investors
-  const investors = [
-    {
-      id: '1',
-      name: 'Rajesh Kumar',
-      email: 'rajesh@venturecapital.com',
-      phone: '+91 98765 43230',
-      type: 'angel',
-      company: 'Kumar Ventures',
-      investmentRange: '₹10L - ₹50L',
-      sectors: ['EdTech', 'FinTech', 'HealthTech'],
-      status: 'active',
-      totalInvestments: 15,
-      totalAmount: '₹2.5Cr',
-      avgTicketSize: '₹16.7L',
-      joinDate: '2023-03-15',
-      lastInvestment: '2024-01-15',
-      profileImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      portfolio: ['EduTech Startup A', 'FinTech Startup B', 'HealthTech Startup C'],
-      experience: '12+ years',
-      location: 'Mumbai'
-    },
-    {
-      id: '2',
-      name: 'Priya Sharma',
-      email: 'priya@techfund.com',
-      phone: '+91 98765 43231',
-      type: 'vc',
-      company: 'TechFund Capital',
-      investmentRange: '₹1Cr - ₹10Cr',
-      sectors: ['AI/ML', 'SaaS', 'EdTech'],
-      status: 'active',
-      totalInvestments: 8,
-      totalAmount: '₹15Cr',
-      avgTicketSize: '₹1.9Cr',
-      joinDate: '2023-05-20',
-      lastInvestment: '2024-01-10',
-      profileImage: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
-      portfolio: ['AI Startup X', 'SaaS Startup Y', 'EdTech Startup Z'],
-      experience: '15+ years',
-      location: 'Bangalore'
-    },
-    {
-      id: '3',
-      name: 'Amit Patel',
-      email: 'amit@seedfund.com',
-      phone: '+91 98765 43232',
-      type: 'seed',
-      company: 'SeedFund Partners',
-      investmentRange: '₹5L - ₹2Cr',
-      sectors: ['EdTech', 'AgriTech', 'CleanTech'],
-      status: 'pending',
-      totalInvestments: 0,
-      totalAmount: '₹0',
-      avgTicketSize: '₹0',
-      joinDate: '2024-01-10',
-      lastInvestment: 'N/A',
-      profileImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-      portfolio: [],
-      experience: '8+ years',
-      location: 'Delhi'
-    },
-    {
-      id: '4',
-      name: 'Sneha Gupta',
-      email: 'sneha@corporate.com',
-      phone: '+91 98765 43233',
-      type: 'corporate',
-      company: 'TechCorp Ventures',
-      investmentRange: '₹5Cr - ₹50Cr',
-      sectors: ['EdTech', 'Enterprise Software'],
-      status: 'active',
-      totalInvestments: 5,
-      totalAmount: '₹25Cr',
-      avgTicketSize: '₹5Cr',
-      joinDate: '2023-08-10',
-      lastInvestment: '2023-12-20',
-      profileImage: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-      portfolio: ['Enterprise Startup 1', 'EdTech Startup 2'],
-      experience: '20+ years',
-      location: 'Pune'
-    }
-  ];
+  // Initialize investors data
+  useEffect(() => {
+    const initialInvestors = [
+      {
+        id: '1',
+        name: 'Rajesh Kumar',
+        email: 'rajesh@venturecapital.com',
+        phone: '+91 98765 43230',
+        type: 'angel',
+        company: 'Kumar Ventures',
+        investmentRange: '₹10L - ₹50L',
+        sectors: ['EdTech', 'FinTech', 'HealthTech'],
+        status: 'active',
+        totalInvestments: 15,
+        totalAmount: '₹2.5Cr',
+        avgTicketSize: '₹16.7L',
+        joinDate: '2023-03-15',
+        lastInvestment: '2024-01-15',
+        profileImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+        portfolio: ['EduTech Startup A', 'FinTech Startup B', 'HealthTech Startup C'],
+        experience: '12+ years',
+        location: 'Mumbai'
+      },
+      {
+        id: '2',
+        name: 'Priya Sharma',
+        email: 'priya@techfund.com',
+        phone: '+91 98765 43231',
+        type: 'vc',
+        company: 'TechFund Capital',
+        investmentRange: '₹1Cr - ₹10Cr',
+        sectors: ['AI/ML', 'SaaS', 'EdTech'],
+        status: 'active',
+        totalInvestments: 8,
+        totalAmount: '₹15Cr',
+        avgTicketSize: '₹1.9Cr',
+        joinDate: '2023-05-20',
+        lastInvestment: '2024-01-10',
+        profileImage: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face',
+        portfolio: ['AI Startup X', 'SaaS Startup Y', 'EdTech Startup Z'],
+        experience: '15+ years',
+        location: 'Bangalore'
+      },
+      {
+        id: '3',
+        name: 'Amit Patel',
+        email: 'amit@seedfund.com',
+        phone: '+91 98765 43232',
+        type: 'seed',
+        company: 'SeedFund Partners',
+        investmentRange: '₹5L - ₹2Cr',
+        sectors: ['EdTech', 'AgriTech', 'CleanTech'],
+        status: 'pending',
+        totalInvestments: 0,
+        totalAmount: '₹0',
+        avgTicketSize: '₹0',
+        joinDate: '2024-01-10',
+        lastInvestment: 'N/A',
+        profileImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+        portfolio: [],
+        experience: '8+ years',
+        location: 'Delhi'
+      },
+      {
+        id: '4',
+        name: 'Sneha Gupta',
+        email: 'sneha@corporate.com',
+        phone: '+91 98765 43233',
+        type: 'corporate',
+        company: 'TechCorp Ventures',
+        investmentRange: '₹5Cr - ₹50Cr',
+        sectors: ['EdTech', 'Enterprise Software'],
+        status: 'active',
+        totalInvestments: 5,
+        totalAmount: '₹25Cr',
+        avgTicketSize: '₹5Cr',
+        joinDate: '2023-08-10',
+        lastInvestment: '2023-12-20',
+        profileImage: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
+        portfolio: ['Enterprise Startup 1', 'EdTech Startup 2'],
+        experience: '20+ years',
+        location: 'Pune'
+      }
+    ];
+    setInvestors(initialInvestors);
+  }, []);
 
   const filteredInvestors = investors.filter(investor => {
     const matchesSearch = investor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -187,6 +215,182 @@ export default function InvestorsPage() {
         ? prev.filter(id => id !== investorId)
         : [...prev, investorId]
     );
+  };
+
+  // CRUD Functions
+  const handleCreateInvestor = () => {
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      type: 'angel',
+      company: '',
+      investmentRange: '',
+      sectors: [],
+      status: 'active',
+      experience: '',
+      location: '',
+      portfolio: []
+    });
+    setSelectedInvestor(null);
+    setShowCreateModal(true);
+  };
+
+  const handleEditInvestor = (investor: any) => {
+    setSelectedInvestor(investor);
+    setFormData({
+      name: investor.name,
+      email: investor.email,
+      phone: investor.phone,
+      type: investor.type,
+      company: investor.company,
+      investmentRange: investor.investmentRange,
+      sectors: investor.sectors,
+      status: investor.status,
+      experience: investor.experience,
+      location: investor.location,
+      portfolio: investor.portfolio
+    });
+    setShowEditModal(true);
+  };
+
+  const handleViewInvestor = (investor: any) => {
+    setSelectedInvestor(investor);
+    setShowViewModal(true);
+  };
+
+  const handleDeleteInvestor = (investor: any) => {
+    setSelectedInvestor(investor);
+    setShowDeleteModal(true);
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      if (showCreateModal) {
+        // Create new investor
+        const newInvestor = {
+          id: (investors.length + 1).toString(),
+          ...formData,
+          totalInvestments: 0,
+          totalAmount: '₹0',
+          avgTicketSize: '₹0',
+          joinDate: new Date().toISOString().split('T')[0],
+          lastInvestment: 'N/A',
+          profileImage: `https://images.unsplash.com/photo-${Math.random().toString(36).substr(2, 9)}?w=150&h=150&fit=crop&crop=face`
+        };
+        setInvestors(prev => [...prev, newInvestor]);
+        setShowCreateModal(false);
+      } else if (showEditModal) {
+        // Update existing investor
+        setInvestors(prev => prev.map(investor => 
+          investor.id === selectedInvestor.id 
+            ? { ...investor, ...formData }
+            : investor
+        ));
+        setShowEditModal(false);
+      }
+    } catch (error) {
+      console.error('Error saving investor:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    setIsSubmitting(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setInvestors(prev => prev.filter(investor => investor.id !== selectedInvestor.id));
+      setShowDeleteModal(false);
+      setSelectedInvestor(null);
+    } catch (error) {
+      console.error('Error deleting investor:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSectorChange = (index: number, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      sectors: prev.sectors.map((sector, i) => 
+        i === index ? value : sector
+      )
+    }));
+  };
+
+  const addSector = () => {
+    setFormData(prev => ({
+      ...prev,
+      sectors: [...prev.sectors, '']
+    }));
+  };
+
+  const removeSector = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      sectors: prev.sectors.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handlePortfolioChange = (index: number, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      portfolio: prev.portfolio.map((company, i) => 
+        i === index ? value : company
+      )
+    }));
+  };
+
+  const addPortfolio = () => {
+    setFormData(prev => ({
+      ...prev,
+      portfolio: [...prev.portfolio, '']
+    }));
+  };
+
+  const removePortfolio = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      portfolio: prev.portfolio.filter((_, i) => i !== index)
+    }));
+  };
+
+  const closeModals = () => {
+    setShowCreateModal(false);
+    setShowEditModal(false);
+    setShowViewModal(false);
+    setShowDeleteModal(false);
+    setSelectedInvestor(null);
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+      type: 'angel',
+      company: '',
+      investmentRange: '',
+      sectors: [],
+      status: 'active',
+      experience: '',
+      location: '',
+      portfolio: []
+    });
   };
 
   if (userLoading || loading) {
@@ -301,7 +505,10 @@ export default function InvestorsPage() {
               </div>
 
               <div className="flex space-x-2">
-                <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <button 
+                  onClick={handleCreateInvestor}
+                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
                   <UserPlusIcon className="h-5 w-5 mr-2" />
                   Add Investor
                 </button>
@@ -402,15 +609,27 @@ export default function InvestorsPage() {
 
                   {/* Actions */}
                   <div className="mt-6 flex space-x-2">
-                    <button className="flex-1 flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    <button 
+                      onClick={() => handleViewInvestor(investor)}
+                      className="flex-1 flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      title="View Investor"
+                    >
                       <EyeIcon className="h-4 w-4 mr-1" />
                       View
                     </button>
-                    <button className="flex-1 flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    <button 
+                      onClick={() => handleEditInvestor(investor)}
+                      className="flex-1 flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      title="Edit Investor"
+                    >
                       <PencilIcon className="h-4 w-4 mr-1" />
                       Edit
                     </button>
-                    <button className="px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 hover:bg-red-50">
+                    <button 
+                      onClick={() => handleDeleteInvestor(investor)}
+                      className="px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 hover:bg-red-50"
+                      title="Delete Investor"
+                    >
                       <TrashIcon className="h-4 w-4" />
                     </button>
                   </div>
@@ -440,6 +659,490 @@ export default function InvestorsPage() {
           )}
         </div>
       </div>
+
+      {/* Create Investor Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Add New Investor</h3>
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            <form onSubmit={handleFormSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="angel">Angel Investor</option>
+                  <option value="vc">Venture Capital</option>
+                  <option value="seed">Seed Fund</option>
+                  <option value="corporate">Corporate VC</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                <input
+                  type="text"
+                  name="company"
+                  value={formData.company}
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Investment Range</label>
+                <input
+                  type="text"
+                  name="investmentRange"
+                  value={formData.investmentRange}
+                  onChange={handleFormChange}
+                  required
+                  placeholder="e.g., ₹10L - ₹50L"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Experience</label>
+                <input
+                  type="text"
+                  name="experience"
+                  value={formData.experience}
+                  onChange={handleFormChange}
+                  required
+                  placeholder="e.g., 12+ years"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <input
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="pending">Pending</option>
+                </select>
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closeModals}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Creating...' : 'Create Investor'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Investor Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Edit Investor</h3>
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            <form onSubmit={handleFormSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="angel">Angel Investor</option>
+                  <option value="vc">Venture Capital</option>
+                  <option value="seed">Seed Fund</option>
+                  <option value="corporate">Corporate VC</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+                <input
+                  type="text"
+                  name="company"
+                  value={formData.company}
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Investment Range</label>
+                <input
+                  type="text"
+                  name="investmentRange"
+                  value={formData.investmentRange}
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Experience</label>
+                <input
+                  type="text"
+                  name="experience"
+                  value={formData.experience}
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <input
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleFormChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="pending">Pending</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sectors</label>
+                <div className="space-y-2">
+                  {formData.sectors.map((sector, index) => (
+                    <div key={index} className="flex space-x-2">
+                      <input
+                        type="text"
+                        value={sector}
+                        onChange={(e) => handleSectorChange(index, e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter sector"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeSector(index)}
+                        className="px-3 py-2 text-red-600 hover:text-red-800"
+                      >
+                        <XMarkIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={addSector}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    + Add Sector
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Portfolio</label>
+                <div className="space-y-2">
+                  {formData.portfolio.map((company, index) => (
+                    <div key={index} className="flex space-x-2">
+                      <input
+                        type="text"
+                        value={company}
+                        onChange={(e) => handlePortfolioChange(index, e.target.value)}
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter company name"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removePortfolio(index)}
+                        className="px-3 py-2 text-red-600 hover:text-red-800"
+                      >
+                        <XMarkIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={addPortfolio}
+                    className="text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    + Add Portfolio Company
+                  </button>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closeModals}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Updating...' : 'Update Investor'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Investor Modal */}
+      {showViewModal && selectedInvestor && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Investor Details</h3>
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div className="flex items-center space-x-4">
+                <img
+                  className="h-16 w-16 rounded-full object-cover"
+                  src={selectedInvestor.profileImage}
+                  alt={selectedInvestor.name}
+                />
+                <div>
+                  <h4 className="text-lg font-medium text-gray-900">{selectedInvestor.name}</h4>
+                  <p className="text-sm text-gray-500">ID: {selectedInvestor.id}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Email</label>
+                  <p className="text-sm text-gray-900">{selectedInvestor.email}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Phone</label>
+                  <p className="text-sm text-gray-900">{selectedInvestor.phone}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Type</label>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor(selectedInvestor.type)}`}>
+                    {selectedInvestor.type.toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Status</label>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedInvestor.status)}`}>
+                    {getStatusIcon(selectedInvestor.status)}
+                    <span className="ml-1 capitalize">{selectedInvestor.status}</span>
+                  </span>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Company</label>
+                  <p className="text-sm text-gray-900">{selectedInvestor.company}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Investment Range</label>
+                  <p className="text-sm text-gray-900">{selectedInvestor.investmentRange}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Experience</label>
+                  <p className="text-sm text-gray-900">{selectedInvestor.experience}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Location</label>
+                  <p className="text-sm text-gray-900">{selectedInvestor.location}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Total Investments</label>
+                  <p className="text-sm text-gray-900">{selectedInvestor.totalInvestments}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Total Amount</label>
+                  <p className="text-sm text-gray-900">{selectedInvestor.totalAmount}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Avg Ticket Size</label>
+                  <p className="text-sm text-gray-900">{selectedInvestor.avgTicketSize}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Join Date</label>
+                  <p className="text-sm text-gray-900">{selectedInvestor.joinDate}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Last Investment</label>
+                  <p className="text-sm text-gray-900">{selectedInvestor.lastInvestment}</p>
+                </div>
+              </div>
+              {selectedInvestor.sectors.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Sectors</label>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedInvestor.sectors.map((sector: string, index: number) => (
+                      <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                        {sector}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {selectedInvestor.portfolio.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Portfolio</label>
+                  <div className="space-y-1">
+                    {selectedInvestor.portfolio.map((company: string, index: number) => (
+                      <p key={index} className="text-sm text-gray-600">{company}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="flex justify-end pt-4">
+                <button
+                  onClick={closeModals}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedInvestor && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Delete Investor</h3>
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Are you sure you want to delete <strong>{selectedInvestor.name}</strong>? This action cannot be undone.
+              </p>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  onClick={closeModals}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteConfirm}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Deleting...' : 'Delete Investor'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

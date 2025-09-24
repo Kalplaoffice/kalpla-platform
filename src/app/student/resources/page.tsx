@@ -10,7 +10,8 @@ import {
   VideoCameraIcon,
   PlayIcon,
   EyeIcon,
-  AcademicCapIcon
+  AcademicCapIcon,
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
 
 export default function StudentResourcesPage() {
@@ -130,7 +131,7 @@ export default function StudentResourcesPage() {
                     Preview
                   </button>
                   <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    <DownloadIcon className="h-4 w-4 mr-2" />
+                    <ArrowDownTrayIcon className="h-4 w-4 mr-2" />
                     Download
                   </button>
                 </div>

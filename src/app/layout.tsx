@@ -4,6 +4,7 @@ import "./globals.css";
 import { AmplifyProvider } from '@/components/providers/AmplifyProvider';
 import { NotificationProvider } from '@/components/notifications/NotificationProvider';
 import { UserProvider } from '@/contexts/UserContext';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ClientOnly } from '@/components/layout/ClientOnly';
@@ -26,9 +27,6 @@ export const metadata: Metadata = {
   description: "Learn, grow, and succeed with Kalpla's comprehensive educational platform",
 };
 
-// Force dynamic rendering for all pages
-export const dynamic = 'force-dynamic';
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -41,19 +39,21 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <AmplifyProvider>
-          <UserProvider>
-            <NotificationProvider>
-              <ClientOnly>
-                <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-50 flex flex-col">
-                  <Navbar />
-                  <main className="flex-1 w-full">
-                    {children}
-                  </main>
-                  <Footer />
-                </div>
-              </ClientOnly>
-            </NotificationProvider>
-          </UserProvider>
+          <AuthProvider>
+            <UserProvider>
+              <NotificationProvider>
+                <ClientOnly>
+                  <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-50 flex flex-col">
+                    <Navbar />
+                    <main className="flex-1 w-full">
+                      {children}
+                    </main>
+                    <Footer />
+                  </div>
+                </ClientOnly>
+              </NotificationProvider>
+            </UserProvider>
+          </AuthProvider>
         </AmplifyProvider>
       </body>
     </html>

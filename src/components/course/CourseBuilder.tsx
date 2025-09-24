@@ -568,7 +568,7 @@ export function CourseBuilder({ courseId, onCourseUpdate }: CourseBuilderProps) 
           </div>
           <div>
             <span className="font-medium text-gray-700">Price:</span>
-            <span className="ml-2 text-gray-600">{course.currency} {course.price}</span>
+            <span className="ml-2 text-gray-600">₹{course.price.toLocaleString('en-IN')}</span>
           </div>
         </div>
       </div>

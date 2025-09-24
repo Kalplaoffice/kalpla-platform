@@ -1,5 +1,4 @@
 import { useUser } from '@/contexts/UserContext';
-import MockAuthService from '@/lib/mockAuthService';
 
 export interface RolePermissions {
   canViewAdmin: boolean;
@@ -23,12 +22,10 @@ export function useRoleBasedAccess() {
       return user.role;
     }
     
-    // Check for Cognito groups in user attributes
+    // Fallback: Check specific users for their roles (legacy)
     if (user?.signInDetails?.loginId) {
-      // This is a real Cognito user
       const email = user.signInDetails.loginId;
       
-      // Check specific users for their roles
       if (email === 'learncapacademy@gmail.com') {
         return 'Admin';
       } else if (email === 'jnaneshshetty08@gmail.com') {
@@ -43,11 +40,6 @@ export function useRoleBasedAccess() {
       if (user.signInDetails.groups && user.signInDetails.groups.length > 0) {
         return user.signInDetails.groups[0];
       }
-    }
-    
-    // Check mock auth service
-    if (MockAuthService.isUserAuthenticated()) {
-      return MockAuthService.getUserRole();
     }
     
     return 'Guest';
@@ -180,7 +172,7 @@ export function useRoleBasedAccess() {
   };
 
   const isAuthenticated = (): boolean => {
-    return user !== null || MockAuthService.isUserAuthenticated();
+    return user !== null;
   };
 
   const requireRole = (requiredRole: string): boolean => {

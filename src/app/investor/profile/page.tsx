@@ -105,7 +105,7 @@ export default function InvestorProfilePage() {
       setError(null);
 
       // Get current user from Cognito
-      const currentUser = await Auth.currentAuthenticatedUser();
+      const currentUser = await getCurrentUser();
       const attributes = currentUser.attributes;
 
       // Mock investor profile data
@@ -179,8 +179,8 @@ export default function InvestorProfilePage() {
       setSuccess(null);
 
       // Update Cognito attributes
-      const currentUser = await Auth.currentAuthenticatedUser();
-      await Auth.updateUserAttributes(currentUser, {
+      const currentUser = await getCurrentUser();
+      await updateUserAttributes(currentUser, {
         name: formData.name,
         phone_number: formData.phone,
         'custom:company': formData.company,

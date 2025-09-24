@@ -2,6 +2,11 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import iso9001 from '@/assets/images/iso-9001.svg';
+import iso45001 from '@/assets/images/iso-45001.svg';
+import iso27001 from '@/assets/images/iso-27001.svg';
+import iso21001 from '@/assets/images/iso-21001.svg';
+import LeadersSection from '@/components/LeadersSection';
 import {
   AcademicCapIcon,
   UserGroupIcon,
@@ -158,7 +163,7 @@ export default function Home() {
       name: 'ISO 9001:2015',
       title: 'Quality Management System',
       description: 'Ensures consistent quality in our educational services and processes',
-      icon: ShieldCheckIcon,
+      image: iso9001,
       color: 'from-blue-500 to-blue-600',
       bgColor: 'bg-blue-50',
       textColor: 'text-blue-600',
@@ -169,7 +174,7 @@ export default function Home() {
       name: 'ISO 45001:2018',
       title: 'Occupational Health & Safety',
       description: 'Committed to maintaining safe and healthy learning environments',
-      icon: ShieldCheckIcon,
+      image: iso45001,
       color: 'from-green-500 to-green-600',
       bgColor: 'bg-green-50',
       textColor: 'text-green-600',
@@ -180,7 +185,7 @@ export default function Home() {
       name: 'ISO 27001:2013',
       title: 'Information Security Management',
       description: 'Protecting student data and maintaining highest security standards',
-      icon: ShieldCheckIcon,
+      image: iso27001,
       color: 'from-purple-500 to-purple-600',
       bgColor: 'bg-purple-50',
       textColor: 'text-purple-600',
@@ -191,7 +196,7 @@ export default function Home() {
       name: 'ISO 21001:2018',
       title: 'Educational Organizations Management',
       description: 'Specialized standard for educational institutions and learning providers',
-      icon: ShieldCheckIcon,
+      image: iso21001,
       color: 'from-orange-500 to-orange-600',
       bgColor: 'bg-orange-50',
       textColor: 'text-orange-600',
@@ -965,10 +970,16 @@ export default function Home() {
                 <div className={`bg-gradient-to-br ${cert.color} p-6 text-center relative overflow-hidden`}>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                   
-                  {/* ISO Badge */}
+                  {/* ISO Image */}
                   <div className="relative z-10">
-                    <div className={`w-16 h-16 mx-auto mb-4 rounded-full ${cert.bgColor} border-4 border-white/20 shadow-lg flex items-center justify-center`}>
-                      <cert.icon className={`h-8 w-8 ${cert.textColor}`} />
+                    <div className="w-20 h-20 mx-auto mb-4 rounded-lg bg-white/90 backdrop-blur-sm border-4 border-white/20 shadow-lg flex items-center justify-center p-2">
+                      <Image 
+                        src={cert.image} 
+                        alt={`${cert.name} certification`}
+                        width={64}
+                        height={64}
+                        className="object-contain"
+                      />
                     </div>
                     
                     {/* Certification Number */}
@@ -1024,6 +1035,9 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Leaders Section */}
+      <LeadersSection />
 
       {/* CTA Banner */}
       <div className="relative bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 py-20 overflow-hidden">

@@ -1,16 +1,15 @@
 import { generateClient } from 'aws-amplify/api';
-// TODO: These operations need to be added to the GraphQL schema
-// import { 
-//   SUBMIT_KSMP_APPLICATION,
-//   SUBMIT_INVESTOR_APPLICATION,
-//   SUBMIT_MENTOR_APPLICATION
-// } from '../graphql/mutations';
-// import { 
-//   GET_KSMP_APPLICATION,
-//   GET_INVESTOR_APPLICATION,
-//   GET_MENTOR_APPLICATION_DETAILS,
-//   LIST_PENDING_APPLICATIONS
-// } from '../graphql/queries';
+import { 
+  SUBMIT_KSMP_APPLICATION,
+  SUBMIT_INVESTOR_APPLICATION,
+  SUBMIT_MENTOR_APPLICATION
+} from '../graphql/mutations';
+import { 
+  GET_KSMP_APPLICATION,
+  GET_INVESTOR_APPLICATION,
+  GET_MENTOR_APPLICATION_DETAILS,
+  LIST_PENDING_APPLICATIONS
+} from '../graphql/queries';
 
 const client = generateClient();
 

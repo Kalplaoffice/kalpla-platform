@@ -1,4 +1,8 @@
-import { Auth } from 'aws-amplify';
+import { getCurrentUser } from '@aws-amplify/auth';
+import { generateClient } from 'aws-amplify/api';
+import { UPDATE_USER } from '@/graphql/mutations';
+
+const client = generateClient();
 
 export interface UserApplication {
   id: string;
@@ -176,15 +180,27 @@ class AdminService {
   /**
    * Suspend user account
    */
-  async suspendUser(userId: string, reason: string): Promise<void> {
+  async suspendUser(userId: string, reason: string, userEmail?: string, firstName?: string): Promise<void> {
     try {
       console.log(`Suspending user ${userId} for reason: ${reason}`);
       
-      // In a real implementation, you would:
-      // 1. Call a Lambda function with admin privileges
-      // 2. Use AWS SDK to call cognito.adminDisableUser
-      // 3. Update user status in DynamoDB
-      // 4. Send notification to user
+      // Update user status in DynamoDB via GraphQL
+      const result = await client.graphql({
+        query: UPDATE_USER,
+        variables: {
+          input: {
+            id: userId,
+            status: "Suspended",
+          },
+        },
+      });
+
+      console.log('User suspended successfully:', result);
+      
+      // Send email notification
+      if (userEmail) {
+        await this.sendStatusChangeNotification(userEmail, firstName || 'User', 'Suspended');
+      }
       
     } catch (error) {
       console.error('Error suspending user:', error);
@@ -195,15 +211,27 @@ class AdminService {
   /**
    * Reactivate user account
    */
-  async reactivateUser(userId: string): Promise<void> {
+  async reactivateUser(userId: string, userEmail?: string, firstName?: string): Promise<void> {
     try {
       console.log(`Reactivating user ${userId}`);
       
-      // In a real implementation, you would:
-      // 1. Call a Lambda function with admin privileges
-      // 2. Use AWS SDK to call cognito.adminEnableUser
-      // 3. Update user status in DynamoDB
-      // 4. Send notification to user
+      // Update user status in DynamoDB via GraphQL
+      const result = await client.graphql({
+        query: UPDATE_USER,
+        variables: {
+          input: {
+            id: userId,
+            status: "Active",
+          },
+        },
+      });
+
+      console.log('User reactivated successfully:', result);
+      
+      // Send email notification
+      if (userEmail) {
+        await this.sendStatusChangeNotification(userEmail, firstName || 'User', 'Active');
+      }
       
     } catch (error) {
       console.error('Error reactivating user:', error);
@@ -343,6 +371,44 @@ class AdminService {
     } catch (error) {
       console.error('Error sending rejection notification:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Send status change notification via Lambda
+   */
+  private async sendStatusChangeNotification(email: string, firstName: string, status: 'Suspended' | 'Active'): Promise<void> {
+    try {
+      console.log(`📧 Sending ${status} notification to ${email}`);
+      
+      // Call the Lambda function directly
+      const lambdaParams = {
+        email,
+        firstName,
+        status
+      };
+
+      // Use AWS Lambda invoke via API Gateway or direct invocation
+      // For now, we'll use a simple fetch to an API endpoint
+      // In production, you might want to use AWS SDK directly
+      const response = await fetch('/api/notifyUserStatus', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(lambdaParams),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to send notification: ${response.statusText}`);
+      }
+
+      console.log(`✅ ${status} notification sent successfully to ${email}`);
+      
+    } catch (error) {
+      console.error(`❌ Error sending ${status} notification to ${email}:`, error);
+      // Don't throw error here to prevent blocking the main operation
+      // The status change should still succeed even if email fails
     }
   }
 }

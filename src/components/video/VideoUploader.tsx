@@ -87,8 +87,14 @@ export function VideoUploader({ lessonId, onUploadComplete, onUploadError }: Vid
       setError(null);
       setProcessingStatus('uploading');
 
-      // Upload file
-      const videoKey = await videoService.uploadVideoFile(uploadedFile, lessonId);
+      // Upload file with progress tracking
+      const videoKey = await videoService.uploadVideoFile(uploadedFile, lessonId, (progress) => {
+        setUploadProgress({
+          loaded: progress,
+          total: 100,
+          percentage: progress
+        });
+      });
       
       setProcessingStatus('processing');
       setUploadProgress(null);

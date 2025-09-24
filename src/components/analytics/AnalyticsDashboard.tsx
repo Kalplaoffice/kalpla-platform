@@ -7,7 +7,7 @@ import {
   UsersIcon,
   CurrencyDollarIcon,
   ClockIcon,
-  ArrowArrowTrendingUpIcon,
+  ArrowTrendingUpIcon,
   TrendingDownIcon,
   EyeIcon,
   CheckCircleIcon,

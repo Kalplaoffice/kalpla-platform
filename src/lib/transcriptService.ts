@@ -1,7 +1,6 @@
 import { generateClient } from 'aws-amplify/api';
-// TODO: These operations need to be added to the GraphQL schema
-// import { GENERATE_TRANSCRIPT } from '../graphql/mutations';
-// import { GET_TRANSCRIPT, LIST_TRANSCRIPTS } from '../graphql/queries';
+import { GENERATE_TRANSCRIPT } from '../graphql/mutations';
+import { GET_TRANSCRIPT, LIST_TRANSCRIPTS } from '../graphql/queries';
 
 const client = generateClient();
 

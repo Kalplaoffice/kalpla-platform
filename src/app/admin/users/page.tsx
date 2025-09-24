@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
+import { adminService } from '@/lib/adminService';
 
 import { 
   UsersIcon,
@@ -57,7 +58,12 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showUserModal, setShowUserModal] = useState(false);
   const [showActionModal, setShowActionModal] = useState(false);
-  const [actionType, setActionType] = useState<'suspend' | 'ban' | 'promote' | 'demote' | null>(null);
+  const [actionType, setActionType] = useState<'suspend' | 'ban' | 'promote' | 'demote' | 'reactivate' | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [notificationStatus, setNotificationStatus] = useState<{
+    type: 'success' | 'error' | null;
+    message: string;
+  }>({ type: null, message: '' });
 
   useEffect(() => {
     // Mock data - replace with actual API calls
@@ -224,37 +230,105 @@ export default function UsersPage() {
     }
   };
 
-  const handleUserAction = async (userId: string, action: 'suspend' | 'ban' | 'promote' | 'demote') => {
-    // TODO: Implement actual user action API call
-    console.log(`${action} user:`, userId);
+  const handleUserAction = async (userId: string, action: 'suspend' | 'ban' | 'promote' | 'demote' | 'reactivate') => {
+    if (!selectedUser) return;
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsProcessing(true);
+    setNotificationStatus({ type: null, message: '' });
     
-    // Update local state
-    setUsers(prev => prev.map(user => {
-      if (user.id === userId) {
-        switch (action) {
-          case 'suspend':
-            return { ...user, status: 'suspended' };
-          case 'ban':
-            return { ...user, status: 'banned' };
-          case 'promote':
-            // Logic for role promotion
-            return user;
-          case 'demote':
-            // Logic for role demotion
-            return user;
-          default:
-            return user;
-        }
+    try {
+      console.log(`${action} user:`, userId);
+      
+      switch (action) {
+        case 'suspend':
+          await adminService.suspendUser(
+            userId, 
+            'Account suspended by admin',
+            selectedUser.email,
+            selectedUser.name
+          );
+          // Update local state
+          setUsers(prev => prev.map(user => 
+            user.id === userId ? { ...user, status: 'suspended' } : user
+          ));
+          setNotificationStatus({
+            type: 'success',
+            message: `✅ User suspended and notification email sent to ${selectedUser.email}`
+          });
+          break;
+          
+        case 'reactivate':
+          await adminService.reactivateUser(
+            userId,
+            selectedUser.email,
+            selectedUser.name
+          );
+          // Update local state
+          setUsers(prev => prev.map(user => 
+            user.id === userId ? { ...user, status: 'active' } : user
+          ));
+          setNotificationStatus({
+            type: 'success',
+            message: `✅ User reactivated and notification email sent to ${selectedUser.email}`
+          });
+          break;
+          
+        case 'ban':
+          // For now, treat ban as suspend (you can implement a separate ban function later)
+          await adminService.suspendUser(
+            userId, 
+            'Account banned by admin',
+            selectedUser.email,
+            selectedUser.name
+          );
+          setUsers(prev => prev.map(user => 
+            user.id === userId ? { ...user, status: 'banned' } : user
+          ));
+          setNotificationStatus({
+            type: 'success',
+            message: `✅ User banned and notification email sent to ${selectedUser.email}`
+          });
+          break;
+          
+        case 'promote':
+          // TODO: Implement role promotion logic
+          console.log('Role promotion not yet implemented');
+          setNotificationStatus({
+            type: 'error',
+            message: 'Role promotion not yet implemented'
+          });
+          break;
+          
+        case 'demote':
+          // TODO: Implement role demotion logic
+          console.log('Role demotion not yet implemented');
+          setNotificationStatus({
+            type: 'error',
+            message: 'Role demotion not yet implemented'
+          });
+          break;
+          
+        default:
+          console.log('Unknown action:', action);
+          setNotificationStatus({
+            type: 'error',
+            message: 'Unknown action'
+          });
       }
-      return user;
-    }));
-    
-    setShowActionModal(false);
-    setSelectedUser(null);
-    setActionType(null);
+      
+      setShowActionModal(false);
+      setSelectedUser(null);
+      setActionType(null);
+      
+    } catch (error) {
+      console.error(`Error ${action}ing user:`, error);
+      setNotificationStatus({
+        type: 'error',
+        message: `Failed to ${action} user: ${error instanceof Error ? error.message : 'Unknown error'}`
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const getRoleHierarchy = (currentRole: string) => {
@@ -305,6 +379,44 @@ export default function UsersPage() {
             Add User
           </button>
         </div>
+
+        {/* Notification Banner */}
+        {notificationStatus.type && (
+          <div className={`p-4 rounded-lg ${
+            notificationStatus.type === 'success' 
+              ? 'bg-green-50 border border-green-200' 
+              : 'bg-red-50 border border-red-200'
+          }`}>
+            <div className="flex items-center">
+              <div className={`flex-shrink-0 ${
+                notificationStatus.type === 'success' ? 'text-green-400' : 'text-red-400'
+              }`}>
+                {notificationStatus.type === 'success' ? (
+                  <CheckCircleIcon className="h-5 w-5" />
+                ) : (
+                  <XCircleIcon className="h-5 w-5" />
+                )}
+              </div>
+              <div className="ml-3">
+                <p className={`text-sm font-medium ${
+                  notificationStatus.type === 'success' ? 'text-green-800' : 'text-red-800'
+                }`}>
+                  {notificationStatus.message}
+                </p>
+              </div>
+              <div className="ml-auto">
+                <button
+                  onClick={() => setNotificationStatus({ type: null, message: '' })}
+                  className={`text-sm ${
+                    notificationStatus.type === 'success' ? 'text-green-600' : 'text-red-600'
+                  } hover:opacity-75`}
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -530,12 +642,12 @@ export default function UsersPage() {
                             <button
                               onClick={() => {
                                 setSelectedUser(user);
-                                setActionType('ban');
+                                setActionType('reactivate');
                                 setShowActionModal(true);
                               }}
-                              className="text-red-600 hover:text-red-900"
+                              className="text-green-600 hover:text-green-900"
                             >
-                              <XCircleIcon className="h-4 w-4" />
+                              <CheckCircleIcon className="h-4 w-4" />
                             </button>
                           )}
                           {roleHierarchy.canPromote && (
@@ -700,9 +812,9 @@ export default function UsersPage() {
                       </p>
                     )}
                     
-                    {actionType === 'ban' && (
+                    {actionType === 'reactivate' && (
                       <p className="text-sm text-gray-600">
-                        This will permanently ban the user's account. This action cannot be undone.
+                        This will reactivate the user's account. They will regain access to the platform.
                       </p>
                     )}
 
@@ -710,20 +822,31 @@ export default function UsersPage() {
                       <button
                         onClick={() => setShowActionModal(false)}
                         className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+                        disabled={isProcessing}
                       >
                         Cancel
                       </button>
                       <button
                         onClick={() => handleUserAction(selectedUser.id, actionType)}
+                        disabled={isProcessing}
                         className={`px-4 py-2 text-white rounded-lg font-medium transition-colors ${
                           actionType === 'ban' 
                             ? 'bg-red-600 hover:bg-red-700' 
                             : actionType === 'suspend'
                             ? 'bg-yellow-600 hover:bg-yellow-700'
+                            : actionType === 'reactivate'
+                            ? 'bg-green-600 hover:bg-green-700'
                             : 'bg-green-600 hover:bg-green-700'
-                        }`}
+                        } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
-                        Confirm {actionType}
+                        {isProcessing ? (
+                          <div className="flex items-center">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                            Processing...
+                          </div>
+                        ) : (
+                          `Confirm ${actionType}`
+                        )}
                       </button>
                     </div>
                   </div>

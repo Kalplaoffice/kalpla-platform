@@ -26,6 +26,30 @@ import {
 export default function DashboardPage() {
   const { role } = useRoleBasedAccess();
   const { user, loading } = useAuthRedirect();
+  const router = useRouter();
+
+  const handleRoleRedirect = () => {
+    switch (role) {
+      case 'student':
+        router.push('/student/dashboard');
+        break;
+      case 'mentor':
+        router.push('/mentor/dashboard');
+        break;
+      case 'instructor':
+        router.push('/instructor/dashboard');
+        break;
+      case 'admin':
+        router.push('/admin/dashboard');
+        break;
+      case 'investor':
+        router.push('/investor/dashboard');
+        break;
+      default:
+        router.push('/');
+        break;
+    }
+  };
 
 
   // Show loading state while checking authentication

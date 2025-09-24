@@ -1,23 +1,22 @@
 import { generateClient } from 'aws-amplify/api';
-// TODO: These operations need to be added to the GraphQL schema
-// import { 
-//   CREATE_STUDENT_PROGRESS, 
-//   UPDATE_STUDENT_PROGRESS,
-//   CREATE_COURSE_METRICS,
-//   UPDATE_COURSE_METRICS,
-//   CREATE_REVENUE_ANALYTICS,
-//   CREATE_STUDENT_ANALYTICS
-// } from '@/graphql/mutations';
-// import { 
-//   GET_STUDENT_PROGRESS,
-//   LIST_STUDENT_PROGRESS,
-//   GET_COURSE_METRICS,
-//   LIST_COURSE_METRICS,
-//   GET_REVENUE_ANALYTICS,
-//   LIST_REVENUE_ANALYTICS,
-//   GET_STUDENT_ANALYTICS,
-//   LIST_STUDENT_ANALYTICS
-// } from '@/graphql/queries';
+import { 
+  CREATE_STUDENT_PROGRESS, 
+  UPDATE_STUDENT_PROGRESS,
+  CREATE_COURSE_METRICS,
+  UPDATE_COURSE_METRICS,
+  CREATE_REVENUE_ANALYTICS,
+  CREATE_STUDENT_ANALYTICS
+} from '@/graphql/mutations';
+import { 
+  GET_STUDENT_PROGRESS,
+  LIST_STUDENT_PROGRESS,
+  GET_COURSE_METRICS,
+  LIST_COURSE_METRICS,
+  GET_REVENUE_ANALYTICS,
+  LIST_REVENUE_ANALYTICS,
+  GET_STUDENT_ANALYTICS,
+  LIST_STUDENT_ANALYTICS
+} from '@/graphql/queries';
 
 const client = generateClient();
 

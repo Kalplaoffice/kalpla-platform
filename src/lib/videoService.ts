@@ -13,7 +13,11 @@ import {
 import {
   GET_VIDEO_PROGRESS,
   GET_VIDEO_ANALYTICS,
-  GET_INTERACTIVE_TIMELINE
+  GET_INTERACTIVE_TIMELINE,
+  GET_PROCESSING_STATUS,
+  GET_VIDEO_MANIFEST_URL,
+  GET_VIDEO_QUALITIES,
+  GET_SIGNED_VIDEO_URL as getSignedVideoUrl
 } from '../graphql/queries';
 
 const client = generateClient();
@@ -138,11 +142,11 @@ class VideoService {
   }
 
   /**
-   * Upload video file
+   * Upload video file with enhanced progress tracking
    */
-  async uploadVideo(file: File, lessonId: string): Promise<string> {
+  async uploadVideoFile(file: File, lessonId: string, onProgress?: (progress: number) => void): Promise<string> {
     try {
-      // Upload to S3
+      // Upload to S3 with progress tracking
       const fileName = `lesson_${lessonId}_${Date.now()}.${file.name.split('.').pop()}`;
       const key = `videos/raw/${lessonId}/${fileName}`;
       
@@ -151,7 +155,13 @@ class VideoService {
         data: file,
         options: {
           contentType: file.type,
-          level: 'private'
+          level: 'private',
+          onProgress: ({ transferredBytes, totalBytes }) => {
+            if (onProgress && totalBytes) {
+              const progress = Math.round((transferredBytes / totalBytes) * 100);
+              onProgress(progress);
+            }
+          }
         }
       }).result;
 
@@ -171,6 +181,57 @@ class VideoService {
     } catch (error) {
       console.error('Error uploading video:', error);
       throw new Error('Failed to upload video');
+    }
+  }
+
+  /**
+   * Get processing status for a video
+   */
+  async getProcessingStatus(lessonId: string): Promise<string> {
+    try {
+      const result = await client.graphql({
+        query: getProcessingStatus,
+        variables: { lessonId }
+      });
+      
+      return result.data.getProcessingStatus.status;
+    } catch (error) {
+      console.error('Error getting processing status:', error);
+      throw new Error('Failed to get processing status');
+    }
+  }
+
+  /**
+   * Get video manifest URL for adaptive streaming
+   */
+  async getVideoManifestUrl(lessonId: string): Promise<string> {
+    try {
+      const result = await client.graphql({
+        query: getVideoManifestUrl,
+        variables: { lessonId }
+      });
+      
+      return result.data.getVideoManifestUrl.url;
+    } catch (error) {
+      console.error('Error getting video manifest URL:', error);
+      throw new Error('Failed to get video manifest URL');
+    }
+  }
+
+  /**
+   * Get available video qualities for a lesson
+   */
+  async getVideoQualities(lessonId: string): Promise<Array<{quality: string, bitrate: number, url: string}>> {
+    try {
+      const result = await client.graphql({
+        query: getVideoQualities,
+        variables: { lessonId }
+      });
+      
+      return result.data.getVideoQualities.qualities;
+    } catch (error) {
+      console.error('Error getting video qualities:', error);
+      throw new Error('Failed to get video qualities');
     }
   }
 

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Authenticator } from '@aws-amplify/ui-react';
 import { 
   Bars3Icon, 
@@ -38,6 +39,7 @@ export function Navbar() {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const { user, signOut } = useUser();
+  const { user: authUser, signOut: authSignOut, isAuthenticated } = useAuth();
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -64,6 +66,15 @@ export function Navbar() {
 
   // Simplified navigation for authenticated users
   const getRoleBasedNavigation = () => {
+    const userRole = user?.role || (user?.signInDetails?.loginId === 'learncapacademy@gmail.com' ? 'Admin' : 'Student');
+    
+    if (userRole === 'Admin') {
+      return [
+        { name: 'Admin Dashboard', href: '/admin/dashboard', icon: ChartBarIcon },
+        { name: 'Profile', href: '/profile', icon: UserIcon },
+      ];
+    }
+    
     return [
       { name: 'Dashboard', href: '/dashboard', icon: ChartBarIcon },
       { name: 'Profile', href: '/profile', icon: UserIcon },
@@ -203,7 +214,7 @@ export function Navbar() {
                           <button
                             onClick={async () => {
                               try {
-                                await signOut();
+                                await authSignOut();
                                 router.push('/');
                                 setActiveDropdown(null);
                               } catch (error) {
@@ -310,7 +321,7 @@ export function Navbar() {
                   <button
                     onClick={async () => {
                       try {
-                        await signOut();
+                        await authSignOut();
                         router.push('/');
                         setIsOpen(false);
                       } catch (error) {

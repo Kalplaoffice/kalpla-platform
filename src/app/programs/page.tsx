@@ -369,9 +369,9 @@ export default function ProgramsPage() {
                     </div>
                     <div className="text-right">
                       <div className="text-2xl font-bold text-gray-900">
-                        ${program.price.toLocaleString()}
+                        ₹{program.price.toLocaleString('en-IN')}
                       </div>
-                      <div className="text-sm text-gray-500">{program.currency}</div>
+                      <div className="text-sm text-gray-500">INR</div>
                     </div>
                   </div>
 

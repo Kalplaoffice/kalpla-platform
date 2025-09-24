@@ -134,15 +134,16 @@ export default function BlogPage() {
   const regularPosts = sortedPosts.filter(post => !post.featured);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="bg-white">
+      {/* Hero Section */}
+      <div className="relative bg-gradient-to-r from-blue-600 to-purple-600">
+        <div className="absolute inset-0 bg-black opacity-20"></div>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">
-              Kalpla Blog
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+              Kalpla <span className="text-yellow-300">Blog</span>
             </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-xl text-blue-100 mb-8 max-w-3xl mx-auto">
               Insights, tips, and stories from entrepreneurs, educators, and industry experts. 
               Stay updated with the latest trends in education, entrepreneurship, and technology.
             </p>
@@ -312,21 +313,21 @@ export default function BlogPage() {
       </div>
 
       {/* Newsletter Signup */}
-      <div className="py-16 bg-blue-600">
+      <div className="py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
             Stay Updated with Our Latest Posts
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
+          <p className="text-xl text-gray-600 mb-8">
             Get notified when we publish new articles about entrepreneurship, education, and technology.
           </p>
           <div className="max-w-md mx-auto flex">
             <input
               type="email"
               placeholder="Enter your email"
-              className="flex-1 px-4 py-3 rounded-l-lg border-0 focus:outline-none focus:ring-2 focus:ring-blue-300"
+              className="flex-1 px-4 py-3 rounded-l-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
-            <button className="bg-yellow-400 text-yellow-900 px-6 py-3 rounded-r-lg font-semibold hover:bg-yellow-300 transition-colors">
+            <button className="bg-blue-600 text-white px-6 py-3 rounded-r-lg font-semibold hover:bg-blue-700 transition-colors">
               Subscribe
             </button>
           </div>

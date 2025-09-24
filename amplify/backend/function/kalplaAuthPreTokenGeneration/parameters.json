@@ -1,3 +1,8 @@
 {
-  "authkalplaAuthUserPoolId": "us-east-1_XXXXXXXXX"
+  "authkalplaAuthUserPoolId": "ap-south-1_4PQaHBGxJ",
+  "USERS_TABLE": "User-kalplaplatform-dev",
+  "MENTOR_PROFILES_TABLE": "MentorProfile-kalplaplatform-dev",
+  "INSTRUCTOR_PROFILES_TABLE": "InstructorProfile-kalplaplatform-dev",
+  "INVESTOR_PROFILES_TABLE": "InvestorProfile-kalplaplatform-dev",
+  "STUDENT_PROFILES_TABLE": "StudentProfile-kalplaplatform-dev"
 }

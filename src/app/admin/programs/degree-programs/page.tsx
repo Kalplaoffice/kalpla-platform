@@ -1,373 +1,400 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import Image from 'next/image';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   PlusIcon,
+  MagnifyingGlassIcon,
+  FunnelIcon,
+  EyeIcon,
   PencilIcon,
   TrashIcon,
-  EyeIcon,
   AcademicCapIcon,
   ClockIcon,
-  UsersIcon,
   CurrencyDollarIcon,
+  UserGroupIcon,
   CheckCircleIcon,
   XCircleIcon,
-  MagnifyingGlassIcon,
-  FunnelIcon
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
+import Image from 'next/image';
+import kalplaLogo from '@/assets/images/kalpla-logo.svg';
 import { degreeProgramService, DegreeProgram } from '@/lib/degreeProgramService';
 
-const stats = [
-  { label: 'Total Programs', value: '0', icon: AcademicCapIcon },
-  { label: 'Active Programs', value: '0', icon: CheckCircleIcon },
-  { label: 'Total Students', value: '0+', icon: UsersIcon },
-  { label: 'Revenue Generated', value: '₹0', icon: CurrencyDollarIcon }
-];
-
-export default function AdminDegreeProgramsPage() {
+export default function DegreeProgramsPage() {
+  const router = useRouter();
   const [programs, setPrograms] = useState<DegreeProgram[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [modeFilter, setModeFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [degreeTypeFilter, setDegreeTypeFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [stats, setStats] = useState({
+    totalPrograms: 0,
+    activePrograms: 0,
+    publicPrograms: 0,
+    totalStudents: 0,
+    averageDuration: 0,
+    averageFee: 0
+  });
 
-  // Load programs on component mount
   useEffect(() => {
-    loadPrograms();
+    loadData();
   }, []);
 
-  const loadPrograms = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      setError(null);
-      const data = await degreeProgramService.getDegreePrograms({
-        status: statusFilter,
-        mode: modeFilter,
-        search: searchQuery
-      });
-      setPrograms(data);
-    } catch (err) {
-      console.error('Error loading programs:', err);
-      setError('Failed to load degree programs');
+      const [programsData, statsData] = await Promise.all([
+        degreeProgramService.getDegreePrograms(),
+        degreeProgramService.getDegreeProgramStats()
+      ]);
+      setPrograms(programsData);
+      setStats(statsData);
+    } catch (error) {
+      console.error('Error loading data:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  // Reload programs when filters change
-  useEffect(() => {
-    if (!loading) {
-      loadPrograms();
-    }
-  }, [statusFilter, modeFilter, searchQuery]);
-
   const filteredPrograms = programs.filter(program => {
-    const matchesSearch = program.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         (program.specialization && program.specialization.toLowerCase().includes(searchQuery.toLowerCase()));
-    const matchesStatus = statusFilter === 'all' || program.status === statusFilter;
-    const matchesMode = modeFilter === 'all' || program.mode.toLowerCase() === modeFilter.toLowerCase();
+    const matchesSearch = program.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         program.field.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         program.shortTitle.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDegreeType = degreeTypeFilter === 'all' || program.degreeType === degreeTypeFilter;
+    const matchesStatus = statusFilter === 'all' || 
+                         (statusFilter === 'active' && program.isActive) ||
+                         (statusFilter === 'inactive' && !program.isActive) ||
+                         (statusFilter === 'public' && program.isPublic) ||
+                         (statusFilter === 'private' && !program.isPublic);
     
-    return matchesSearch && matchesStatus && matchesMode;
+    return matchesSearch && matchesDegreeType && matchesStatus;
   });
 
-  const handleDeleteProgram = async (id: string) => {
-    if (confirm('Are you sure you want to delete this degree program?')) {
-      try {
-        await degreeProgramService.deleteDegreeProgram(id);
-        setPrograms(programs.filter(program => program.id !== id));
-      } catch (err) {
-        console.error('Error deleting program:', err);
-        alert('Failed to delete degree program');
-      }
+  const handleDelete = async (programId: string) => {
+    if (!confirm('Are you sure you want to delete this degree program? This action cannot be undone.')) {
+      return;
     }
-  };
 
-  const handleToggleStatus = async (id: string, currentStatus: 'active' | 'inactive') => {
     try {
-      const updatedProgram = await degreeProgramService.toggleProgramStatus(id, currentStatus);
-      setPrograms(programs.map(program => 
-        program.id === id ? updatedProgram : program
-      ));
-    } catch (err) {
-      console.error('Error toggling status:', err);
-      alert('Failed to update program status');
+      const result = await degreeProgramService.deleteDegreeProgram(programId);
+      if (result.success) {
+        setPrograms(programs.filter(p => p.id !== programId));
+      } else {
+        alert('Failed to delete program: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error deleting program:', error);
+      alert('Failed to delete program');
     }
   };
 
-  // Calculate stats
-  const totalPrograms = programs.length;
-  const activePrograms = programs.filter(p => p.status === 'active').length;
-  const totalStudents = programs.reduce((sum, p) => sum + (p.totalStudents || 0), 0);
-  const totalRevenue = programs.reduce((sum, p) => {
-    const revenue = p.revenue?.replace(/[₹,]/g, '') || '0';
-    return sum + parseInt(revenue);
-  }, 0);
+  const formatCurrency = (amount: number, currency: string) => {
+    if (currency === 'INR') {
+      return `₹${amount.toLocaleString('en-IN')}`;
+    }
+    return `${currency} ${amount.toLocaleString()}`;
+  };
 
-  const updatedStats = [
-    { label: 'Total Programs', value: totalPrograms.toString(), icon: AcademicCapIcon },
-    { label: 'Active Programs', value: activePrograms.toString(), icon: CheckCircleIcon },
-    { label: 'Total Students', value: `${totalStudents}+`, icon: UsersIcon },
-    { label: 'Revenue Generated', value: `₹${totalRevenue.toLocaleString()}`, icon: CurrencyDollarIcon }
-  ];
+  const getDegreeTypeColor = (type: string) => {
+    switch (type) {
+      case 'bachelor':
+        return 'bg-blue-100 text-blue-800';
+      case 'master':
+        return 'bg-green-100 text-green-800';
+      case 'certificate':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'diploma':
+        return 'bg-purple-100 text-purple-800';
+      case 'phd':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading degree programs...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Degree Programs</h1>
-              <p className="mt-1 text-sm text-gray-500">
-                Manage and oversee all degree programs offered by Kalpla
-              </p>
-            </div>
-            <div className="mt-4 sm:mt-0">
-              <Link
-                href="/admin/programs/degree-programs/add"
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Add Degree Program
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          {updatedStats.map((stat, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <stat.icon className="h-5 w-5 text-blue-600" />
-                  </div>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-500">{stat.label}</p>
-                  <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
-              <XCircleIcon className="h-5 w-5 text-red-500 mr-2" />
-              <span className="text-sm text-red-700">{error}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Search and Filter */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                type="text"
-                placeholder="Search programs..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              <Image
+                src={kalplaLogo}
+                alt="Kalpla"
+                width={32}
+                height={32}
+                className="h-8 w-auto"
               />
+              <span className="ml-2 text-lg font-medium text-gray-900">Degree Programs</span>
             </div>
             
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FunnelIcon className="h-5 w-5 text-gray-400" />
+            <button
+              onClick={() => router.push('/admin/programs/degree-programs/create')}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              <PlusIcon className="h-4 w-4 mr-2" />
+              Create Program
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-6 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <AcademicCapIcon className="h-6 w-6 text-blue-600" />
               </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Programs</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalPrograms}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CheckCircleIcon className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Active Programs</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.activePrograms}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <EyeIcon className="h-6 w-6 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Public Programs</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.publicPrograms}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <UserGroupIcon className="h-6 w-6 text-yellow-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Students</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalStudents}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <ClockIcon className="h-6 w-6 text-indigo-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Avg Duration</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.averageDuration}m</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <CurrencyDollarIcon className="h-6 w-6 text-red-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Avg Fee</p>
+                <p className="text-2xl font-bold text-gray-900">₹{stats.averageFee.toLocaleString('en-IN')}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters and Search */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search programs..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-4">
+              <select
+                value={degreeTypeFilter}
+                onChange={(e) => setDegreeTypeFilter(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">All Degree Types</option>
+                <option value="bachelor">Bachelor</option>
+                <option value="master">Master</option>
+                <option value="certificate">Certificate</option>
+                <option value="diploma">Diploma</option>
+                <option value="phd">PhD</option>
+              </select>
+              
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
-              </select>
-            </div>
-            
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FunnelIcon className="h-5 w-5 text-gray-400" />
-              </div>
-              <select
-                value={modeFilter}
-                onChange={(e) => setModeFilter(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="all">All Modes</option>
-                <option value="online">Online</option>
-                <option value="offline">Offline</option>
-                <option value="hybrid">Hybrid</option>
+                <option value="public">Public</option>
+                <option value="private">Private</option>
               </select>
             </div>
           </div>
         </div>
 
-        {/* Programs Table */}
-        <div className="bg-white shadow-sm border border-gray-200 rounded-lg overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">All Degree Programs</h3>
-          </div>
-          
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Loading programs...</p>
+        {/* Programs List */}
+        {filteredPrograms.length === 0 ? (
+          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+            <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-4 text-lg font-medium text-gray-900">No degree programs found</h3>
+            <p className="mt-2 text-gray-600">
+              {programs.length === 0 
+                ? "No degree programs have been created yet."
+                : "No programs match your current filters."
+              }
+            </p>
+            {programs.length === 0 && (
+              <div className="mt-6">
+                <button
+                  onClick={() => router.push('/admin/programs/degree-programs/create')}
+                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 mx-auto"
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Create First Program
+                </button>
               </div>
+            )}
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">Degree Programs</h2>
             </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Program
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Duration & Mode
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Schedule
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Created
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredPrograms.map((program) => (
-                    <tr key={program.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-12 w-12">
-                            {program.image ? (
-                              <Image
-                                src={program.image}
-                                alt={program.name}
-                                width={48}
-                                height={48}
-                                className="h-12 w-12 rounded-lg object-cover"
-                              />
-                            ) : (
-                              <div className="h-12 w-12 bg-gray-200 rounded-lg flex items-center justify-center">
-                                <AcademicCapIcon className="h-6 w-6 text-gray-400" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{program.name}</div>
-                            <div className="text-sm text-gray-500">{program.specialization || 'No specialization'}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{program.duration}</div>
-                        <div className="text-sm text-gray-500">{program.mode}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{program.schedule}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <button
-                          onClick={() => handleToggleStatus(program.id!, program.status)}
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            program.status === 'active'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {program.status === 'active' ? (
-                            <>
-                              <CheckCircleIcon className="h-3 w-3 mr-1" />
-                              Active
-                            </>
-                          ) : (
-                            <>
-                              <XCircleIcon className="h-3 w-3 mr-1" />
-                              Inactive
-                            </>
-                          )}
-                        </button>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {program.createdAt ? new Date(program.createdAt).toLocaleDateString() : 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end space-x-2">
-                          <Link
-                            href={`/admin/programs/degree-programs/${program.id}`}
-                            className="text-blue-600 hover:text-blue-900"
-                            title="View Details"
-                          >
-                            <EyeIcon className="h-4 w-4" />
-                          </Link>
-                          <Link
-                            href={`/admin/programs/degree-programs/${program.id}/edit`}
-                            className="text-indigo-600 hover:text-indigo-900"
-                            title="Edit Program"
-                          >
-                            <PencilIcon className="h-4 w-4" />
-                          </Link>
-                          <button
-                            onClick={() => handleDeleteProgram(program.id!)}
-                            className="text-red-600 hover:text-red-900"
-                            title="Delete Program"
-                          >
-                            <TrashIcon className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-          
-          {filteredPrograms.length === 0 && (
-            <div className="text-center py-12">
-              <AcademicCapIcon className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-sm font-medium text-gray-900">No programs found</h3>
-              <p className="mt-1 text-sm text-gray-500">
-                {searchQuery || statusFilter !== 'all' || modeFilter !== 'all'
-                  ? 'Try adjusting your search or filter criteria.'
-                  : 'Get started by creating a new degree program.'}
-              </p>
-              {!searchQuery && statusFilter === 'all' && modeFilter === 'all' && (
-                <div className="mt-6">
-                  <Link
-                    href="/admin/programs/degree-programs/add"
-                    className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    <PlusIcon className="h-4 w-4 mr-2" />
-                    Add Degree Program
-                  </Link>
+            
+            <div className="divide-y divide-gray-200">
+              {filteredPrograms.map((program) => (
+                <div key={program.id} className="p-6 hover:bg-gray-50">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h3 className="text-lg font-medium text-gray-900">{program.title}</h3>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getDegreeTypeColor(program.degreeType)}`}>
+                          {program.degreeType.toUpperCase()}
+                        </span>
+                        {program.isActive ? (
+                          <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+                            Active
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+                            Inactive
+                          </span>
+                        )}
+                        {program.isPublic ? (
+                          <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                            Public
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
+                            Private
+                          </span>
+                        )}
+                      </div>
+                      
+                      <p className="text-gray-600 mb-3">{program.description}</p>
+                      
+                      <div className="flex items-center space-x-6 text-sm text-gray-500 mb-3">
+                        <span className="flex items-center">
+                          <AcademicCapIcon className="h-4 w-4 mr-1" />
+                          {program.field}
+                        </span>
+                        <span className="flex items-center">
+                          <ClockIcon className="h-4 w-4 mr-1" />
+                          {program.duration} months
+                        </span>
+                        <span className="flex items-center">
+                          <DocumentTextIcon className="h-4 w-4 mr-1" />
+                          {program.totalCredits} credits
+                        </span>
+                        <span className="flex items-center">
+                          <CurrencyDollarIcon className="h-4 w-4 mr-1" />
+                          {formatCurrency(program.fee, program.currency)}
+                        </span>
+                        <span className="flex items-center">
+                          <UserGroupIcon className="h-4 w-4 mr-1" />
+                          {program.curriculumPhases.length} phases
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center space-x-4 text-xs text-gray-500">
+                        <span>Created: {new Date(program.createdAt).toLocaleDateString()}</span>
+                        <span>Updated: {new Date(program.updatedAt).toLocaleDateString()}</span>
+                        <span>By: {program.createdBy}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2 ml-4">
+                      <button
+                        onClick={() => router.push(`/admin/programs/degree-programs/${program.id}`)}
+                        className="flex items-center px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                      >
+                        <EyeIcon className="h-4 w-4 mr-1" />
+                        View
+                      </button>
+                      
+                      <button
+                        onClick={() => router.push(`/admin/programs/degree-programs/${program.id}/edit`)}
+                        className="flex items-center px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                      >
+                        <PencilIcon className="h-4 w-4 mr-1" />
+                        Edit
+                      </button>
+                      
+                      <button
+                        onClick={() => handleDelete(program.id)}
+                        className="flex items-center px-3 py-2 border border-red-300 rounded-lg text-red-700 hover:bg-red-50"
+                      >
+                        <TrashIcon className="h-4 w-4 mr-1" />
+                        Delete
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

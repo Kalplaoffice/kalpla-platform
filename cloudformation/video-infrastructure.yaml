@@ -28,6 +28,200 @@ Parameters:
     Description: Allowed CORS origins
 
 Resources:
+  # MediaConvert Service Role
+  MediaConvertRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: mediaconvert.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: MediaConvertPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub '${VideoStorageBucket.Arn}/*'
+                  - !GetAtt VideoStorageBucket.Arn
+              - Effect: Allow
+                Action:
+                  - mediaconvert:*
+                Resource: '*'
+
+  # MediaConvert Job Queue
+  MediaConvertQueue:
+    Type: AWS::MediaConvert::Queue
+    Properties:
+      Name: !Sub 'kalpla-video-queue-${Environment}'
+      Description: !Sub 'Queue for Kalpla video processing - ${Environment}'
+      Status: ACTIVE
+      PricingPlan: ON_DEMAND
+
+  # MediaConvert Job Template
+  MediaConvertJobTemplate:
+    Type: AWS::MediaConvert::JobTemplate
+    Properties:
+      Name: !Sub 'kalpla-hls-template-${Environment}'
+      Description: !Sub 'HLS adaptive bitrate template for Kalpla - ${Environment}'
+      Settings:
+        Inputs:
+          - FileInput: 's3://placeholder/input.mp4'
+            AudioSelectors:
+              "Audio Selector 1":
+                DefaultSelection: "DEFAULT"
+            VideoSelector:
+              ColorSpace: "FOLLOW"
+        OutputGroups:
+          - Name: "HLS"
+            OutputGroupSettings:
+              Type: "HLS_GROUP_SETTINGS"
+              HlsGroupSettings:
+                SegmentLength: 6
+                MinSegmentLength: 0
+                Destination: 's3://placeholder/output/'
+                ManifestDurationFormat: "INTEGER"
+                ProgramDateTime: "EXCLUDE"
+                TimedMetadataId3Frame: "NONE"
+                TimedMetadataId3Period: 10
+                Encryption:
+                  EncryptionMethod: "AES_128"
+                  KeyProviderSettings:
+                    StaticKeyProvider:
+                      KeyFormat: "identity"
+                      KeyFormatVersions: "1"
+                      StaticKeyValue: "0123456789012345"
+            Outputs:
+              - NameModifier: "_2160p"
+                VideoDescription:
+                  Width: 3840
+                  Height: 2160
+                  CodecSettings:
+                    Codec: "H_264"
+                    H264Settings:
+                      RateControlMode: "QVBR"
+                      QvbrSettings:
+                        QvbrQualityLevel: 8
+                      MaxBitrate: 15000000
+                      GopSize: 60
+                      GopSizeUnits: "FRAMES"
+                      FramerateControl: "INITIALIZE_FROM_SOURCE"
+                      FramerateNumerator: 30
+                      FramerateDenominator: 1
+                AudioDescriptions:
+                  - AudioSourceName: "Audio Selector 1"
+                    CodecSettings:
+                      Codec: "AAC"
+                      AacSettings:
+                        Bitrate: 192000
+                        CodingMode: "CODING_MODE_2_0"
+                        SampleRate: 48000
+              - NameModifier: "_1080p"
+                VideoDescription:
+                  Width: 1920
+                  Height: 1080
+                  CodecSettings:
+                    Codec: "H_264"
+                    H264Settings:
+                      RateControlMode: "QVBR"
+                      QvbrSettings:
+                        QvbrQualityLevel: 7
+                      MaxBitrate: 5000000
+                      GopSize: 60
+                      GopSizeUnits: "FRAMES"
+                      FramerateControl: "INITIALIZE_FROM_SOURCE"
+                      FramerateNumerator: 30
+                      FramerateDenominator: 1
+                AudioDescriptions:
+                  - AudioSourceName: "Audio Selector 1"
+                    CodecSettings:
+                      Codec: "AAC"
+                      AacSettings:
+                        Bitrate: 128000
+                        CodingMode: "CODING_MODE_2_0"
+                        SampleRate: 48000
+              - NameModifier: "_720p"
+                VideoDescription:
+                  Width: 1280
+                  Height: 720
+                  CodecSettings:
+                    Codec: "H_264"
+                    H264Settings:
+                      RateControlMode: "QVBR"
+                      QvbrSettings:
+                        QvbrQualityLevel: 6
+                      MaxBitrate: 3000000
+                      GopSize: 60
+                      GopSizeUnits: "FRAMES"
+                      FramerateControl: "INITIALIZE_FROM_SOURCE"
+                      FramerateNumerator: 30
+                      FramerateDenominator: 1
+                AudioDescriptions:
+                  - AudioSourceName: "Audio Selector 1"
+                    CodecSettings:
+                      Codec: "AAC"
+                      AacSettings:
+                        Bitrate: 128000
+                        CodingMode: "CODING_MODE_2_0"
+                        SampleRate: 48000
+              - NameModifier: "_480p"
+                VideoDescription:
+                  Width: 854
+                  Height: 480
+                  CodecSettings:
+                    Codec: "H_264"
+                    H264Settings:
+                      RateControlMode: "QVBR"
+                      QvbrSettings:
+                        QvbrQualityLevel: 5
+                      MaxBitrate: 1500000
+                      GopSize: 60
+                      GopSizeUnits: "FRAMES"
+                      FramerateControl: "INITIALIZE_FROM_SOURCE"
+                      FramerateNumerator: 30
+                      FramerateDenominator: 1
+                AudioDescriptions:
+                  - AudioSourceName: "Audio Selector 1"
+                    CodecSettings:
+                      Codec: "AAC"
+                      AacSettings:
+                        Bitrate: 96000
+                        CodingMode: "CODING_MODE_2_0"
+                        SampleRate: 48000
+              - NameModifier: "_360p"
+                VideoDescription:
+                  Width: 640
+                  Height: 360
+                  CodecSettings:
+                    Codec: "H_264"
+                    H264Settings:
+                      RateControlMode: "QVBR"
+                      QvbrSettings:
+                        QvbrQualityLevel: 4
+                      MaxBitrate: 800000
+                      GopSize: 60
+                      GopSizeUnits: "FRAMES"
+                      FramerateControl: "INITIALIZE_FROM_SOURCE"
+                      FramerateNumerator: 30
+                      FramerateDenominator: 1
+                AudioDescriptions:
+                  - AudioSourceName: "Audio Selector 1"
+                    CodecSettings:
+                      Codec: "AAC"
+                      AacSettings:
+                        Bitrate: 64000
+                        CodingMode: "CODING_MODE_2_0"
+                        SampleRate: 48000
+
   # S3 Bucket for Video Storage
   VideoStorageBucket:
     Type: AWS::S3::Bucket
@@ -491,6 +685,24 @@ Outputs:
     Value: !Ref VideoStorageBucket
     Export:
       Name: !Sub '${AWS::StackName}-VideoStorageBucket'
+
+  MediaConvertRoleArn:
+    Description: ARN of the MediaConvert service role
+    Value: !GetAtt MediaConvertRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-MediaConvertRole'
+
+  MediaConvertQueueArn:
+    Description: ARN of the MediaConvert queue
+    Value: !Ref MediaConvertQueue
+    Export:
+      Name: !Sub '${AWS::StackName}-MediaConvertQueue'
+
+  MediaConvertJobTemplateArn:
+    Description: ARN of the MediaConvert job template
+    Value: !Ref MediaConvertJobTemplate
+    Export:
+      Name: !Sub '${AWS::StackName}-MediaConvertJobTemplate'
 
   CloudFrontDistributionDomain:
     Description: CloudFront distribution domain

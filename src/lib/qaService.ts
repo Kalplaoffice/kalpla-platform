@@ -1,15 +1,14 @@
 import { generateClient } from 'aws-amplify/api';
-// TODO: These operations need to be added to the GraphQL schema
-// import {
-//   CREATE_QUESTION,
-//   CREATE_ANSWER,
-//   UPDATE_QUESTION_STATUS
-// } from '../graphql/mutations';
-// import {
-//   GET_QUESTIONS_BY_LESSON,
-//   GET_QUESTIONS_BY_STUDENT,
-//   GET_PENDING_QUESTIONS
-// } from '../graphql/queries';
+import {
+  CREATE_QUESTION,
+  CREATE_ANSWER,
+  UPDATE_QUESTION_STATUS
+} from '../graphql/mutations';
+import {
+  GET_QUESTIONS_BY_LESSON,
+  GET_QUESTIONS_BY_STUDENT,
+  GET_PENDING_QUESTIONS
+} from '../graphql/queries';
 
 const client = generateClient();
 

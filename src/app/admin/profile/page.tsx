@@ -21,7 +21,7 @@ import {
   CurrencyDollarIcon,
   ClockIcon
 } from '@heroicons/react/24/outline';
-import { getCurrentUser, updateUserAttributes } from 'aws-amplify/auth';
+import { getCurrentUser, updateUserAttributes, signOut } from 'aws-amplify/auth';
 
 interface AdminProfile {
   id: string;
@@ -78,7 +78,7 @@ export default function AdminProfilePage() {
       setError(null);
 
       // Get current user from Cognito
-      const currentUser = await Auth.currentAuthenticatedUser();
+      const currentUser = await getCurrentUser();
       const attributes = currentUser.attributes;
 
       // Mock admin profile data
@@ -127,8 +127,8 @@ export default function AdminProfilePage() {
       setSuccess(null);
 
       // Update Cognito attributes
-      const currentUser = await Auth.currentAuthenticatedUser();
-      await Auth.updateUserAttributes(currentUser, {
+      const currentUser = await getCurrentUser();
+      await updateUserAttributes(currentUser, {
         name: formData.name,
         phone_number: formData.phone,
         'custom:department': formData.department
@@ -162,7 +162,7 @@ export default function AdminProfilePage() {
 
   const handleSignOut = async () => {
     try {
-      await Auth.signOut();
+      await signOut();
       router.push('/');
     } catch (error) {
       console.error('Error signing out:', error);

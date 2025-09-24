@@ -57,9 +57,13 @@ exports.handler = async (event) => {
                     OutputGroupSettings: {
                         Type: "HLS_GROUP_SETTINGS",
                         HlsGroupSettings: {
-                            SegmentLength: 10,
+                            SegmentLength: 6,
                             MinSegmentLength: 0,
                             Destination: `s3://${process.env.VIDEO_BUCKET}/${outputKey}`,
+                            ManifestDurationFormat: "INTEGER",
+                            ProgramDateTime: "EXCLUDE",
+                            TimedMetadataId3Frame: "NONE",
+                            TimedMetadataId3Period: 10,
                             Encryption: {
                                 EncryptionMethod: "AES_128",
                                 KeyProviderSettings: {
@@ -73,6 +77,41 @@ exports.handler = async (event) => {
                         }
                     },
                     Outputs: [
+                        // 4K Quality (if source supports it)
+                        {
+                            NameModifier: "_2160p",
+                            VideoDescription: {
+                                Width: 3840,
+                                Height: 2160,
+                                CodecSettings: {
+                                    Codec: "H_264",
+                                    H264Settings: {
+                                        RateControlMode: "QVBR",
+                                        QvbrSettings: {
+                                            QvbrQualityLevel: 8
+                                        },
+                                        MaxBitrate: 15000000,
+                                        GopSize: 60,
+                                        GopSizeUnits: "FRAMES",
+                                        FramerateControl: "INITIALIZE_FROM_SOURCE",
+                                        FramerateNumerator: 30,
+                                        FramerateDenominator: 1
+                                    }
+                                }
+                            },
+                            AudioDescriptions: [{
+                                AudioSourceName: "Audio Selector 1",
+                                CodecSettings: {
+                                    Codec: "AAC",
+                                    AacSettings: {
+                                        Bitrate: 192000,
+                                        CodingMode: "CODING_MODE_2_0",
+                                        SampleRate: 48000
+                                    }
+                                }
+                            }]
+                        },
+                        // 1080p Quality
                         {
                             NameModifier: "_1080p",
                             VideoDescription: {
@@ -83,9 +122,14 @@ exports.handler = async (event) => {
                                     H264Settings: {
                                         RateControlMode: "QVBR",
                                         QvbrSettings: {
-                                            QvbrQualityLevel: 8
+                                            QvbrQualityLevel: 7
                                         },
-                                        MaxBitrate: 5000000
+                                        MaxBitrate: 5000000,
+                                        GopSize: 60,
+                                        GopSizeUnits: "FRAMES",
+                                        FramerateControl: "INITIALIZE_FROM_SOURCE",
+                                        FramerateNumerator: 30,
+                                        FramerateDenominator: 1
                                     }
                                 }
                             },
@@ -101,6 +145,7 @@ exports.handler = async (event) => {
                                 }
                             }]
                         },
+                        // 720p Quality
                         {
                             NameModifier: "_720p",
                             VideoDescription: {
@@ -111,9 +156,14 @@ exports.handler = async (event) => {
                                     H264Settings: {
                                         RateControlMode: "QVBR",
                                         QvbrSettings: {
-                                            QvbrQualityLevel: 7
+                                            QvbrQualityLevel: 6
                                         },
-                                        MaxBitrate: 3000000
+                                        MaxBitrate: 3000000,
+                                        GopSize: 60,
+                                        GopSizeUnits: "FRAMES",
+                                        FramerateControl: "INITIALIZE_FROM_SOURCE",
+                                        FramerateNumerator: 30,
+                                        FramerateDenominator: 1
                                     }
                                 }
                             },
@@ -129,6 +179,7 @@ exports.handler = async (event) => {
                                 }
                             }]
                         },
+                        // 480p Quality
                         {
                             NameModifier: "_480p",
                             VideoDescription: {
@@ -139,9 +190,14 @@ exports.handler = async (event) => {
                                     H264Settings: {
                                         RateControlMode: "QVBR",
                                         QvbrSettings: {
-                                            QvbrQualityLevel: 6
+                                            QvbrQualityLevel: 5
                                         },
-                                        MaxBitrate: 1500000
+                                        MaxBitrate: 1500000,
+                                        GopSize: 60,
+                                        GopSizeUnits: "FRAMES",
+                                        FramerateControl: "INITIALIZE_FROM_SOURCE",
+                                        FramerateNumerator: 30,
+                                        FramerateDenominator: 1
                                     }
                                 }
                             },
@@ -151,6 +207,40 @@ exports.handler = async (event) => {
                                     Codec: "AAC",
                                     AacSettings: {
                                         Bitrate: 96000,
+                                        CodingMode: "CODING_MODE_2_0",
+                                        SampleRate: 48000
+                                    }
+                                }
+                            }]
+                        },
+                        // 360p Quality for low bandwidth
+                        {
+                            NameModifier: "_360p",
+                            VideoDescription: {
+                                Width: 640,
+                                Height: 360,
+                                CodecSettings: {
+                                    Codec: "H_264",
+                                    H264Settings: {
+                                        RateControlMode: "QVBR",
+                                        QvbrSettings: {
+                                            QvbrQualityLevel: 4
+                                        },
+                                        MaxBitrate: 800000,
+                                        GopSize: 60,
+                                        GopSizeUnits: "FRAMES",
+                                        FramerateControl: "INITIALIZE_FROM_SOURCE",
+                                        FramerateNumerator: 30,
+                                        FramerateDenominator: 1
+                                    }
+                                }
+                            },
+                            AudioDescriptions: [{
+                                AudioSourceName: "Audio Selector 1",
+                                CodecSettings: {
+                                    Codec: "AAC",
+                                    AacSettings: {
+                                        Bitrate: 64000,
                                         CodingMode: "CODING_MODE_2_0",
                                         SampleRate: 48000
                                     }

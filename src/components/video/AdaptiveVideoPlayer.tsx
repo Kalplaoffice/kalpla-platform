@@ -1,232 +1,267 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { videoService } from '@/lib/videoService';
 import { 
-  PlayIcon,
-  PauseIcon,
-  SpeakerWaveIcon,
+  PlayIcon, 
+  PauseIcon, 
+  SpeakerWaveIcon, 
   SpeakerXMarkIcon,
-  ArrowsPointingOutIcon,
-  ArrowsPointingInIcon,
-  ForwardIcon,
-  BackwardIcon,
+  Cog6ToothIcon,
   ClockIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  SignalIcon,
-  WifiIcon
+  CheckCircleIcon
 } from '@heroicons/react/24/outline';
 
+interface AdaptiveVideoPlayerProps {
+  lessonId: string;
+  onProgress?: (progress: number) => void;
+  onComplete?: () => void;
+  autoplay?: boolean;
+  showControls?: boolean;
+}
+
 interface VideoQuality {
-  id: string;
-  label: string;
-  resolution: string;
+  quality: string;
   bitrate: number;
   url: string;
-  isDefault?: boolean;
+  resolution?: string;
+  codec?: string;
 }
 
-interface AdaptiveVideoPlayerProps {
-  videoQualities: VideoQuality[];
-  title: string;
-  duration?: number;
-  onTimeUpdate?: (currentTime: number) => void;
-  onVideoEnd?: () => void;
-  onVideoStart?: () => void;
-  onQualityChange?: (quality: VideoQuality) => void;
-  className?: string;
-  autoPlay?: boolean;
-  showControls?: boolean;
-  enableAdaptiveBitrate?: boolean;
-}
-
-export function AdaptiveVideoPlayer({
-  videoQualities,
-  title,
-  duration,
-  onTimeUpdate,
-  onVideoEnd,
-  onVideoStart,
-  onQualityChange,
-  className = '',
-  autoPlay = false,
-  showControls = true,
-  enableAdaptiveBitrate = true
+export function AdaptiveVideoPlayer({ 
+  lessonId, 
+  onProgress, 
+  onComplete, 
+  autoplay = false,
+  showControls = true 
 }: AdaptiveVideoPlayerProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showControls, setShowControls] = useState(showControls);
-  const [controlsTimeout, setControlsTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [currentQuality, setCurrentQuality] = useState<VideoQuality | null>(null);
-  const [availableQualities, setAvailableQualities] = useState<VideoQuality[]>([]);
+  const [qualities, setQualities] = useState<VideoQuality[]>([]);
+  const [currentQuality, setCurrentQuality] = useState<string>('auto');
   const [showQualityMenu, setShowQualityMenu] = useState(false);
-  const [networkSpeed, setNetworkSpeed] = useState<number>(0);
-  const [bufferHealth, setBufferHealth] = useState(0);
-  const [isBuffering, setIsBuffering] = useState(false);
+  const [processingStatus, setProcessingStatus] = useState<string>('idle');
+  const [manifestUrl, setManifestUrl] = useState<string | null>(null);
+  
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize with default quality
+  // Load video manifest and qualities
   useEffect(() => {
-    if (videoQualities.length > 0) {
-      const defaultQuality = videoQualities.find(q => q.isDefault) || videoQualities[0];
-      setCurrentQuality(defaultQuality);
-      setAvailableQualities(videoQualities);
-    }
-  }, [videoQualities]);
-
-  // Monitor network speed and buffer health
-  useEffect(() => {
-    if (!videoRef.current || !enableAdaptiveBitrate) return;
-
-    const video = videoRef.current;
-    let lastTime = 0;
-    let lastBytes = 0;
-
-    const handleProgress = () => {
-      if (video.buffered.length > 0) {
-        const bufferedEnd = video.buffered.end(video.buffered.length - 1);
-        const bufferHealth = ((bufferedEnd - video.currentTime) / video.duration) * 100;
-        setBufferHealth(Math.max(0, Math.min(100, bufferHealth)));
-      }
-    };
-
-    const handleLoadStart = () => {
-      setIsBuffering(true);
-    };
-
-    const handleCanPlay = () => {
-      setIsBuffering(false);
-    };
-
-    const handleWaiting = () => {
-      setIsBuffering(true);
-    };
-
-    const handlePlaying = () => {
-      setIsBuffering(false);
-    };
-
-    // Estimate network speed
-    const estimateNetworkSpeed = () => {
-      if (video.networkState === 2) { // NETWORK_LOADING
-        const currentTime = Date.now();
-        const currentBytes = video.buffered.length > 0 ? video.buffered.end(0) : 0;
+    const loadVideoData = async () => {
+      try {
+        setIsLoading(true);
         
-        if (lastTime > 0) {
-          const timeDiff = (currentTime - lastTime) / 1000;
-          const bytesDiff = currentBytes - lastBytes;
-          const speed = (bytesDiff * 8) / timeDiff; // bits per second
-          setNetworkSpeed(speed);
+        // Check processing status first
+        const status = await videoService.getProcessingStatus(lessonId);
+        setProcessingStatus(status);
+        
+        if (status === 'COMPLETED') {
+          // Get manifest URL for HLS streaming
+          const manifest = await videoService.getVideoManifestUrl(lessonId);
+          setManifestUrl(manifest);
+          
+          // Get available qualities
+          const videoQualities = await videoService.getVideoQualities(lessonId);
+          setQualities(videoQualities);
+          
+          // Set default quality to highest available
+          if (videoQualities.length > 0) {
+            setCurrentQuality(videoQualities[0].quality);
+          }
+        } else if (status === 'PROCESSING') {
+          // Poll for status updates
+          const interval = setInterval(async () => {
+            const newStatus = await videoService.getProcessingStatus(lessonId);
+            setProcessingStatus(newStatus);
+            
+            if (newStatus === 'COMPLETED') {
+              clearInterval(interval);
+              await loadVideoData();
+            } else if (newStatus === 'FAILED') {
+              clearInterval(interval);
+              setError('Video processing failed');
+            }
+          }, 5000);
+          
+          return () => clearInterval(interval);
+        } else if (status === 'FAILED') {
+          setError('Video processing failed');
         }
-        
-        lastTime = currentTime;
-        lastBytes = currentBytes;
+      } catch (err: any) {
+        setError(err.message || 'Failed to load video');
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    video.addEventListener('progress', handleProgress);
-    video.addEventListener('loadstart', handleLoadStart);
-    video.addEventListener('canplay', handleCanPlay);
-    video.addEventListener('waiting', handleWaiting);
-    video.addEventListener('playing', handlePlaying);
-    video.addEventListener('timeupdate', estimateNetworkSpeed);
+    loadVideoData();
+  }, [lessonId]);
+
+  // Set up video element
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !manifestUrl) return;
+
+    // Set up HLS.js for adaptive streaming
+    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      // Native HLS support (Safari)
+      video.src = manifestUrl;
+    } else {
+      // Use HLS.js for other browsers
+      import('hls.js').then((Hls) => {
+        if (Hls.default.isSupported()) {
+          const hls = new Hls.default({
+            enableWorker: true,
+            lowLatencyMode: true,
+            backBufferLength: 90
+          });
+          
+          hls.loadSource(manifestUrl);
+          hls.attachMedia(video);
+          
+          hls.on(Hls.default.Events.MANIFEST_PARSED, () => {
+            console.log('HLS manifest parsed');
+          });
+          
+          hls.on(Hls.default.Events.ERROR, (event, data) => {
+            console.error('HLS error:', data);
+            if (data.fatal) {
+              setError('Video playback error');
+            }
+          });
+          
+          return () => {
+            hls.destroy();
+          };
+        } else {
+          setError('HLS not supported in this browser');
+        }
+      });
+    }
+
+    // Set up event listeners
+    const handleLoadedMetadata = () => {
+      setDuration(video.duration);
+      setIsLoading(false);
+    };
+
+    const handleTimeUpdate = () => {
+      setCurrentTime(video.currentTime);
+      const progress = (video.currentTime / video.duration) * 100;
+      onProgress?.(progress);
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      onComplete?.();
+    };
+
+    const handleError = () => {
+      setError('Video playback error');
+      setIsLoading(false);
+    };
+
+    video.addEventListener('loadedmetadata', handleLoadedMetadata);
+    video.addEventListener('timeupdate', handleTimeUpdate);
+    video.addEventListener('ended', handleEnded);
+    video.addEventListener('error', handleError);
 
     return () => {
-      video.removeEventListener('progress', handleProgress);
-      video.removeEventListener('loadstart', handleLoadStart);
-      video.removeEventListener('canplay', handleCanPlay);
-      video.removeEventListener('waiting', handleWaiting);
-      video.removeEventListener('playing', handlePlaying);
-      video.removeEventListener('timeupdate', estimateNetworkSpeed);
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+      video.removeEventListener('ended', handleEnded);
+      video.removeEventListener('error', handleError);
     };
-  }, [enableAdaptiveBitrate]);
+  }, [manifestUrl, onProgress, onComplete]);
 
-  // Adaptive bitrate logic
+  // Track video progress
   useEffect(() => {
-    if (!enableAdaptiveBitrate || !currentQuality) return;
-
-    const video = videoRef.current;
-    if (!video) return;
-
-    // Check if we need to switch quality
-    const shouldSwitchQuality = () => {
-      if (bufferHealth < 10 && networkSpeed > 0) {
-        // Buffer is low, try to switch to lower quality
-        const currentIndex = availableQualities.findIndex(q => q.id === currentQuality.id);
-        if (currentIndex > 0) {
-          const lowerQuality = availableQualities[currentIndex - 1];
-          switchToQuality(lowerQuality);
-          return true;
+    if (isPlaying && currentTime > 0) {
+      progressIntervalRef.current = setInterval(async () => {
+        try {
+          await videoService.updateVideoProgress({
+            lessonId,
+            lastPosition: currentTime,
+            duration,
+            percentWatched: (currentTime / duration) * 100,
+            completed: currentTime >= duration * 0.95,
+            timeSpent: currentTime,
+            device: navigator.userAgent,
+            sessionId: Date.now().toString()
+          }, 'current-user-id'); // This should come from auth context
+        } catch (error) {
+          console.error('Error updating video progress:', error);
         }
-      } else if (bufferHealth > 30 && networkSpeed > 0) {
-        // Buffer is healthy, try to switch to higher quality
-        const currentIndex = availableQualities.findIndex(q => q.id === currentQuality.id);
-        if (currentIndex < availableQualities.length - 1) {
-          const higherQuality = availableQualities[currentIndex + 1];
-          if (networkSpeed > higherQuality.bitrate * 1.5) {
-            switchToQuality(higherQuality);
-            return true;
-          }
-        }
+      }, 10000); // Update every 10 seconds
+    } else {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
       }
-      return false;
+    }
+
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
     };
+  }, [isPlaying, currentTime, duration, lessonId]);
 
-    const switchToQuality = (quality: VideoQuality) => {
-      if (quality.id === currentQuality.id) return;
-      
-      const currentTime = video.currentTime;
-      const wasPlaying = !video.paused;
-      
-      setCurrentQuality(quality);
-      video.src = quality.url;
-      video.load();
-      
-      video.addEventListener('loadeddata', () => {
-        video.currentTime = currentTime;
-        if (wasPlaying) {
-          video.play();
-        }
-      }, { once: true });
-      
-      onQualityChange?.(quality);
-    };
-
-    // Check quality every 5 seconds
-    const interval = setInterval(shouldSwitchQuality, 5000);
-    
-    return () => clearInterval(interval);
-  }, [currentQuality, bufferHealth, networkSpeed, enableAdaptiveBitrate, availableQualities, onQualityChange]);
-
-  const handleQualitySelect = (quality: VideoQuality) => {
-    if (quality.id === currentQuality?.id) return;
-    
+  const togglePlay = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
-    
-    const currentTime = video.currentTime;
-    const wasPlaying = !video.paused;
-    
+
+    if (video.paused) {
+      video.play();
+      setIsPlaying(true);
+    } else {
+      video.pause();
+      setIsPlaying(false);
+    }
+  }, []);
+
+  const handleSeek = useCallback((time: number) => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.currentTime = time;
+    setCurrentTime(time);
+  }, []);
+
+  const handleVolumeChange = useCallback((newVolume: number) => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    video.volume = newVolume;
+    setVolume(newVolume);
+    setIsMuted(newVolume === 0);
+  }, []);
+
+  const toggleMute = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (video.muted) {
+      video.muted = false;
+      setIsMuted(false);
+    } else {
+      video.muted = true;
+      setIsMuted(true);
+    }
+  }, []);
+
+  const changeQuality = useCallback((quality: string) => {
     setCurrentQuality(quality);
-    video.src = quality.url;
-    video.load();
-    
-    video.addEventListener('loadeddata', () => {
-      video.currentTime = currentTime;
-      if (wasPlaying) {
-        video.play();
-      }
-    }, { once: true });
-    
-    onQualityChange?.(quality);
     setShowQualityMenu(false);
-  };
+    
+    // HLS.js quality switching would be handled here
+    // For now, we'll rely on adaptive streaming
+  }, []);
 
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
@@ -234,184 +269,96 @@ export function AdaptiveVideoPlayer({
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  const formatBitrate = (bitrate: number) => {
-    if (bitrate >= 1000000) {
-      return `${(bitrate / 1000000).toFixed(1)} Mbps`;
-    } else if (bitrate >= 1000) {
-      return `${(bitrate / 1000).toFixed(0)} Kbps`;
-    }
-    return `${bitrate} bps`;
+  const getProgressPercentage = () => {
+    if (duration === 0) return 0;
+    return (currentTime / duration) * 100;
   };
 
-  const getNetworkSpeedLabel = (speed: number) => {
-    if (speed >= 1000000) {
-      return 'Fast';
-    } else if (speed >= 500000) {
-      return 'Good';
-    } else if (speed >= 100000) {
-      return 'Fair';
-    }
-    return 'Slow';
-  };
-
-  const getNetworkSpeedColor = (speed: number) => {
-    if (speed >= 1000000) {
-      return 'text-green-500';
-    } else if (speed >= 500000) {
-      return 'text-blue-500';
-    } else if (speed >= 100000) {
-      return 'text-yellow-500';
-    }
-    return 'text-red-500';
-  };
-
-  if (error) {
+  if (processingStatus === 'PROCESSING') {
     return (
-      <div className={`bg-gray-900 rounded-lg flex items-center justify-center ${className}`}>
-        <div className="text-center text-white">
-          <ExclamationTriangleIcon className="h-12 w-12 mx-auto mb-4 text-red-500" />
-          <p className="text-lg font-medium">{error}</p>
-          <p className="text-sm text-gray-400 mt-2">Please try refreshing the page</p>
-        </div>
+      <div className="bg-gray-900 rounded-lg p-8 text-center">
+        <ClockIcon className="h-12 w-12 text-yellow-500 mx-auto mb-4 animate-spin" />
+        <h3 className="text-lg font-medium text-white mb-2">Processing Video</h3>
+        <p className="text-gray-400">
+          Your video is being processed for adaptive streaming. This may take a few minutes.
+        </p>
+      </div>
+    );
+  }
+
+  if (processingStatus === 'FAILED' || error) {
+    return (
+      <div className="bg-gray-900 rounded-lg p-8 text-center">
+        <div className="h-12 w-12 text-red-500 mx-auto mb-4">⚠️</div>
+        <h3 className="text-lg font-medium text-white mb-2">Video Error</h3>
+        <p className="text-gray-400">
+          {error || 'Failed to process video. Please try again later.'}
+        </p>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="bg-gray-900 rounded-lg p-8 text-center">
+        <div className="h-12 w-12 text-blue-500 mx-auto mb-4 animate-pulse">📹</div>
+        <h3 className="text-lg font-medium text-white mb-2">Loading Video</h3>
+        <p className="text-gray-400">Preparing video for playback...</p>
       </div>
     );
   }
 
   return (
-    <div className={`relative bg-gray-900 rounded-lg overflow-hidden ${className}`}>
+    <div className="relative bg-black rounded-lg overflow-hidden">
+      {/* Video Element */}
       <video
         ref={videoRef}
-        src={currentQuality?.url || ''}
         className="w-full h-full"
-        autoPlay={autoPlay}
-        onLoadStart={() => setIsLoading(true)}
-        onLoadedMetadata={() => {
-          setDuration(videoRef.current?.duration || 0);
-          setIsLoading(false);
-        }}
-        onTimeUpdate={() => {
-          const time = videoRef.current?.currentTime || 0;
-          setCurrentTime(time);
-          onTimeUpdate?.(time);
-        }}
-        onEnded={() => {
-          setIsPlaying(false);
-          onVideoEnd?.();
-        }}
-        onPlay={() => {
-          setIsPlaying(true);
-          onVideoStart?.();
-        }}
-        onPause={() => setIsPlaying(false)}
-        onError={() => setError('Failed to load video')}
-        onMouseMove={() => {
-          setShowControls(true);
-          if (controlsTimeout) {
-            clearTimeout(controlsTimeout);
-          }
-          const timeout = setTimeout(() => {
-            setShowControls(false);
-          }, 3000);
-          setControlsTimeout(timeout);
-        }}
+        poster="/images/video-placeholder.jpg"
+        onClick={togglePlay}
       />
-      
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-75">
-          <div className="text-center text-white">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-            <p className="text-lg font-medium">Loading video...</p>
-          </div>
-        </div>
-      )}
 
-      {isBuffering && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50">
-          <div className="text-center text-white">
-            <div className="animate-pulse rounded-full h-8 w-8 border-2 border-white mx-auto mb-2"></div>
-            <p className="text-sm">Buffering...</p>
-          </div>
-        </div>
-      )}
-
-      {showControls && !isLoading && (
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-4">
+      {/* Custom Controls */}
+      {showControls && (
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4">
           {/* Progress Bar */}
           <div className="mb-4">
-            <input
-              type="range"
-              min="0"
-              max={duration || 0}
-              value={currentTime}
-              onChange={(e) => {
-                const newTime = parseFloat(e.target.value);
-                if (videoRef.current) {
-                  videoRef.current.currentTime = newTime;
-                  setCurrentTime(newTime);
-                }
+            <div 
+              className="w-full h-1 bg-gray-600 rounded-full cursor-pointer"
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const clickX = e.clientX - rect.left;
+                const percentage = clickX / rect.width;
+                handleSeek(percentage * duration);
               }}
-              className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
-            />
+            >
+              <div 
+                className="h-full bg-blue-500 rounded-full transition-all duration-200"
+                style={{ width: `${getProgressPercentage()}%` }}
+              />
+            </div>
           </div>
 
-          {/* Controls */}
-          <div className="flex items-center justify-between text-white">
+          {/* Control Buttons */}
+          <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
+              {/* Play/Pause Button */}
               <button
-                onClick={() => {
-                  if (videoRef.current) {
-                    videoRef.current.currentTime = Math.max(videoRef.current.currentTime - 10, 0);
-                  }
-                }}
-                className="hover:text-gray-300 transition-colors"
-              >
-                <BackwardIcon className="h-6 w-6" />
-              </button>
-              
-              <button
-                onClick={() => {
-                  if (videoRef.current) {
-                    if (isPlaying) {
-                      videoRef.current.pause();
-                    } else {
-                      videoRef.current.play();
-                    }
-                  }
-                }}
-                className="hover:text-gray-300 transition-colors"
+                onClick={togglePlay}
+                className="text-white hover:text-blue-400 transition-colors"
               >
                 {isPlaying ? (
-                  <PauseIcon className="h-8 w-8" />
+                  <PauseIcon className="h-6 w-6" />
                 ) : (
-                  <PlayIcon className="h-8 w-8" />
+                  <PlayIcon className="h-6 w-6" />
                 )}
               </button>
-              
-              <button
-                onClick={() => {
-                  if (videoRef.current) {
-                    videoRef.current.currentTime = Math.min(videoRef.current.currentTime + 10, videoRef.current.duration);
-                  }
-                }}
-                className="hover:text-gray-300 transition-colors"
-              >
-                <ForwardIcon className="h-6 w-6" />
-              </button>
-              
+
+              {/* Volume Control */}
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => {
-                    if (videoRef.current) {
-                      if (isMuted) {
-                        videoRef.current.volume = volume;
-                        setIsMuted(false);
-                      } else {
-                        videoRef.current.volume = 0;
-                        setIsMuted(true);
-                      }
-                    }
-                  }}
-                  className="hover:text-gray-300 transition-colors"
+                  onClick={toggleMute}
+                  className="text-white hover:text-blue-400 transition-colors"
                 >
                   {isMuted ? (
                     <SpeakerXMarkIcon className="h-5 w-5" />
@@ -419,114 +366,63 @@ export function AdaptiveVideoPlayer({
                     <SpeakerWaveIcon className="h-5 w-5" />
                   )}
                 </button>
-                
                 <input
                   type="range"
                   min="0"
                   max="1"
                   step="0.1"
                   value={isMuted ? 0 : volume}
-                  onChange={(e) => {
-                    const newVolume = parseFloat(e.target.value);
-                    if (videoRef.current) {
-                      videoRef.current.volume = newVolume;
-                      setVolume(newVolume);
-                      setIsMuted(newVolume === 0);
-                    }
-                  }}
-                  className="w-20 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                  onChange={(e) => handleVolumeChange(parseFloat(e.target.value))}
+                  className="w-20 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer"
                 />
               </div>
+
+              {/* Time Display */}
+              <span className="text-white text-sm">
+                {formatTime(currentTime)} / {formatTime(duration)}
+              </span>
             </div>
 
             <div className="flex items-center space-x-4">
               {/* Quality Selector */}
-              <div className="relative">
-                <button
-                  onClick={() => setShowQualityMenu(!showQualityMenu)}
-                  className="flex items-center space-x-1 px-2 py-1 bg-gray-800 bg-opacity-50 rounded text-sm hover:bg-opacity-75 transition-colors"
-                >
-                  <span>{currentQuality?.label || 'Auto'}</span>
-                  <SignalIcon className="h-3 w-3" />
-                </button>
-                
-                {showQualityMenu && (
-                  <div className="absolute bottom-full right-0 mb-2 bg-gray-800 rounded-lg shadow-lg py-2 min-w-32">
-                    {availableQualities.map((quality) => (
-                      <button
-                        key={quality.id}
-                        onClick={() => handleQualitySelect(quality)}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-700 transition-colors ${
-                          quality.id === currentQuality?.id ? 'text-blue-400' : 'text-white'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span>{quality.label}</span>
-                          <span className="text-xs text-gray-400">{formatBitrate(quality.bitrate)}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Network Speed Indicator */}
-              {enableAdaptiveBitrate && networkSpeed > 0 && (
-                <div className="flex items-center space-x-1 text-xs">
-                  <WifiIcon className={`h-3 w-3 ${getNetworkSpeedColor(networkSpeed)}`} />
-                  <span className={getNetworkSpeedColor(networkSpeed)}>
-                    {getNetworkSpeedLabel(networkSpeed)}
-                  </span>
+              {qualities.length > 1 && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowQualityMenu(!showQualityMenu)}
+                    className="flex items-center space-x-1 text-white hover:text-blue-400 transition-colors"
+                  >
+                    <Cog6ToothIcon className="h-5 w-5" />
+                    <span className="text-sm">{currentQuality}</span>
+                  </button>
+                  
+                  {showQualityMenu && (
+                    <div className="absolute bottom-full right-0 mb-2 bg-black/90 rounded-lg py-2 min-w-32">
+                      {qualities.map((quality) => (
+                        <button
+                          key={quality.quality}
+                          onClick={() => changeQuality(quality.quality)}
+                          className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-700 transition-colors ${
+                            currentQuality === quality.quality ? 'text-blue-400' : 'text-white'
+                          }`}
+                        >
+                          {quality.quality} ({quality.bitrate}kbps)
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
-
-              <div className="flex items-center space-x-2">
-                <ClockIcon className="h-4 w-4" />
-                <span className="text-sm">
-                  {formatTime(currentTime)} / {formatTime(duration)}
-                </span>
-              </div>
-              
-              <button
-                onClick={() => {
-                  if (videoRef.current) {
-                    if (!isFullscreen) {
-                      if (videoRef.current.requestFullscreen) {
-                        videoRef.current.requestFullscreen();
-                      }
-                    } else {
-                      if (document.exitFullscreen) {
-                        document.exitFullscreen();
-                      }
-                    }
-                    setIsFullscreen(!isFullscreen);
-                  }
-                }}
-                className="hover:text-gray-300 transition-colors"
-              >
-                {isFullscreen ? (
-                  <ArrowsPointingInIcon className="h-5 w-5" />
-                ) : (
-                  <ArrowsPointingOutIcon className="h-5 w-5" />
-                )}
-              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Video Title */}
-      <div className="absolute top-4 left-4 right-4">
-        <h3 className="text-white text-lg font-medium bg-black bg-opacity-50 px-3 py-1 rounded">
-          {title}
-        </h3>
-      </div>
-
-      {/* Buffer Health Indicator */}
-      {enableAdaptiveBitrate && (
+      {/* Processing Complete Indicator */}
+      {processingStatus === 'COMPLETED' && (
         <div className="absolute top-4 right-4">
-          <div className="bg-black bg-opacity-50 px-2 py-1 rounded text-xs text-white">
-            Buffer: {Math.round(bufferHealth)}%
+          <div className="flex items-center space-x-2 bg-green-500/90 text-white px-3 py-1 rounded-full text-sm">
+            <CheckCircleIcon className="h-4 w-4" />
+            <span>Ready</span>
           </div>
         </div>
       )}

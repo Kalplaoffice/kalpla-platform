@@ -1,0 +1,20 @@
+{
+  "name": "notifyUserStatusChange",
+  "runtime": "nodejs18.x",
+  "handler": "index.handler",
+  "description": "Sends email notifications when user status changes (suspended/reactivated)",
+  "environment": {
+    "SES_FROM_EMAIL": "support@kalpla.com",
+    "SES_REPLY_TO_EMAIL": "support@kalpla.com"
+  },
+  "permissions": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ses:SendEmail",
+        "ses:SendRawEmail"
+      ],
+      "Resource": "*"
+    }
+  ]
+}

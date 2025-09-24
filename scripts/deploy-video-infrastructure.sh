@@ -1,18 +1,15 @@
 #!/bin/bash
 
-# Kalpla Video Player Infrastructure Deployment Script
-# This script deploys the complete video infrastructure to AWS
+# Kalpla Video Infrastructure Deployment Script
+# This script deploys the video infrastructure including S3, CloudFront, MediaConvert, and Lambda functions
 
 set -e
 
 # Configuration
 STACK_NAME="kalpla-video-infrastructure"
-ENVIRONMENT="dev"
-REGION="us-east-1"
-CLOUDFRONT_DOMAIN="d1234567890.cloudfront.net"
-CLOUDFRONT_KEY_PAIR_ID="K2JCJMDEHXQW6F"
-JWT_SECRET="your-secret-key-$(date +%s)"
-ALLOWED_ORIGINS="http://localhost:3000,https://kalpla.com"
+ENVIRONMENT=${1:-dev}
+REGION=${2:-us-east-1}
+TEMPLATE_FILE="cloudformation/video-infrastructure.yaml"
 
 # Colors for output
 RED='\033[0;31m'
@@ -38,225 +35,181 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Function to check if AWS CLI is configured
+# Check if AWS CLI is installed
 check_aws_cli() {
-    print_status "Checking AWS CLI configuration..."
-    
     if ! command -v aws &> /dev/null; then
         print_error "AWS CLI is not installed. Please install it first."
         exit 1
     fi
-    
-    if ! aws sts get-caller-identity &> /dev/null; then
-        print_error "AWS CLI is not configured. Please run 'aws configure' first."
-        exit 1
-    fi
-    
-    print_success "AWS CLI is configured"
 }
 
-# Function to check if CloudFormation template exists
+# Check if template file exists
 check_template() {
-    print_status "Checking CloudFormation template..."
-    
-    if [ ! -f "cloudformation/video-infrastructure.yaml" ]; then
-        print_error "CloudFormation template not found at cloudformation/video-infrastructure.yaml"
+    if [ ! -f "$TEMPLATE_FILE" ]; then
+        print_error "Template file $TEMPLATE_FILE not found."
         exit 1
     fi
-    
-    print_success "CloudFormation template found"
 }
 
-# Function to validate CloudFormation template
+# Validate CloudFormation template
 validate_template() {
     print_status "Validating CloudFormation template..."
-    
-    aws cloudformation validate-template \
-        --template-body file://cloudformation/video-infrastructure.yaml \
-        --region $REGION
-    
-    if [ $? -eq 0 ]; then
-        print_success "CloudFormation template is valid"
+    if aws cloudformation validate-template --template-body file://$TEMPLATE_FILE --region $REGION; then
+        print_success "Template validation successful"
     else
-        print_error "CloudFormation template validation failed"
+        print_error "Template validation failed"
         exit 1
     fi
 }
 
-# Function to deploy CloudFormation stack
+# Deploy CloudFormation stack
 deploy_stack() {
-    print_status "Deploying CloudFormation stack: $STACK_NAME"
+    print_status "Deploying CloudFormation stack: $STACK_NAME-$ENVIRONMENT"
     
-    aws cloudformation deploy \
-        --template-file cloudformation/video-infrastructure.yaml \
-        --stack-name $STACK_NAME \
-        --parameter-overrides \
-            Environment=$ENVIRONMENT \
-            CloudFrontDomain=$CLOUDFRONT_DOMAIN \
-            CloudFrontKeyPairId=$CLOUDFRONT_KEY_PAIR_ID \
-            JWTSecret=$JWT_SECRET \
-            AllowedOrigins=$ALLOWED_ORIGINS \
-        --capabilities CAPABILITY_IAM \
-        --region $REGION
-    
-    if [ $? -eq 0 ]; then
-        print_success "CloudFormation stack deployed successfully"
+    # Check if stack exists
+    if aws cloudformation describe-stacks --stack-name "$STACK_NAME-$ENVIRONMENT" --region $REGION &> /dev/null; then
+        print_status "Stack exists, updating..."
+        aws cloudformation update-stack \
+            --stack-name "$STACK_NAME-$ENVIRONMENT" \
+            --template-body file://$TEMPLATE_FILE \
+            --parameters ParameterKey=Environment,ParameterValue=$ENVIRONMENT \
+                       ParameterKey=CloudFrontDomain,ParameterValue="d1234567890.cloudfront.net" \
+                       ParameterKey=CloudFrontKeyPairId,ParameterValue="K2JCJMDEHXQW6F" \
+                       ParameterKey=JWTSecret,ParameterValue="your-secret-key" \
+                       ParameterKey=AllowedOrigins,ParameterValue="http://localhost:3000,https://kalpla.com" \
+            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+            --region $REGION
     else
-        print_error "CloudFormation stack deployment failed"
-        exit 1
+        print_status "Creating new stack..."
+        aws cloudformation create-stack \
+            --stack-name "$STACK_NAME-$ENVIRONMENT" \
+            --template-body file://$TEMPLATE_FILE \
+            --parameters ParameterKey=Environment,ParameterValue=$ENVIRONMENT \
+                       ParameterKey=CloudFrontDomain,ParameterValue="d1234567890.cloudfront.net" \
+                       ParameterKey=CloudFrontKeyPairId,ParameterValue="K2JCJMDEHXQW6F" \
+                       ParameterKey=JWTSecret,ParameterValue="your-secret-key" \
+                       ParameterKey=AllowedOrigins,ParameterValue="http://localhost:3000,https://kalpla.com" \
+            --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
+            --region $REGION
     fi
+    
+    print_status "Waiting for stack deployment to complete..."
+    aws cloudformation wait stack-update-complete --stack-name "$STACK_NAME-$ENVIRONMENT" --region $REGION || \
+    aws cloudformation wait stack-create-complete --stack-name "$STACK_NAME-$ENVIRONMENT" --region $REGION
+    
+    print_success "Stack deployment completed successfully"
 }
 
-# Function to get stack outputs
+# Get stack outputs
 get_outputs() {
-    print_status "Getting stack outputs..."
-    
+    print_status "Retrieving stack outputs..."
     aws cloudformation describe-stacks \
-        --stack-name $STACK_NAME \
+        --stack-name "$STACK_NAME-$ENVIRONMENT" \
         --region $REGION \
         --query 'Stacks[0].Outputs' \
         --output table
 }
 
-# Function to update Lambda function code
-update_lambda_code() {
-    print_status "Updating Lambda function code..."
+# Deploy Lambda functions
+deploy_lambda_functions() {
+    print_status "Deploying Lambda functions..."
     
-    # Create deployment package
-    cd amplify/backend/function/videoAccessManager/src
-    npm install
-    zip -r ../../../video-access-manager.zip .
-    cd ../../../../..
+    # Deploy video upload processor
+    if [ -d "amplify/backend/function/videoUploadProcessor" ]; then
+        print_status "Deploying video upload processor..."
+        cd amplify/backend/function/videoUploadProcessor
+        npm install
+        zip -r ../../../../video-upload-processor.zip .
+        cd ../../../../
+        
+        # Update Lambda function code
+        aws lambda update-function-code \
+            --function-name "videoUploadProcessor-$ENVIRONMENT" \
+            --zip-file fileb://video-upload-processor.zip \
+            --region $REGION
+        
+        rm video-upload-processor.zip
+        print_success "Video upload processor deployed"
+    fi
     
-    # Update Lambda function
-    aws lambda update-function-code \
-        --function-name VideoAccessManager-$ENVIRONMENT \
-        --zip-file fileb://amplify/backend/function/videoAccessManager/video-access-manager.zip \
-        --region $REGION
-    
-    if [ $? -eq 0 ]; then
-        print_success "Lambda function code updated successfully"
-    else
-        print_error "Lambda function code update failed"
-        exit 1
+    # Deploy video signed URL generator
+    if [ -d "amplify/backend/function/videoSignedUrlGenerator" ]; then
+        print_status "Deploying video signed URL generator..."
+        cd amplify/backend/function/videoSignedUrlGenerator
+        npm install
+        zip -r ../../../../video-signed-url-generator.zip .
+        cd ../../../../
+        
+        # Update Lambda function code
+        aws lambda update-function-code \
+            --function-name "videoSignedUrlGenerator-$ENVIRONMENT" \
+            --zip-file fileb://video-signed-url-generator.zip \
+            --region $REGION
+        
+        rm video-signed-url-generator.zip
+        print_success "Video signed URL generator deployed"
     fi
 }
 
-# Function to create sample data
-create_sample_data() {
-    print_status "Creating sample data..."
+# Test video infrastructure
+test_infrastructure() {
+    print_status "Testing video infrastructure..."
     
-    # Create sample course enrollment
-    aws dynamodb put-item \
-        --table-name CourseEnrollments-$ENVIRONMENT \
-        --item '{
-            "userId": {"S": "sample-user-123"},
-            "courseId": {"S": "course-1"},
-            "enrolledAt": {"S": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"},
-            "status": {"S": "active"}
-        }' \
-        --region $REGION
-    
-    # Create sample lesson
-    aws dynamodb put-item \
-        --table-name Lessons-$ENVIRONMENT \
-        --item '{
-            "id": {"S": "lesson-1"},
-            "courseId": {"S": "course-1"},
-            "title": {"S": "Introduction to Business Model Canvas"},
-            "description": {"S": "Understanding the nine building blocks of a business model"},
-            "type": {"S": "video"},
-            "duration": {"N": "1200"},
-            "videoPath": {"S": "/videos/intro-bmc.mp4"},
-            "order": {"N": "1"},
-            "isLocked": {"BOOL": false}
-        }' \
-        --region $REGION
-    
-    print_success "Sample data created successfully"
-}
-
-# Function to test the deployment
-test_deployment() {
-    print_status "Testing deployment..."
-    
-    # Get API Gateway URL
-    API_URL=$(aws cloudformation describe-stacks \
-        --stack-name $STACK_NAME \
+    # Test S3 bucket access
+    BUCKET_NAME=$(aws cloudformation describe-stacks \
+        --stack-name "$STACK_NAME-$ENVIRONMENT" \
         --region $REGION \
-        --query 'Stacks[0].Outputs[?OutputKey==`VideoAccessManagerAPIUrl`].OutputValue' \
+        --query 'Stacks[0].Outputs[?OutputKey==`VideoStorageBucketName`].OutputValue' \
         --output text)
     
-    if [ -z "$API_URL" ]; then
-        print_error "Could not get API Gateway URL"
-        exit 1
+    if [ -n "$BUCKET_NAME" ]; then
+        print_success "S3 bucket created: $BUCKET_NAME"
+        
+        # Test bucket permissions
+        if aws s3 ls "s3://$BUCKET_NAME" --region $REGION &> /dev/null; then
+            print_success "S3 bucket access confirmed"
+        else
+            print_warning "S3 bucket access test failed"
+        fi
+    else
+        print_error "Failed to get S3 bucket name"
     fi
     
-    print_status "API Gateway URL: $API_URL"
+    # Test MediaConvert
+    MEDIACONVERT_ROLE=$(aws cloudformation describe-stacks \
+        --stack-name "$STACK_NAME-$ENVIRONMENT" \
+        --region $REGION \
+        --query 'Stacks[0].Outputs[?OutputKey==`MediaConvertRoleArn`].OutputValue' \
+        --output text)
     
-    # Test API endpoint
-    print_status "Testing API endpoint..."
-    
-    # Note: This test will fail without proper authentication
-    # In a real scenario, you would need to provide a valid JWT token
-    curl -X GET "$API_URL/access-check/course-1/lesson-1" \
-        -H "Content-Type: application/json" \
-        -w "\nHTTP Status: %{http_code}\n" \
-        --max-time 10
-    
-    print_success "Deployment test completed"
-}
-
-# Function to display deployment summary
-display_summary() {
-    print_status "Deployment Summary"
-    echo "=================="
-    echo "Stack Name: $STACK_NAME"
-    echo "Environment: $ENVIRONMENT"
-    echo "Region: $REGION"
-    echo "CloudFront Domain: $CLOUDFRONT_DOMAIN"
-    echo "JWT Secret: $JWT_SECRET"
-    echo ""
-    
-    print_status "Next Steps:"
-    echo "1. Update your frontend environment variables with the API Gateway URL"
-    echo "2. Configure CloudFront key pair for signed URLs"
-    echo "3. Upload sample videos to the S3 bucket"
-    echo "4. Test the video player functionality"
-    echo ""
-    
-    print_status "Useful Commands:"
-    echo "aws cloudformation describe-stacks --stack-name $STACK_NAME --region $REGION"
-    echo "aws dynamodb list-tables --region $REGION"
-    echo "aws s3 ls s3://kalpla-videos-$ENVIRONMENT-$AWS_ACCOUNT_ID --region $REGION"
+    if [ -n "$MEDIACONVERT_ROLE" ]; then
+        print_success "MediaConvert role created: $MEDIACONVERT_ROLE"
+    else
+        print_error "Failed to get MediaConvert role"
+    fi
 }
 
 # Main execution
 main() {
-    print_status "Starting Kalpla Video Player Infrastructure Deployment"
-    echo "=========================================================="
+    print_status "Starting Kalpla Video Infrastructure Deployment"
+    print_status "Environment: $ENVIRONMENT"
+    print_status "Region: $REGION"
+    print_status "Stack Name: $STACK_NAME-$ENVIRONMENT"
     
-    # Check prerequisites
     check_aws_cli
     check_template
-    
-    # Deploy infrastructure
     validate_template
     deploy_stack
+    deploy_lambda_functions
+    test_infrastructure
+    get_outputs
     
-    # Update Lambda code
-    update_lambda_code
-    
-    # Create sample data
-    create_sample_data
-    
-    # Test deployment
-    test_deployment
-    
-    # Display summary
-    display_summary
-    
-    print_success "Video Player Infrastructure Deployment Completed Successfully!"
+    print_success "Video infrastructure deployment completed successfully!"
+    print_status "Next steps:"
+    print_status "1. Update your application configuration with the stack outputs"
+    print_status "2. Configure CloudFront distribution settings"
+    print_status "3. Set up MediaConvert job templates"
+    print_status "4. Test video upload and processing workflow"
 }
 
 # Run main function

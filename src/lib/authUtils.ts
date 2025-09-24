@@ -1,5 +1,3 @@
-import MockAuthService from './mockAuthService';
-
 export interface User {
   username?: string;
   email?: string;
@@ -20,16 +18,15 @@ export interface User {
 export function getUserRole(user: User | null): string {
   if (!user) return 'Guest';
   
+  // Use the role from user object (from Cognito attributes)
   if (user.role) {
     return user.role;
   }
   
-  // Check for Cognito groups in user attributes
+  // Fallback: Check specific users for their roles (legacy)
   if (user.signInDetails?.loginId) {
-    // This is a real Cognito user
     const email = user.signInDetails.loginId;
     
-    // Check specific users for their roles
     if (email === 'learncapacademy@gmail.com') {
       return 'Admin';
     } else if (email === 'jnaneshshetty08@gmail.com') {
@@ -44,11 +41,6 @@ export function getUserRole(user: User | null): string {
     if (user.signInDetails.groups && user.signInDetails.groups.length > 0) {
       return user.signInDetails.groups[0];
     }
-  }
-  
-  // Check mock auth service
-  if (MockAuthService.isUserAuthenticated()) {
-    return MockAuthService.getUserRole();
   }
   
   return 'Guest';
@@ -82,5 +74,5 @@ export function getDashboardPath(user: User | null): string {
  * Check if user is authenticated
  */
 export function isUserAuthenticated(user: User | null): boolean {
-  return user !== null || MockAuthService.isUserAuthenticated();
+  return user !== null;
 }

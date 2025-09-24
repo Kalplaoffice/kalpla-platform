@@ -1,356 +1,352 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRoleBasedAccess } from '@/hooks/useRoleBasedAccess';
-import { AdminLayout } from '@/components/admin/AdminLayout';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
-  CheckCircleIcon, 
-  XCircleIcon, 
-  ClockIcon,
   EyeIcon,
-  DocumentTextIcon,
-  UserIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ClockIcon,
+  ExclamationTriangleIcon,
+  MagnifyingGlassIcon,
+  FunnelIcon,
   CalendarIcon,
-  AcademicCapIcon
+  UserIcon,
+  DocumentTextIcon,
+  PlayIcon,
+  QuestionMarkCircleIcon
 } from '@heroicons/react/24/outline';
+import Image from 'next/image';
+import kalplaLogo from '@/assets/images/kalpla-logo.svg';
+import { courseApprovalService, CourseApproval, ApprovalStatus } from '@/lib/courseApprovalService';
 
-interface CourseApproval {
-  id: string;
-  title: string;
-  instructor: string;
-  category: string;
-  submittedDate: string;
-  status: 'pending' | 'approved' | 'rejected';
-  description: string;
-  duration: string;
-  level: string;
-  price: number;
-}
-
-export default function CourseApprovalsPage() {
-  const { user } = useRoleBasedAccess();
+export default function AdminApprovalsPage() {
+  const router = useRouter();
   const [approvals, setApprovals] = useState<CourseApproval[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedStatus, setSelectedStatus] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<ApprovalStatus | 'all'>('all');
+  const [stats, setStats] = useState({
+    totalSubmissions: 0,
+    pendingReview: 0,
+    approved: 0,
+    rejected: 0,
+    averageReviewTime: 0
+  });
 
   useEffect(() => {
-    // Mock data - replace with actual API call
-    const mockApprovals: CourseApproval[] = [
-      {
-        id: '1',
-        title: 'Advanced React Development',
-        instructor: 'Dr. Sarah Johnson',
-        category: 'Web Development',
-        submittedDate: '2024-01-15',
-        status: 'pending',
-        description: 'Comprehensive course covering advanced React concepts, hooks, and state management.',
-        duration: '8 weeks',
-        level: 'Intermediate',
-        price: 299
-      },
-      {
-        id: '2',
-        title: 'Machine Learning Fundamentals',
-        instructor: 'Prof. Michael Chen',
-        category: 'Data Science',
-        submittedDate: '2024-01-12',
-        status: 'approved',
-        description: 'Introduction to machine learning algorithms and practical applications.',
-        duration: '12 weeks',
-        level: 'Beginner',
-        price: 399
-      },
-      {
-        id: '3',
-        title: 'Digital Marketing Strategy',
-        instructor: 'Lisa Rodriguez',
-        category: 'Marketing',
-        submittedDate: '2024-01-10',
-        status: 'rejected',
-        description: 'Complete guide to digital marketing strategies and campaign management.',
-        duration: '6 weeks',
-        level: 'Beginner',
-        price: 199
-      }
-    ];
-    
-    setApprovals(mockApprovals);
-    setLoading(false);
+    loadData();
   }, []);
 
-  const filteredApprovals = selectedStatus === 'all' 
-    ? approvals 
-    : approvals.filter(approval => approval.status === selectedStatus);
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
-      case 'rejected':
-        return <XCircleIcon className="h-5 w-5 text-red-500" />;
-      default:
-        return <ClockIcon className="h-5 w-5 text-yellow-500" />;
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [approvalsData, statsData] = await Promise.all([
+        courseApprovalService.getPendingApprovals(),
+        courseApprovalService.getApprovalStats()
+      ]);
+      setApprovals(approvalsData);
+      setStats(statsData);
+    } catch (error) {
+      console.error('Error loading data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const filteredApprovals = approvals.filter(approval => {
+    const matchesSearch = approval.courseTitle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         approval.instructorName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || approval.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  const getStatusColor = (status: ApprovalStatus) => {
     switch (status) {
+      case 'submitted':
+        return 'bg-blue-100 text-blue-800';
+      case 'under_review':
+        return 'bg-yellow-100 text-yellow-800';
       case 'approved':
         return 'bg-green-100 text-green-800';
       case 'rejected':
         return 'bg-red-100 text-red-800';
       default:
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const handleApproval = (id: string, action: 'approve' | 'reject') => {
-    setApprovals(prev => 
-      prev.map(approval => 
-        approval.id === id 
-          ? { ...approval, status: action === 'approve' ? 'approved' : 'rejected' }
-          : approval
-      )
-    );
+  const getStatusIcon = (status: ApprovalStatus) => {
+    switch (status) {
+      case 'submitted':
+        return <DocumentTextIcon className="h-4 w-4 text-blue-500" />;
+      case 'under_review':
+        return <ClockIcon className="h-4 w-4 text-yellow-500" />;
+      case 'approved':
+        return <CheckCircleIcon className="h-4 w-4 text-green-500" />;
+      case 'rejected':
+        return <XCircleIcon className="h-4 w-4 text-red-500" />;
+      default:
+        return <DocumentTextIcon className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getDaysSinceSubmission = (submittedAt: string) => {
+    const days = Math.floor((Date.now() - new Date(submittedAt).getTime()) / (1000 * 60 * 60 * 24));
+    return days;
   };
 
   if (loading) {
     return (
-      <AdminLayout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading approvals...</p>
         </div>
-      </AdminLayout>
+      </div>
     );
   }
 
   return (
-    <AdminLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="md:flex md:items-center md:justify-between">
-          <div className="min-w-0 flex-1">
-            <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-              Course Approvals
-            </h2>
-            <p className="mt-1 text-sm text-gray-500">
-              Review and approve course submissions from instructors
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center">
+              <Image
+                src={kalplaLogo}
+                alt="Kalpla"
+                width={32}
+                height={32}
+                className="h-8 w-auto"
+              />
+              <span className="ml-2 text-lg font-medium text-gray-900">Course Approvals</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <DocumentTextIcon className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Submissions</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalSubmissions}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <ClockIcon className="h-6 w-6 text-yellow-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Pending Review</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.pendingReview}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CheckCircleIcon className="h-6 w-6 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Approved</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.approved}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <XCircleIcon className="h-6 w-6 text-red-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Rejected</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.rejected}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <CalendarIcon className="h-6 w-6 text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Avg Review Time</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.averageReviewTime}h</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Filters and Search */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <div className="relative">
+                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search courses or instructors..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            </div>
+            
+            <div className="flex gap-4">
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as ApprovalStatus | 'all')}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="all">All Status</option>
+                <option value="submitted">Submitted</option>
+                <option value="under_review">Under Review</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Approvals List */}
+        {filteredApprovals.length === 0 ? (
+          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+            <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-4 text-lg font-medium text-gray-900">No approvals found</h3>
+            <p className="mt-2 text-gray-600">
+              {approvals.length === 0 
+                ? "No course approvals have been submitted yet."
+                : "No approvals match your current filters."
+              }
             </p>
           </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <ClockIcon className="h-6 w-6 text-yellow-500" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Pending Reviews
-                    </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {approvals.filter(a => a.status === 'pending').length}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900">Course Approvals</h2>
             </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <CheckCircleIcon className="h-6 w-6 text-green-500" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Approved
-                    </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {approvals.filter(a => a.status === 'approved').length}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex-shrink-0">
-                <XCircleIcon className="h-6 w-6 text-red-500" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Rejected
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {approvals.filter(a => a.status === 'rejected').length}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white overflow-hidden shadow rounded-lg">
-            <div className="p-5">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <AcademicCapIcon className="h-6 w-6 text-blue-500" />
-                </div>
-                <div className="ml-5 w-0 flex-1">
-                  <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">
-                      Total Courses
-                    </dt>
-                    <dd className="text-lg font-medium text-gray-900">
-                      {approvals.length}
-                    </dd>
-                  </dl>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Filters */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setSelectedStatus('all')}
-              className={`px-4 py-2 rounded-full text-sm font-medium ${
-                selectedStatus === 'all'
-                  ? 'bg-blue-100 text-blue-800'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              All ({approvals.length})
-            </button>
-            <button
-              onClick={() => setSelectedStatus('pending')}
-              className={`px-4 py-2 rounded-full text-sm font-medium ${
-                selectedStatus === 'pending'
-                  ? 'bg-yellow-100 text-yellow-800'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Pending ({approvals.filter(a => a.status === 'pending').length})
-            </button>
-            <button
-              onClick={() => setSelectedStatus('approved')}
-              className={`px-4 py-2 rounded-full text-sm font-medium ${
-                selectedStatus === 'approved'
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Approved ({approvals.filter(a => a.status === 'approved').length})
-            </button>
-            <button
-              onClick={() => setSelectedStatus('rejected')}
-              className={`px-4 py-2 rounded-full text-sm font-medium ${
-                selectedStatus === 'rejected'
-                  ? 'bg-red-100 text-red-800'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Rejected ({approvals.filter(a => a.status === 'rejected').length})
-            </button>
-          </div>
-        </div>
-
-        {/* Course List */}
-        <div className="bg-white shadow overflow-hidden sm:rounded-md">
-          <ul className="divide-y divide-gray-200">
-            {filteredApprovals.map((approval) => (
-              <li key={approval.id}>
-                <div className="px-4 py-4 sm:px-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        {getStatusIcon(approval.status)}
-                      </div>
-                      <div className="ml-4">
-                        <div className="flex items-center">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {approval.title}
-                          </p>
-                          <span className={`ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(approval.status)}`}>
-                            {approval.status}
+            
+            <div className="divide-y divide-gray-200">
+              {filteredApprovals.map((approval) => (
+                <div key={approval.id} className="p-6 hover:bg-gray-50">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h3 className="text-lg font-medium text-gray-900">{approval.courseTitle}</h3>
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(approval.status)}`}>
+                          {approval.status.replace('_', ' ').toUpperCase()}
+                        </span>
+                        {getDaysSinceSubmission(approval.submittedAt) > 3 && approval.status === 'submitted' && (
+                          <span className="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded-full">
+                            Overdue
                           </span>
-                        </div>
-                        <div className="mt-1 flex items-center text-sm text-gray-500">
-                          <UserIcon className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                          <p className="truncate">{approval.instructor}</p>
-                          <span className="mx-2">•</span>
-                          <p className="truncate">{approval.category}</p>
-                          <span className="mx-2">•</span>
-                          <p className="truncate">₹{approval.price}</p>
-                        </div>
-                        <p className="mt-1 text-sm text-gray-600 line-clamp-2">
-                          {approval.description}
-                        </p>
-                        <div className="mt-2 flex items-center text-xs text-gray-500">
-                          <CalendarIcon className="flex-shrink-0 mr-1 h-3 w-3" />
-                          <p>Submitted: {new Date(approval.submittedDate).toLocaleDateString()}</p>
-                          <span className="mx-2">•</span>
-                          <p>{approval.duration}</p>
-                          <span className="mx-2">•</span>
-                          <p>{approval.level}</p>
-                        </div>
+                        )}
                       </div>
+                      
+                      <div className="flex items-center space-x-6 text-sm text-gray-500 mb-3">
+                        <span className="flex items-center">
+                          <UserIcon className="h-4 w-4 mr-1" />
+                          {approval.instructorName}
+                        </span>
+                        <span className="flex items-center">
+                          <CalendarIcon className="h-4 w-4 mr-1" />
+                          Submitted {formatDate(approval.submittedAt)}
+                        </span>
+                        <span>{approval.metadata.totalLessons} lessons</span>
+                        <span>{Math.floor(approval.metadata.totalDuration / 60)}h {approval.metadata.totalDuration % 60}m</span>
+                        <span className="font-medium text-gray-900">
+                          {approval.metadata.isFree ? 'Free' : `₹${approval.metadata.coursePrice.toLocaleString('en-IN')}`}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                        <div className="flex items-center space-x-1">
+                          <PlayIcon className="h-4 w-4 text-red-500" />
+                          <span>{approval.metadata.hasVideoContent ? 'Video' : 'No Video'}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <DocumentTextIcon className="h-4 w-4 text-blue-500" />
+                          <span>{approval.metadata.hasPdfContent ? 'PDF' : 'No PDF'}</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <QuestionMarkCircleIcon className="h-4 w-4 text-green-500" />
+                          <span>{approval.metadata.hasQuizContent ? 'Quiz' : 'No Quiz'}</span>
+                        </div>
+                        {approval.metadata.previewLessons > 0 && (
+                          <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
+                            {approval.metadata.previewLessons} Preview
+                          </span>
+                        )}
+                      </div>
+                      
+                      {approval.feedback && (
+                        <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                          <p className="text-sm text-gray-700">
+                            <span className="font-medium">Feedback:</span> {approval.feedback}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {approval.rejectionReason && (
+                        <div className="mt-3 p-3 bg-red-50 rounded-lg">
+                          <p className="text-sm text-red-700">
+                            <span className="font-medium">Rejection Reason:</span> {approval.rejectionReason}
+                          </p>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <button className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                    
+                    <div className="flex items-center space-x-2 ml-4">
+                      <button
+                        onClick={() => router.push(`/admin/courses/approvals/${approval.id}/review`)}
+                        className="flex items-center px-3 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                      >
                         <EyeIcon className="h-4 w-4 mr-1" />
                         Review
                       </button>
-                      {approval.status === 'pending' && (
-                        <>
-                          <button
-                            onClick={() => handleApproval(approval.id, 'approve')}
-                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                          >
-                            <CheckCircleIcon className="h-4 w-4 mr-1" />
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => handleApproval(approval.id, 'reject')}
-                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                          >
-                            <XCircleIcon className="h-4 w-4 mr-1" />
-                            Reject
-                          </button>
-                        </>
+                      
+                      {approval.status === 'submitted' && (
+                        <button
+                          onClick={() => router.push(`/admin/courses/approvals/${approval.id}/review`)}
+                          className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                          Start Review
+                        </button>
                       )}
                     </div>
                   </div>
                 </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {filteredApprovals.length === 0 && (
-          <div className="text-center py-12">
-            <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No courses found</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {selectedStatus === 'all' 
-                ? 'No courses have been submitted for approval yet.'
-                : `No courses with status "${selectedStatus}" found.`
-              }
-            </p>
+              ))}
+            </div>
           </div>
         )}
       </div>
-    </AdminLayout>
+    </div>
   );
 }

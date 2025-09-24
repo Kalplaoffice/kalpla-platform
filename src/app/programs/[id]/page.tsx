@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { getCurrentUser } from '@aws-amplify/auth';
+import { generateClient } from 'aws-amplify/api';
 import { 
   StarIcon,
   ClockIcon,
@@ -15,14 +17,25 @@ import {
   DocumentTextIcon,
   CalendarIcon,
   CurrencyDollarIcon,
-  TrophyIcon
+  TrophyIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
+
+const client = generateClient();
 
 export default function ProgramDetailPage() {
   const params = useParams();
   const programId = params.id;
   const [isFavorited, setIsFavorited] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [showApplicationModal, setShowApplicationModal] = useState(false);
+  const [applicationForm, setApplicationForm] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    statementOfPurpose: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Mock program data - in real app, this would be fetched based on programId
   const program = {
@@ -141,8 +154,68 @@ export default function ProgramDetailPage() {
   };
 
   const handleApply = () => {
-    // TODO: Implement application functionality
-    console.log('Apply to program:', program.id);
+    setShowApplicationModal(true);
+  };
+
+  const handleApplicationSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    
+    try {
+      const user = await getCurrentUser();
+      
+      // Create the application using GraphQL mutation
+      const result = await client.graphql({
+        query: `
+          mutation CreateProgramApplication($input: CreateProgramApplicationInput!) {
+            createProgramApplication(input: $input) {
+              id
+              programID
+              studentID
+              fullName
+              email
+              phone
+              statementOfPurpose
+              status
+              submittedAt
+              createdAt
+            }
+          }
+        `,
+        variables: {
+          input: {
+            programID: programId,
+            studentID: user.username,
+            fullName: applicationForm.fullName,
+            email: applicationForm.email,
+            phone: applicationForm.phone,
+            statementOfPurpose: applicationForm.statementOfPurpose,
+            status: 'pending',
+            submittedAt: new Date().toISOString()
+          }
+        }
+      });
+
+      console.log('Application submitted:', result);
+      alert('✅ Application submitted successfully! You will receive an email confirmation shortly.');
+      
+      // Reset form and close modal
+      setApplicationForm({ fullName: '', email: '', phone: '', statementOfPurpose: '' });
+      setShowApplicationModal(false);
+      
+    } catch (error) {
+      console.error('❌ Application submission failed:', error);
+      alert('Failed to submit application. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setApplicationForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleFavorite = () => {
@@ -257,7 +330,7 @@ export default function ProgramDetailPage() {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-lg p-6 sticky top-8">
               <div className="text-center mb-6">
-                <div className="text-3xl font-bold text-gray-900 mb-2">${program.price.toLocaleString()}</div>
+                <div className="text-3xl font-bold text-gray-900 mb-2">₹{program.price.toLocaleString('en-IN')}</div>
                 <p className="text-gray-600">Total program cost</p>
               </div>
 
@@ -485,6 +558,108 @@ export default function ProgramDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Application Modal */}
+      {showApplicationModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Apply to {program.title}</h2>
+                <button
+                  onClick={() => setShowApplicationModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XMarkIcon className="h-6 w-6" />
+                </button>
+              </div>
+
+              <form onSubmit={handleApplicationSubmit} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={applicationForm.fullName}
+                    onChange={(e) => handleInputChange('fullName', e.target.value)}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    value={applicationForm.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter your email address"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={applicationForm.phone}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Enter your phone number"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Statement of Purpose
+                  </label>
+                  <textarea
+                    value={applicationForm.statementOfPurpose}
+                    onChange={(e) => handleInputChange('statementOfPurpose', e.target.value)}
+                    rows={6}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    placeholder="Tell us why you want to join this program and what you hope to achieve..."
+                  />
+                </div>
+
+                <div className="bg-blue-50 p-4 rounded-md">
+                  <h3 className="font-medium text-blue-900 mb-2">Application Process</h3>
+                  <ul className="text-sm text-blue-800 space-y-1">
+                    <li>• Your application will be reviewed by our admissions team</li>
+                    <li>• You'll receive a response within 2-3 weeks</li>
+                    <li>• If approved, you'll receive payment instructions</li>
+                    <li>• Program starts on {new Date(program.startDate).toLocaleDateString()}</li>
+                  </ul>
+                </div>
+
+                <div className="flex justify-end space-x-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowApplicationModal(false)}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isSubmitting ? 'Submitting...' : 'Submit Application'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

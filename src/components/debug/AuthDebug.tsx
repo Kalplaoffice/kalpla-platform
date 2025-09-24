@@ -2,7 +2,6 @@
 
 import { useUser } from '@/contexts/UserContext';
 import useRoleBasedAccess from '@/hooks/useRoleBasedAccess';
-import MockAuthService from '@/lib/mockAuthService';
 
 export function AuthDebug() {
   const { user, loading } = useUser();
@@ -21,8 +20,6 @@ export function AuthDebug() {
         <div><strong>Role:</strong> {role}</div>
         <div><strong>Is Authenticated:</strong> {isAuthenticated() ? 'true' : 'false'}</div>
         <div><strong>Dashboard Path:</strong> {getDashboardPath()}</div>
-        <div><strong>Mock Auth:</strong> {MockAuthService.isUserAuthenticated() ? 'true' : 'false'}</div>
-        <div><strong>Mock Role:</strong> {MockAuthService.getUserRole()}</div>
         
         {user?.signInDetails && (
           <div>

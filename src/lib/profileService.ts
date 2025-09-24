@@ -1,15 +1,14 @@
 import { generateClient } from 'aws-amplify/api';
-// TODO: These operations need to be added to the GraphQL schema
-// import {
-//   UPDATE_USER_PROFILE,
-//   UPDATE_STUDENT_PROFILE,
-//   UPDATE_MENTOR_PROFILE
-// } from '../graphql/mutations';
-// import {
-//   GET_USER_PROFILE,
-//   GET_STUDENT_PROFILE,
-//   GET_MENTOR_PROFILE
-// } from '../graphql/queries';
+import {
+  UPDATE_USER_PROFILE,
+  UPDATE_STUDENT_PROFILE,
+  UPDATE_MENTOR_PROFILE
+} from '../graphql/mutations';
+import {
+  GET_USER_PROFILE,
+  GET_STUDENT_PROFILE,
+  GET_MENTOR_PROFILE
+} from '../graphql/queries';
 
 const client = generateClient();
 

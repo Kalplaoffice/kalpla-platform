@@ -1,4 +1,4 @@
-import { signIn, signUp, signOut, getCurrentUser, confirmSignUp, resendSignUpCode, resetPassword, updatePassword, updateUserAttributes } from 'aws-amplify/auth';
+import { signIn, signUp, signOut, getCurrentUser, confirmSignUp, resendSignUpCode, resetPassword, updatePassword, updateUserAttributes, signInWithRedirect } from 'aws-amplify/auth';
 import { Hub } from 'aws-amplify/utils';
 
 export interface User {
@@ -207,8 +207,7 @@ class AuthService {
    */
   async signInWithGoogle(): Promise<void> {
     try {
-      // Google sign-in not implemented in v6 yet
-      throw new Error('Google sign-in not implemented in v6 yet');
+      await signInWithRedirect({ provider: 'Google' });
     } catch (error) {
       console.error('Google sign in error:', error);
       throw this.normalizeError(error);

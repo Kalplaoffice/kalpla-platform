@@ -1,0 +1,390 @@
+{
+  "api": {
+    "kalpla": {
+      "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
+      "output": {
+        "GraphQLAPIEndpointOutput": "https://byvfvux4hrbjfdrork2awunxem.appsync-api.ap-south-1.amazonaws.com/graphql",
+        "GraphQLAPIIdOutput": "kalpla",
+        "GraphQLAPIKeyOutput": "da2-api-key",
+        "authConfig": {
+          "additionalAuthenticationProviders": [
+            {
+              "apiKeyConfig": {
+                "apiKeyExpirationDays": 365,
+                "description": "Public API Key for unauthenticated access"
+              },
+              "authenticationType": "API_KEY"
+            }
+          ],
+          "defaultAuthentication": {
+            "authenticationType": "AMAZON_COGNITO_USER_POOLS",
+            "userPoolConfig": {
+              "userPoolId": "authkalplaAuth"
+            }
+          }
+        }
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "AppSync"
+    }
+  },
+  "auth": {
+    "kalplaAuth": {
+      "customAuth": false,
+      "dependsOn": [],
+      "frontendAuthConfig": {
+        "mfaConfiguration": "OPTIONAL",
+        "mfaTypes": [
+          "SMS",
+          "TOTP"
+        ],
+        "passwordProtectionSettings": {
+          "passwordPolicyCharacters": [
+            "RequiresLowercase",
+            "RequiresUppercase",
+            "RequiresNumbers",
+            "RequiresSymbols"
+          ],
+          "passwordPolicyMinLength": 8
+        },
+        "signupAttributes": [
+          "EMAIL",
+          "NAME"
+        ],
+        "socialProviders": [
+          "GOOGLE"
+        ],
+        "usernameAttributes": [
+          "EMAIL",
+          "PHONE_NUMBER"
+        ],
+        "verificationMechanisms": [
+          "EMAIL",
+          "PHONE_NUMBER"
+        ]
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "Cognito"
+    }
+  },
+  "function": {
+    "analyticsProcessor": {
+      "build": true,
+      "dependsOn": [
+        {
+          "attributes": [
+            "GraphQLAPIIdOutput"
+          ],
+          "category": "api",
+          "resourceName": "kalpla"
+        }
+      ],
+      "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
+      "output": {
+        "Arn": "arn:aws:lambda:ap-south-1:112914241644:function:analyticsProcessor",
+        "LambdaExecutionRole": "amplify-kalplaplatform-dev-737da-lambdaRole",
+        "LambdaExecutionRoleArn": "arn:aws:iam::112914241644:role/amplify-kalplaplatform-dev-737da-lambdaRole",
+        "Region": "ap-south-1"
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    },
+    "kalplaAuthPostConfirmation": {
+      "build": true,
+      "dependsOn": [
+        {
+          "attributes": [
+            "UserPoolId"
+          ],
+          "category": "auth",
+          "resourceName": "kalplaAuth"
+        }
+      ],
+      "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
+      "output": {
+        "Arn": "arn:aws:lambda:ap-south-1:112914241644:function:kalplaAuthPostConfirmation",
+        "LambdaExecutionRole": "amplify-kalplaplatform-dev-737da-lambdaRole",
+        "LambdaExecutionRoleArn": "arn:aws:iam::112914241644:role/amplify-kalplaplatform-dev-737da-lambdaRole",
+        "Region": "ap-south-1"
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    },
+    "kalplaAuthPreTokenGeneration": {
+      "build": true,
+      "dependsOn": [
+        {
+          "attributes": [
+            "UserPoolId"
+          ],
+          "category": "auth",
+          "resourceName": "kalplaAuth"
+        }
+      ],
+      "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
+      "output": {
+        "Arn": "arn:aws:lambda:ap-south-1:112914241644:function:kalplaAuthPreTokenGeneration",
+        "LambdaExecutionRole": "amplify-kalplaplatform-dev-737da-lambdaRole",
+        "LambdaExecutionRoleArn": "arn:aws:iam::112914241644:role/amplify-kalplaplatform-dev-737da-lambdaRole",
+        "Region": "ap-south-1"
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    },
+    "paymentProcessor": {
+      "build": true,
+      "dependsOn": [
+        {
+          "attributes": [
+            "GraphQLAPIIdOutput"
+          ],
+          "category": "api",
+          "resourceName": "kalpla"
+        }
+      ],
+      "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
+      "output": {
+        "Arn": "arn:aws:lambda:ap-south-1:112914241644:function:paymentProcessor",
+        "LambdaExecutionRole": "amplify-kalplaplatform-dev-737da-lambdaRole",
+        "LambdaExecutionRoleArn": "arn:aws:iam::112914241644:role/amplify-kalplaplatform-dev-737da-lambdaRole",
+        "Region": "ap-south-1"
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    },
+    "paymentWebhook": {
+      "build": true,
+      "dependsOn": [
+        {
+          "attributes": [
+            "GraphQLAPIIdOutput"
+          ],
+          "category": "api",
+          "resourceName": "kalpla"
+        }
+      ],
+      "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
+      "output": {
+        "Arn": "arn:aws:lambda:ap-south-1:112914241644:function:paymentWebhook",
+        "LambdaExecutionRole": "amplify-kalplaplatform-dev-737da-lambdaRole",
+        "LambdaExecutionRoleArn": "arn:aws:iam::112914241644:role/amplify-kalplaplatform-dev-737da-lambdaRole",
+        "Region": "ap-south-1"
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    },
+    "videoSignedUrlGenerator": {
+      "build": true,
+      "dependsOn": [
+        {
+          "attributes": [
+            "GraphQLAPIIdOutput"
+          ],
+          "category": "api",
+          "resourceName": "kalpla"
+        }
+      ],
+      "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
+      "output": {
+        "Arn": "arn:aws:lambda:ap-south-1:112914241644:function:videoSignedUrlGenerator",
+        "LambdaExecutionRole": "amplify-kalplaplatform-dev-737da-lambdaRole",
+        "LambdaExecutionRoleArn": "arn:aws:iam::112914241644:role/amplify-kalplaplatform-dev-737da-lambdaRole",
+        "Region": "ap-south-1"
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    },
+    "videoUploadProcessor": {
+      "build": true,
+      "dependsOn": [
+        {
+          "attributes": [
+            "BucketName"
+          ],
+          "category": "storage",
+          "resourceName": "kalplaVideos"
+        }
+      ],
+      "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
+      "output": {
+        "Arn": "arn:aws:lambda:ap-south-1:112914241644:function:videoUploadProcessor",
+        "LambdaExecutionRole": "amplify-kalplaplatform-dev-737da-lambdaRole",
+        "LambdaExecutionRoleArn": "arn:aws:iam::112914241644:role/amplify-kalplaplatform-dev-737da-lambdaRole",
+        "Region": "ap-south-1"
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "Lambda"
+    }
+  },
+  "hosting": {},
+  "parameters": {
+    "AMPLIFY_function_analyticsProcessor_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "analyticsProcessor"
+        }
+      ]
+    },
+    "AMPLIFY_function_analyticsProcessor_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "analyticsProcessor"
+        }
+      ]
+    },
+    "AMPLIFY_function_kalplaAuthPostConfirmation_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "kalplaAuthPostConfirmation"
+        }
+      ]
+    },
+    "AMPLIFY_function_kalplaAuthPostConfirmation_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "kalplaAuthPostConfirmation"
+        }
+      ]
+    },
+    "AMPLIFY_function_kalplaAuthPreTokenGeneration_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "kalplaAuthPreTokenGeneration"
+        }
+      ]
+    },
+    "AMPLIFY_function_kalplaAuthPreTokenGeneration_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "kalplaAuthPreTokenGeneration"
+        }
+      ]
+    },
+    "AMPLIFY_function_paymentProcessor_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "paymentProcessor"
+        }
+      ]
+    },
+    "AMPLIFY_function_paymentProcessor_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "paymentProcessor"
+        }
+      ]
+    },
+    "AMPLIFY_function_paymentWebhook_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "paymentWebhook"
+        }
+      ]
+    },
+    "AMPLIFY_function_paymentWebhook_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "paymentWebhook"
+        }
+      ]
+    },
+    "AMPLIFY_function_videoSignedUrlGenerator_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "videoSignedUrlGenerator"
+        }
+      ]
+    },
+    "AMPLIFY_function_videoSignedUrlGenerator_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "videoSignedUrlGenerator"
+        }
+      ]
+    },
+    "AMPLIFY_function_videoUploadProcessor_deploymentBucketName": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "videoUploadProcessor"
+        }
+      ]
+    },
+    "AMPLIFY_function_videoUploadProcessor_s3Key": {
+      "usedBy": [
+        {
+          "category": "function",
+          "resourceName": "videoUploadProcessor"
+        }
+      ]
+    }
+  },
+  "storage": {
+    "kalplaDocuments": {
+      "dependsOn": [
+        {
+          "attributes": [
+            "UserPoolId"
+          ],
+          "category": "auth",
+          "resourceName": "kalplaAuth"
+        }
+      ],
+      "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
+      "output": {
+        "BucketName": "kalpla-documents-dev",
+        "Region": "ap-south-1"
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "S3"
+    },
+    "kalplaStorage": {
+      "dependsOn": [
+        {
+          "attributes": [
+            "UserPoolId"
+          ],
+          "category": "auth",
+          "resourceName": "kalplaAuth"
+        }
+      ],
+      "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
+      "output": {
+        "BucketName": "kalpla-storage-dev",
+        "Region": "ap-south-1"
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "S3"
+    },
+    "kalplaVideos": {
+      "dependsOn": [
+        {
+          "attributes": [
+            "UserPoolId"
+          ],
+          "category": "auth",
+          "resourceName": "kalplaAuth"
+        }
+      ],
+      "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
+      "output": {
+        "BucketName": "kalpla-videos-dev",
+        "Region": "ap-south-1"
+      },
+      "providerPlugin": "awscloudformation",
+      "service": "S3"
+    }
+  }
+}

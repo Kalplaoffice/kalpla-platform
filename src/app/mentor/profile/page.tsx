@@ -90,7 +90,7 @@ export default function MentorProfilePage() {
       setError(null);
 
       // Get current user from Cognito
-      const currentUser = await Auth.currentAuthenticatedUser();
+      const currentUser = await getCurrentUser();
       const attributes = currentUser.attributes;
 
       // Mock mentor profile data
@@ -151,8 +151,8 @@ export default function MentorProfilePage() {
       setSuccess(null);
 
       // Update Cognito attributes
-      const currentUser = await Auth.currentAuthenticatedUser();
-      await Auth.updateUserAttributes(currentUser, {
+      const currentUser = await getCurrentUser();
+      await updateUserAttributes(currentUser, {
         name: formData.name,
         phone_number: formData.phone,
         'custom:bio': formData.bio,

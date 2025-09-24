@@ -204,7 +204,10 @@ class PaymentService {
    * Format amount for display
    */
   formatAmount(amount: number, currency: string = 'INR'): string {
-    return new Intl.NumberFormat('en-IN', {
+    // Use Indian locale for INR formatting with ₹ symbol
+    const locale = currency === 'INR' ? 'en-IN' : 'en-US';
+    
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: currency,
       minimumFractionDigits: 0,

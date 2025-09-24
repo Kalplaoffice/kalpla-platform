@@ -1,0 +1,20 @@
+{
+  "functionName": "payuWebhook",
+  "runtime": "nodejs18.x",
+  "role": "arn:aws:iam::123456789012:role/LambdaExecutionRole",
+  "handler": "index.handler",
+  "timeout": 30,
+  "memorySize": 256,
+  "environment": {
+    "PAYU_MERCHANT_KEY": "gtKFFx",
+    "PAYU_MERCHANT_SALT": "eCwWELxi",
+    "PAYMENTS_TABLE": "Payments",
+    "ENROLLMENTS_TABLE": "Enrollments",
+    "FROM_EMAIL": "noreply@kalpla.edu"
+  },
+  "vpc": {
+    "securityGroupIds": [],
+    "subnetIds": []
+  },
+  "layers": []
+}

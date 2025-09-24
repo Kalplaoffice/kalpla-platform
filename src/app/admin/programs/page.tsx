@@ -21,7 +21,8 @@ import {
   ExclamationTriangleIcon,
   BriefcaseIcon,
   StarIcon,
-  GlobeAltIcon
+  GlobeAltIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 
 export default function ProgramsPage() {
@@ -34,6 +35,38 @@ export default function ProgramsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  
+  // CRUD Modal States
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedProgram, setSelectedProgram] = useState<any>(null);
+  const [programs, setPrograms] = useState<any[]>([]);
+  
+  // Form States
+  const [formData, setFormData] = useState({
+    name: '',
+    type: 'corporate_partnership',
+    status: 'active',
+    partner: '',
+    investmentAmount: '',
+    equity: '',
+    startDate: '',
+    endDate: '',
+    description: '',
+    benefits: [''],
+    studentsSupported: '',
+    mentorsProvided: '',
+    coursesCreated: '',
+    successRate: '',
+    contactPerson: '',
+    contactEmail: '',
+    contactPhone: '',
+    location: '',
+    website: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (userLoading) return;
@@ -54,8 +87,9 @@ export default function ProgramsPage() {
     setLoading(false);
   }, [user, userLoading, router, hasRedirected, role, isAuthenticated]);
 
-  // Mock data for programs and investors
-  const programs = [
+  // Initialize programs data
+  useEffect(() => {
+    const initialPrograms = [
     {
       id: 'PROG_001',
       name: 'TechCorp Ventures Partnership',
@@ -157,6 +191,8 @@ export default function ProgramsPage() {
       updatedAt: '2024-01-22'
     }
   ];
+    setPrograms(initialPrograms);
+  }, []);
 
   const filteredPrograms = programs.filter(program => {
     const matchesSearch = program.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -211,6 +247,189 @@ export default function ProgramsPage() {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
+    });
+  };
+
+  // CRUD Functions
+  const handleCreateProgram = () => {
+    setFormData({
+      name: '',
+      type: 'corporate_partnership',
+      status: 'active',
+      partner: '',
+      investmentAmount: '',
+      equity: '',
+      startDate: '',
+      endDate: '',
+      description: '',
+      benefits: [''],
+      studentsSupported: '',
+      mentorsProvided: '',
+      coursesCreated: '',
+      successRate: '',
+      contactPerson: '',
+      contactEmail: '',
+      contactPhone: '',
+      location: '',
+      website: ''
+    });
+    setSelectedProgram(null);
+    setShowCreateModal(true);
+  };
+
+  const handleEditProgram = (program: any) => {
+    setSelectedProgram(program);
+    setFormData({
+      name: program.name,
+      type: program.type,
+      status: program.status,
+      partner: program.partner,
+      investmentAmount: program.investmentAmount.toString(),
+      equity: program.equity.toString(),
+      startDate: program.startDate,
+      endDate: program.endDate,
+      description: program.description,
+      benefits: program.benefits.length > 0 ? program.benefits : [''],
+      studentsSupported: program.studentsSupported.toString(),
+      mentorsProvided: program.mentorsProvided.toString(),
+      coursesCreated: program.coursesCreated.toString(),
+      successRate: program.successRate.toString(),
+      contactPerson: program.contactPerson,
+      contactEmail: program.contactEmail,
+      contactPhone: program.contactPhone,
+      location: program.location,
+      website: program.website
+    });
+    setShowEditModal(true);
+  };
+
+  const handleViewProgram = (program: any) => {
+    setSelectedProgram(program);
+    setShowViewModal(true);
+  };
+
+  const handleDeleteProgram = (program: any) => {
+    setSelectedProgram(program);
+    setShowDeleteModal(true);
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      // Filter out empty benefits
+      const filteredBenefits = formData.benefits.filter(b => b.trim() !== '');
+
+      const programData = {
+        ...formData,
+        benefits: filteredBenefits,
+        investmentAmount: parseInt(formData.investmentAmount) || 0,
+        equity: parseInt(formData.equity) || 0,
+        studentsSupported: parseInt(formData.studentsSupported) || 0,
+        mentorsProvided: parseInt(formData.mentorsProvided) || 0,
+        coursesCreated: parseInt(formData.coursesCreated) || 0,
+        successRate: parseInt(formData.successRate) || 0
+      };
+
+      if (showCreateModal) {
+        // Create new program
+        const newProgram = {
+          ...programData,
+          id: `PROG_${Date.now()}`,
+          partnerLogo: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=100&h=100&fit=crop',
+          createdAt: new Date().toISOString().split('T')[0],
+          updatedAt: new Date().toISOString().split('T')[0]
+        };
+        setPrograms([...programs, newProgram]);
+        setShowCreateModal(false);
+      } else if (showEditModal && selectedProgram) {
+        // Update existing program
+        const updatedProgram = {
+          ...programData,
+          id: selectedProgram.id,
+          partnerLogo: selectedProgram.partnerLogo,
+          createdAt: selectedProgram.createdAt,
+          updatedAt: new Date().toISOString().split('T')[0]
+        };
+        setPrograms(programs.map(program => 
+          program.id === selectedProgram.id ? updatedProgram : program
+        ));
+        setShowEditModal(false);
+      }
+    } catch (err) {
+      console.error('Error saving program:', err);
+      alert('Failed to save program');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!selectedProgram) return;
+
+    try {
+      setPrograms(programs.filter(program => program.id !== selectedProgram.id));
+      setShowDeleteModal(false);
+      setSelectedProgram(null);
+    } catch (err) {
+      console.error('Error deleting program:', err);
+      alert('Failed to delete program');
+    }
+  };
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleBenefitChange = (index: number, value: string) => {
+    const newBenefits = [...formData.benefits];
+    newBenefits[index] = value;
+    setFormData(prev => ({ ...prev, benefits: newBenefits }));
+  };
+
+  const addBenefit = () => {
+    setFormData(prev => ({
+      ...prev,
+      benefits: [...prev.benefits, '']
+    }));
+  };
+
+  const removeBenefit = (index: number) => {
+    const newBenefits = formData.benefits.filter((_, i) => i !== index);
+    setFormData(prev => ({ ...prev, benefits: newBenefits }));
+  };
+
+  const closeModals = () => {
+    setShowCreateModal(false);
+    setShowEditModal(false);
+    setShowViewModal(false);
+    setShowDeleteModal(false);
+    setSelectedProgram(null);
+    setFormData({
+      name: '',
+      type: 'corporate_partnership',
+      status: 'active',
+      partner: '',
+      investmentAmount: '',
+      equity: '',
+      startDate: '',
+      endDate: '',
+      description: '',
+      benefits: [''],
+      studentsSupported: '',
+      mentorsProvided: '',
+      coursesCreated: '',
+      successRate: '',
+      contactPerson: '',
+      contactEmail: '',
+      contactPhone: '',
+      location: '',
+      website: ''
     });
   };
 
@@ -339,7 +558,10 @@ export default function ProgramsPage() {
               </div>
 
               <div className="flex space-x-2">
-                <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <button 
+                  onClick={handleCreateProgram}
+                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
                   <PlusIcon className="h-5 w-5 mr-2" />
                   Add Program
                 </button>
@@ -465,14 +687,23 @@ export default function ProgramsPage() {
 
                     {/* Actions */}
                     <div className="flex space-x-2 pt-4">
-                      <button className="flex-1 flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                      <button 
+                        onClick={() => handleViewProgram(program)}
+                        className="flex-1 flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      >
                         <EyeIcon className="h-4 w-4 mr-1" />
                         View Details
                       </button>
-                      <button className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                      <button 
+                        onClick={() => handleEditProgram(program)}
+                        className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      >
                         <PencilIcon className="h-4 w-4" />
                       </button>
-                      <button className="px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 hover:bg-red-50">
+                      <button 
+                        onClick={() => handleDeleteProgram(program)}
+                        className="px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 hover:bg-red-50"
+                      >
                         <TrashIcon className="h-4 w-4" />
                       </button>
                     </div>
@@ -494,7 +725,10 @@ export default function ProgramsPage() {
                 }
               </p>
               <div className="mt-6">
-                <button className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
+                <button 
+                  onClick={handleCreateProgram}
+                  className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                >
                   <PlusIcon className="h-4 w-4 mr-2" />
                   Create First Program
                 </button>
@@ -503,6 +737,686 @@ export default function ProgramsPage() {
           )}
         </div>
       </div>
+
+      {/* Create Program Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Create Program</h3>
+              <button
+                onClick={closeModals}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            <form onSubmit={handleFormSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Program Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleFormChange}
+                    required
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Type</label>
+                  <select
+                    name="type"
+                    value={formData.type}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="corporate_partnership">Corporate Partnership</option>
+                    <option value="accelerator">Accelerator</option>
+                    <option value="angel_network">Angel Network</option>
+                    <option value="government_grant">Government Grant</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Partner</label>
+                  <input
+                    type="text"
+                    name="partner"
+                    value={formData.partner}
+                    onChange={handleFormChange}
+                    required
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Status</label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="active">Active</option>
+                    <option value="pending">Pending</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Investment Amount (₹)</label>
+                  <input
+                    type="number"
+                    name="investmentAmount"
+                    value={formData.investmentAmount}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Equity (%)</label>
+                  <input
+                    type="number"
+                    name="equity"
+                    value={formData.equity}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Start Date</label>
+                  <input
+                    type="date"
+                    name="startDate"
+                    value={formData.startDate}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">End Date</label>
+                  <input
+                    type="date"
+                    name="endDate"
+                    value={formData.endDate}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleFormChange}
+                  rows={3}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Benefits</label>
+                {formData.benefits.map((benefit, index) => (
+                  <div key={index} className="flex space-x-2 mt-2">
+                    <input
+                      type="text"
+                      value={benefit}
+                      onChange={(e) => handleBenefitChange(index, e.target.value)}
+                      className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeBenefit(index)}
+                      className="px-3 py-2 border border-red-300 rounded-md text-red-700 hover:bg-red-50"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addBenefit}
+                  className="mt-2 px-3 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  <PlusIcon className="h-4 w-4 mr-1" />
+                  Add Benefit
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Students Supported</label>
+                  <input
+                    type="number"
+                    name="studentsSupported"
+                    value={formData.studentsSupported}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Mentors Provided</label>
+                  <input
+                    type="number"
+                    name="mentorsProvided"
+                    value={formData.mentorsProvided}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Courses Created</label>
+                  <input
+                    type="number"
+                    name="coursesCreated"
+                    value={formData.coursesCreated}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Success Rate (%)</label>
+                  <input
+                    type="number"
+                    name="successRate"
+                    value={formData.successRate}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Contact Person</label>
+                  <input
+                    type="text"
+                    name="contactPerson"
+                    value={formData.contactPerson}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Contact Email</label>
+                  <input
+                    type="email"
+                    name="contactEmail"
+                    value={formData.contactEmail}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Contact Phone</label>
+                  <input
+                    type="tel"
+                    name="contactPhone"
+                    value={formData.contactPhone}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Location</label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">Website</label>
+                  <input
+                    type="url"
+                    name="website"
+                    value={formData.website}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closeModals}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Creating...' : 'Create Program'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Program Modal */}
+      {showEditModal && selectedProgram && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Edit Program</h3>
+              <button
+                onClick={closeModals}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            <form onSubmit={handleFormSubmit} className="space-y-4">
+              {/* Same form fields as create modal */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Program Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleFormChange}
+                    required
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Type</label>
+                  <select
+                    name="type"
+                    value={formData.type}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="corporate_partnership">Corporate Partnership</option>
+                    <option value="accelerator">Accelerator</option>
+                    <option value="angel_network">Angel Network</option>
+                    <option value="government_grant">Government Grant</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Partner</label>
+                  <input
+                    type="text"
+                    name="partner"
+                    value={formData.partner}
+                    onChange={handleFormChange}
+                    required
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Status</label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="active">Active</option>
+                    <option value="pending">Pending</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Investment Amount (₹)</label>
+                  <input
+                    type="number"
+                    name="investmentAmount"
+                    value={formData.investmentAmount}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Equity (%)</label>
+                  <input
+                    type="number"
+                    name="equity"
+                    value={formData.equity}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Start Date</label>
+                  <input
+                    type="date"
+                    name="startDate"
+                    value={formData.startDate}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">End Date</label>
+                  <input
+                    type="date"
+                    name="endDate"
+                    value={formData.endDate}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleFormChange}
+                  rows={3}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Benefits</label>
+                {formData.benefits.map((benefit, index) => (
+                  <div key={index} className="flex space-x-2 mt-2">
+                    <input
+                      type="text"
+                      value={benefit}
+                      onChange={(e) => handleBenefitChange(index, e.target.value)}
+                      className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeBenefit(index)}
+                      className="px-3 py-2 border border-red-300 rounded-md text-red-700 hover:bg-red-50"
+                    >
+                      <TrashIcon className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={addBenefit}
+                  className="mt-2 px-3 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                >
+                  <PlusIcon className="h-4 w-4 mr-1" />
+                  Add Benefit
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Students Supported</label>
+                  <input
+                    type="number"
+                    name="studentsSupported"
+                    value={formData.studentsSupported}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Mentors Provided</label>
+                  <input
+                    type="number"
+                    name="mentorsProvided"
+                    value={formData.mentorsProvided}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Courses Created</label>
+                  <input
+                    type="number"
+                    name="coursesCreated"
+                    value={formData.coursesCreated}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Success Rate (%)</label>
+                  <input
+                    type="number"
+                    name="successRate"
+                    value={formData.successRate}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Contact Person</label>
+                  <input
+                    type="text"
+                    name="contactPerson"
+                    value={formData.contactPerson}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Contact Email</label>
+                  <input
+                    type="email"
+                    name="contactEmail"
+                    value={formData.contactEmail}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Contact Phone</label>
+                  <input
+                    type="tel"
+                    name="contactPhone"
+                    value={formData.contactPhone}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Location</label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={formData.location}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">Website</label>
+                  <input
+                    type="url"
+                    name="website"
+                    value={formData.website}
+                    onChange={handleFormChange}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closeModals}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Updating...' : 'Update Program'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Program Modal */}
+      {showViewModal && selectedProgram && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Program Details</h3>
+              <button
+                onClick={closeModals}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Program Name</label>
+                  <p className="mt-1 text-sm text-gray-900">{selectedProgram.name}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Type</label>
+                  <p className="mt-1 text-sm text-gray-900">{selectedProgram.type}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Partner</label>
+                  <p className="mt-1 text-sm text-gray-900">{selectedProgram.partner}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Status</label>
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedProgram.status)}`}>
+                    {getStatusIcon(selectedProgram.status)}
+                    <span className="ml-1">{selectedProgram.status}</span>
+                  </span>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Investment Amount</label>
+                  <p className="mt-1 text-sm text-gray-900">{formatCurrency(selectedProgram.investmentAmount)}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Equity</label>
+                  <p className="mt-1 text-sm text-gray-900">{selectedProgram.equity}%</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Start Date</label>
+                  <p className="mt-1 text-sm text-gray-900">{formatDate(selectedProgram.startDate)}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">End Date</label>
+                  <p className="mt-1 text-sm text-gray-900">{formatDate(selectedProgram.endDate)}</p>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Description</label>
+                <p className="mt-1 text-sm text-gray-900">{selectedProgram.description}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Benefits</label>
+                <ul className="mt-1 text-sm text-gray-900 list-disc list-inside">
+                  {selectedProgram.benefits.map((benefit: string, index: number) => (
+                    <li key={index}>{benefit}</li>
+                  ))}
+                </ul>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Students Supported</label>
+                  <p className="mt-1 text-sm text-gray-900">{selectedProgram.studentsSupported}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Mentors Provided</label>
+                  <p className="mt-1 text-sm text-gray-900">{selectedProgram.mentorsProvided}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Courses Created</label>
+                  <p className="mt-1 text-sm text-gray-900">{selectedProgram.coursesCreated}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Success Rate</label>
+                  <p className="mt-1 text-sm text-gray-900">{selectedProgram.successRate}%</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Contact Person</label>
+                  <p className="mt-1 text-sm text-gray-900">{selectedProgram.contactPerson}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Contact Email</label>
+                  <p className="mt-1 text-sm text-gray-900">{selectedProgram.contactEmail}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Contact Phone</label>
+                  <p className="mt-1 text-sm text-gray-900">{selectedProgram.contactPhone}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Location</label>
+                  <p className="mt-1 text-sm text-gray-900">{selectedProgram.location}</p>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700">Website</label>
+                  <p className="mt-1 text-sm text-gray-900">{selectedProgram.website}</p>
+                </div>
+              </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  onClick={closeModals}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    closeModals();
+                    handleEditProgram(selectedProgram);
+                  }}
+                  className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Edit Program
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedProgram && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Delete Program</h3>
+              <button
+                onClick={closeModals}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="mb-4">
+              <p className="text-sm text-gray-600">
+                Are you sure you want to delete <strong>{selectedProgram.name}</strong>? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={closeModals}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                Delete Program
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

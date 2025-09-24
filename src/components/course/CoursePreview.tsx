@@ -138,7 +138,7 @@ export function CoursePreview({ course }: CoursePreviewProps) {
             {/* Price */}
             <div className="text-right">
               <div className="text-3xl font-bold text-gray-900">
-                {course.currency} {course.price}
+                ₹{course.price.toLocaleString('en-IN')}
               </div>
               <div className="text-sm text-gray-600">One-time payment</div>
             </div>

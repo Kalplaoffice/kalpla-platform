@@ -205,8 +205,11 @@ class CurrencyService {
 
     const formattedAmount = this.roundToDecimalPlaces(amount, currency.decimalPlaces);
     
+    // Use Indian locale for INR, US locale for others
+    const locale = currencyCode === 'INR' ? 'en-IN' : 'en-US';
+    
     // Format number with appropriate decimal places
-    const numberFormatter = new Intl.NumberFormat('en-US', {
+    const numberFormatter = new Intl.NumberFormat(locale, {
       minimumFractionDigits: currency.decimalPlaces,
       maximumFractionDigits: currency.decimalPlaces
     });

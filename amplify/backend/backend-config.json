@@ -4,8 +4,8 @@
       "lastPushTimeStamp": "2024-12-19T12:00:00.000Z",
       "output": {
         "GraphQLAPIEndpointOutput": "https://byvfvux4hrbjfdrork2awunxem.appsync-api.ap-south-1.amazonaws.com/graphql",
-        "GraphQLAPIIdOutput": "kalpla",
-        "GraphQLAPIKeyOutput": "da2-api-key",
+        "GraphQLAPIIdOutput": "oi3bmbfhpbbpnodgdphdetaiiy",
+        "GraphQLAPIKeyOutput": "da2-oieevp2alffejgbjv663gypvta",
         "authConfig": {
           "additionalAuthenticationProviders": [
             {
@@ -19,7 +19,7 @@
           "defaultAuthentication": {
             "authenticationType": "AMAZON_COGNITO_USER_POOLS",
             "userPoolConfig": {
-              "userPoolId": "authkalplaAuth"
+              "userPoolId": "ap-south-1_4PQaHBGxJ"
             }
           }
         }

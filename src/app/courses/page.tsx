@@ -266,7 +266,7 @@ export default function CoursesPage() {
 
                   <div className="flex items-center justify-between">
                     <div className="text-2xl font-bold text-gray-900">
-                      ${course.price}
+                      ₹{course.price.toLocaleString('en-IN')}
                     </div>
                     <div className="flex space-x-2">
                       <Link

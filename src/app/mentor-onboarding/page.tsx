@@ -1,255 +1,206 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useUser } from '@/contexts/UserContext';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { applicationService } from '@/lib/applicationService';
 import { 
-  DocumentArrowUpIcon, 
-  CheckCircleIcon, 
-  ExclamationTriangleIcon,
-  UserIcon,
-  AcademicCapIcon,
-  BriefcaseIcon
+  UserIcon, 
+  AcademicCapIcon, 
+  BriefcaseIcon, 
+  DocumentTextIcon,
+  CheckCircleIcon,
+  ArrowRightIcon,
+  ArrowLeftIcon,
+  XMarkIcon,
+  CloudArrowUpIcon,
+  StarIcon,
+  GlobeAltIcon,
+  PhoneIcon,
+  EnvelopeIcon
 } from '@heroicons/react/24/outline';
+import Image from 'next/image';
+import kalplaLogo from '@/assets/images/kalpla-logo.svg';
 
-interface MentorOnboardingData {
-  name: string;
+interface MentorApplicationData {
+  // Personal Information
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
-  expertise: string;
-  linkedin: string;
-  portfolio: string;
-  bio: string;
-  availability: string;
-  documents: {
-    // Mandatory Documents (from checklist)
-    panCard: File | null;
-    aadhaarCard: File | null;
-    bankAccountDetails: File | null;
-    cancelledCheque: File | null;
-    educationalCertificate: File | null;
-    experienceProof: File | null;
-    passportPhoto: File | null;
-    digitalSignature: File | null;
-    
-    // Optional Documents
-    gstRegistration: File | null;
-    professionalTaxRegistration: File | null;
+  location: string;
+  timezone: string;
+  
+  // Professional Information
+  currentCompany: string;
+  currentPosition: string;
+  yearsOfExperience: string;
+  industry: string;
+  specialization: string[];
+  
+  // Education
+  education: {
+    degree: string;
+    institution: string;
+    year: string;
+  }[];
+  
+  // Skills & Expertise
+  skills: string[];
+  certifications: string[];
+  languages: string[];
+  
+  // Mentoring Experience
+  previousMentoring: boolean;
+  mentoringExperience: string;
+  preferredMentoringAreas: string[];
+  
+  // Availability
+  availability: {
+    hoursPerWeek: string;
+    preferredTimeSlots: string[];
+    timezone: string;
   };
-  declaration: boolean;
-  signature: string;
-  signatureImage: string;
+  
+  // Motivation
+  motivation: string;
+  goals: string;
+  expectations: string;
+  
+  // Additional Information
+  linkedinProfile: string;
+  portfolio: string;
+  resume: File | null;
+  profilePicture: File | null;
+  
+  // Terms & Conditions
+  agreeToTerms: boolean;
+  agreeToPrivacy: boolean;
+  agreeToCodeOfConduct: boolean;
 }
 
 export default function MentorOnboardingPage() {
-  const { user, signInWithGoogle } = useUser();
   const router = useRouter();
-  
-  const [formData, setFormData] = useState<MentorOnboardingData>({
-    name: '',
+  const [currentStep, setCurrentStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<MentorApplicationData>({
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
-    expertise: '',
-    linkedin: '',
-    portfolio: '',
-    bio: '',
-    availability: '',
-    documents: {
-      // Mandatory Documents
-      panCard: null,
-      aadhaarCard: null,
-      bankAccountDetails: null,
-      cancelledCheque: null,
-      educationalCertificate: null,
-      experienceProof: null,
-      passportPhoto: null,
-      digitalSignature: null,
-      
-      // Optional Documents
-      gstRegistration: null,
-      professionalTaxRegistration: null
+    location: '',
+    timezone: '',
+    currentCompany: '',
+    currentPosition: '',
+    yearsOfExperience: '',
+    industry: '',
+    specialization: [],
+    education: [{ degree: '', institution: '', year: '' }],
+    skills: [],
+    certifications: [],
+    languages: [],
+    previousMentoring: false,
+    mentoringExperience: '',
+    preferredMentoringAreas: [],
+    availability: {
+      hoursPerWeek: '',
+      preferredTimeSlots: [],
+      timezone: ''
     },
-    declaration: false,
-    signature: '',
-    signatureImage: ''
+    motivation: '',
+    goals: '',
+    expectations: '',
+    linkedinProfile: '',
+    portfolio: '',
+    resume: null,
+    profilePicture: null,
+    agreeToTerms: false,
+    agreeToPrivacy: false,
+    agreeToCodeOfConduct: false
   });
-  
-  const [currentStep, setCurrentStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({});
 
   const steps = [
-    { id: 1, name: 'Basic Information', icon: UserIcon },
-    { id: 2, name: 'Documents', icon: DocumentArrowUpIcon },
-    { id: 3, name: 'Declaration', icon: CheckCircleIcon },
-    { id: 4, name: 'Review & Submit', icon: AcademicCapIcon }
+    { id: 1, title: 'Personal Information', icon: UserIcon },
+    { id: 2, title: 'Professional Background', icon: BriefcaseIcon },
+    { id: 3, title: 'Education & Skills', icon: AcademicCapIcon },
+    { id: 4, title: 'Mentoring Experience', icon: StarIcon },
+    { id: 5, title: 'Availability', icon: GlobeAltIcon },
+    { id: 6, title: 'Motivation & Goals', icon: DocumentTextIcon },
+    { id: 7, title: 'Documents & Review', icon: CheckCircleIcon }
   ];
 
-  useEffect(() => {
-    // Pre-fill email if user is logged in
-    if (user?.email) {
-      setFormData(prev => ({
-        ...prev,
-        email: user.email,
-        name: `${user.firstName} ${user.lastName}`.trim()
-      }));
-    }
-  }, [user]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
+  const handleInputChange = (field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
-      [name]: value
-    }));
-    setError('');
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, documentType: keyof MentorOnboardingData['documents']) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Validate file type and size
-      const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      
-      if (!allowedTypes.includes(file.type)) {
-        setError('Please upload only PDF, JPEG, or PNG files');
-        return;
-      }
-      
-      if (file.size > maxSize) {
-        setError('File size must be less than 10MB');
-        return;
-      }
-      
-      setFormData(prev => ({
-        ...prev,
-        documents: {
-          ...prev.documents,
-          [documentType]: file
-        }
-      }));
-      setError('');
-    }
-  };
-
-  const handleDeclarationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      declaration: e.target.checked
+      [field]: value
     }));
   };
 
-  const validateStep = (step: number): boolean => {
-    switch (step) {
-      case 1:
-        if (!formData.name.trim() || !formData.email.trim() || !formData.phone.trim() || 
-            !formData.expertise.trim() || !formData.bio.trim() || !formData.availability.trim()) {
-          setError('Please fill in all required fields');
-          return false;
-        }
-        break;
-      case 2:
-        // Check all mandatory documents
-        const mandatoryDocs = [
-          'panCard', 'aadhaarCard', 'bankAccountDetails', 'cancelledCheque',
-          'educationalCertificate', 'experienceProof', 'passportPhoto', 'digitalSignature'
-        ];
-        
-        const missingDocs = mandatoryDocs.filter(doc => !formData.documents[doc as keyof typeof formData.documents]);
-        
-        if (missingDocs.length > 0) {
-          setError(`Please upload all mandatory documents: ${missingDocs.join(', ')}`);
-          return false;
-        }
-        break;
-      case 3:
-        if (!formData.declaration || !formData.signature.trim()) {
-          setError('Please accept the declaration and provide your signature');
-          return false;
-        }
-        break;
-    }
-    return true;
+  const handleNestedInputChange = (parentField: string, field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [parentField]: {
+        ...prev[parentField as keyof MentorApplicationData],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleArrayChange = (field: string, value: string, action: 'add' | 'remove') => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: action === 'add' 
+        ? [...(prev[field as keyof MentorApplicationData] as string[]), value]
+        : (prev[field as keyof MentorApplicationData] as string[]).filter(item => item !== value)
+    }));
+  };
+
+  const handleEducationChange = (index: number, field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      education: prev.education.map((edu, i) => 
+        i === index ? { ...edu, [field]: value } : edu
+      )
+    }));
+  };
+
+  const addEducation = () => {
+    setFormData(prev => ({
+      ...prev,
+      education: [...prev.education, { degree: '', institution: '', year: '' }]
+    }));
+  };
+
+  const removeEducation = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      education: prev.education.filter((_, i) => i !== index)
+    }));
   };
 
   const nextStep = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, 4));
-      setError('');
+    if (currentStep < steps.length) {
+      setCurrentStep(currentStep + 1);
     }
   };
 
   const prevStep = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
-    setError('');
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
   };
 
   const handleSubmit = async () => {
-    if (!validateStep(4)) return;
-    
-    setLoading(true);
-    setError('');
-
+    setIsSubmitting(true);
     try {
-      // Upload documents to S3
-      const documentUrls = await uploadDocuments();
-      
-      // Submit mentor application
-      await submitMentorApplication(documentUrls);
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Redirect to success page
       router.push('/mentor-onboarding/success');
-    } catch (err: any) {
-      setError(err.message || 'Submission failed. Please try again.');
+    } catch (error) {
+      console.error('Error submitting application:', error);
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
-  };
-
-  const uploadDocuments = async (): Promise<{[key: string]: string}> => {
-    const uploads: {[key: string]: string} = {};
-    
-    for (const [docType, file] of Object.entries(formData.documents)) {
-      if (file) {
-        try {
-          // This would use Amplify Storage to upload to S3
-          // For now, we'll simulate the upload
-          const fileName = `${docType}_${Date.now()}.${file.name.split('.').pop()}`;
-          const fileUrl = `s3://kalpla-mentor-documents/${user?.id || 'anonymous'}/${fileName}`;
-          
-          uploads[docType] = fileUrl;
-          setUploadProgress(prev => ({ ...prev, [docType]: 100 }));
-        } catch (error) {
-          throw new Error(`Failed to upload ${docType} document`);
-        }
-      }
-    }
-    
-    return uploads;
-  };
-
-  const submitMentorApplication = async (documentUrls: {[key: string]: string}) => {
-    const applicationData = {
-      name: formData.name,
-      email: formData.email,
-      phone: formData.phone,
-      expertise: formData.expertise,
-      linkedin: formData.linkedin,
-      portfolio: formData.portfolio,
-      bio: formData.bio,
-      availability: formData.availability,
-      documents: documentUrls,
-      signature: formData.signature,
-      status: 'PENDING'
-    };
-    
-    console.log('Submitting mentor application:', applicationData);
-    
-    // Call the actual GraphQL API
-    await applicationService.submitMentorApplication(applicationData);
   };
 
   const renderStepContent = () => {
@@ -257,692 +208,697 @@ export default function MentorOnboardingPage() {
       case 1:
         return (
           <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Personal Information</h2>
+              <p className="text-gray-600">Tell us about yourself</p>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                  Full Name *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
                 <input
                   type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  value={formData.firstName}
+                  onChange={(e) => handleInputChange('firstName', e.target.value)}
+                  className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
               </div>
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email Address *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
+                <input
+                  type="text"
+                  value={formData.lastName}
+                  onChange={(e) => handleInputChange('lastName', e.target.value)}
+                  className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
                 <input
                   type="email"
-                  id="email"
-                  name="email"
                   value={formData.email}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  onChange={(e) => handleInputChange('email', e.target.value)}
+                  className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
               </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                  Phone Number *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
                 <input
                   type="tel"
-                  id="phone"
-                  name="phone"
                   value={formData.phone}
-                  onChange={handleInputChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
+                  className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
               </div>
               <div>
-                <label htmlFor="expertise" className="block text-sm font-medium text-gray-700">
-                  Expertise / Domain *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Location *</label>
                 <input
                   type="text"
-                  id="expertise"
-                  name="expertise"
-                  value={formData.expertise}
-                  onChange={handleInputChange}
-                  placeholder="e.g., Startup Strategy, Product Management"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  value={formData.location}
+                  onChange={(e) => handleInputChange('location', e.target.value)}
+                  placeholder="City, Country"
+                  className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Timezone *</label>
+                <select
+                  value={formData.timezone}
+                  onChange={(e) => handleInputChange('timezone', e.target.value)}
+                  className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="">Select Timezone</option>
+                  <option value="UTC-12">UTC-12 (Baker Island)</option>
+                  <option value="UTC-11">UTC-11 (American Samoa)</option>
+                  <option value="UTC-10">UTC-10 (Hawaii)</option>
+                  <option value="UTC-9">UTC-9 (Alaska)</option>
+                  <option value="UTC-8">UTC-8 (Pacific Time)</option>
+                  <option value="UTC-7">UTC-7 (Mountain Time)</option>
+                  <option value="UTC-6">UTC-6 (Central Time)</option>
+                  <option value="UTC-5">UTC-5 (Eastern Time)</option>
+                  <option value="UTC-4">UTC-4 (Atlantic Time)</option>
+                  <option value="UTC-3">UTC-3 (Brazil)</option>
+                  <option value="UTC-2">UTC-2 (Mid-Atlantic)</option>
+                  <option value="UTC-1">UTC-1 (Azores)</option>
+                  <option value="UTC+0">UTC+0 (Greenwich)</option>
+                  <option value="UTC+1">UTC+1 (Central European)</option>
+                  <option value="UTC+2">UTC+2 (Eastern European)</option>
+                  <option value="UTC+3">UTC+3 (Moscow)</option>
+                  <option value="UTC+4">UTC+4 (Gulf)</option>
+                  <option value="UTC+5">UTC+5 (Pakistan)</option>
+                  <option value="UTC+5:30">UTC+5:30 (India)</option>
+                  <option value="UTC+6">UTC+6 (Bangladesh)</option>
+                  <option value="UTC+7">UTC+7 (Thailand)</option>
+                  <option value="UTC+8">UTC+8 (China)</option>
+                  <option value="UTC+9">UTC+9 (Japan)</option>
+                  <option value="UTC+10">UTC+10 (Australia)</option>
+                  <option value="UTC+11">UTC+11 (Solomon Islands)</option>
+                  <option value="UTC+12">UTC+12 (New Zealand)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Professional Background</h2>
+              <p className="text-gray-600">Share your professional experience</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label htmlFor="linkedin" className="block text-sm font-medium text-gray-700">
-                  LinkedIn Profile
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Current Company *</label>
                 <input
-                  type="url"
-                  id="linkedin"
-                  name="linkedin"
-                  value={formData.linkedin}
-                  onChange={handleInputChange}
-                  placeholder="https://linkedin.com/in/yourprofile"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  type="text"
+                  value={formData.currentCompany}
+                  onChange={(e) => handleInputChange('currentCompany', e.target.value)}
+                  className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  required
                 />
               </div>
               <div>
-                <label htmlFor="portfolio" className="block text-sm font-medium text-gray-700">
-                  Portfolio / Website
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Current Position *</label>
                 <input
-                  type="url"
-                  id="portfolio"
-                  name="portfolio"
-                  value={formData.portfolio}
-                  onChange={handleInputChange}
-                  placeholder="https://yourportfolio.com"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  type="text"
+                  value={formData.currentPosition}
+                  onChange={(e) => handleInputChange('currentPosition', e.target.value)}
+                  className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  required
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Years of Experience *</label>
+                <select
+                  value={formData.yearsOfExperience}
+                  onChange={(e) => handleInputChange('yearsOfExperience', e.target.value)}
+                  className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="">Select Experience</option>
+                  <option value="1-2">1-2 years</option>
+                  <option value="3-5">3-5 years</option>
+                  <option value="6-10">6-10 years</option>
+                  <option value="11-15">11-15 years</option>
+                  <option value="16-20">16-20 years</option>
+                  <option value="20+">20+ years</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Industry *</label>
+                <select
+                  value={formData.industry}
+                  onChange={(e) => handleInputChange('industry', e.target.value)}
+                  className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  required
+                >
+                  <option value="">Select Industry</option>
+                  <option value="Technology">Technology</option>
+                  <option value="Finance">Finance</option>
+                  <option value="Healthcare">Healthcare</option>
+                  <option value="Education">Education</option>
+                  <option value="Marketing">Marketing</option>
+                  <option value="Sales">Sales</option>
+                  <option value="Operations">Operations</option>
+                  <option value="Human Resources">Human Resources</option>
+                  <option value="Legal">Legal</option>
+                  <option value="Consulting">Consulting</option>
+                  <option value="Other">Other</option>
+                </select>
               </div>
             </div>
             
             <div>
-              <label htmlFor="bio" className="block text-sm font-medium text-gray-700">
-                Short Bio *
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Specialization Areas *</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {['Business Strategy', 'Product Management', 'Marketing', 'Sales', 'Finance', 'Operations', 'Technology', 'Leadership', 'Entrepreneurship', 'Innovation'].map(specialization => (
+                  <label key={specialization} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.specialization.includes(specialization)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          handleArrayChange('specialization', specialization, 'add');
+                        } else {
+                          handleArrayChange('specialization', specialization, 'remove');
+                        }
+                      }}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">{specialization}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Education & Skills</h2>
+              <p className="text-gray-600">Tell us about your educational background and skills</p>
+            </div>
+            
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <label className="block text-sm font-medium text-gray-700">Education</label>
+                <button
+                  type="button"
+                  onClick={addEducation}
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                >
+                  + Add Education
+                </button>
+              </div>
+              {formData.education.map((edu, index) => (
+                <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 p-4 border rounded-lg">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Degree</label>
+                    <input
+                      type="text"
+                      value={edu.degree}
+                      onChange={(e) => handleEducationChange(index, 'degree', e.target.value)}
+                      placeholder="e.g., MBA, B.Tech"
+                      className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Institution</label>
+                    <input
+                      type="text"
+                      value={edu.institution}
+                      onChange={(e) => handleEducationChange(index, 'institution', e.target.value)}
+                      placeholder="University name"
+                      className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                    <input
+                      type="text"
+                      value={edu.year}
+                      onChange={(e) => handleEducationChange(index, 'year', e.target.value)}
+                      placeholder="2020"
+                      className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="flex items-end">
+                    {formData.education.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeEducation(index)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        <XMarkIcon className="h-5 w-5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Skills</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {['Leadership', 'Communication', 'Problem Solving', 'Strategic Thinking', 'Project Management', 'Data Analysis', 'Team Building', 'Negotiation', 'Public Speaking', 'Mentoring'].map(skill => (
+                  <label key={skill} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.skills.includes(skill)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          handleArrayChange('skills', skill, 'add');
+                        } else {
+                          handleArrayChange('skills', skill, 'remove');
+                        }
+                      }}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">{skill}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Languages</label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                {['English', 'Hindi', 'Spanish', 'French', 'German', 'Chinese', 'Japanese', 'Arabic'].map(language => (
+                  <label key={language} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.languages.includes(language)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          handleArrayChange('languages', language, 'add');
+                        } else {
+                          handleArrayChange('languages', language, 'remove');
+                        }
+                      }}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">{language}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 4:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Mentoring Experience</h2>
+              <p className="text-gray-600">Share your mentoring background</p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-4">Have you mentored before? *</label>
+              <div className="flex space-x-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="previousMentoring"
+                    checked={formData.previousMentoring === true}
+                    onChange={() => handleInputChange('previousMentoring', true)}
+                    className="text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-gray-700">Yes</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="previousMentoring"
+                    checked={formData.previousMentoring === false}
+                    onChange={() => handleInputChange('previousMentoring', false)}
+                    className="text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="ml-2 text-gray-700">No</span>
+                </label>
+              </div>
+            </div>
+            
+            {formData.previousMentoring && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Mentoring Experience</label>
+                <textarea
+                  value={formData.mentoringExperience}
+                  onChange={(e) => handleInputChange('mentoringExperience', e.target.value)}
+                  rows={4}
+                  placeholder="Describe your previous mentoring experience..."
+                  className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+            )}
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Mentoring Areas *</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {['Career Development', 'Business Strategy', 'Leadership', 'Product Management', 'Marketing', 'Sales', 'Finance', 'Operations', 'Technology', 'Entrepreneurship'].map(area => (
+                  <label key={area} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.preferredMentoringAreas.includes(area)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          handleArrayChange('preferredMentoringAreas', area, 'add');
+                        } else {
+                          handleArrayChange('preferredMentoringAreas', area, 'remove');
+                        }
+                      }}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">{area}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 5:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Availability</h2>
+              <p className="text-gray-600">Tell us about your availability for mentoring</p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Hours per week you can dedicate to mentoring *</label>
+              <select
+                value={formData.availability.hoursPerWeek}
+                onChange={(e) => handleNestedInputChange('availability', 'hoursPerWeek', e.target.value)}
+                className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                required
+              >
+                <option value="">Select Hours</option>
+                <option value="1-2">1-2 hours</option>
+                <option value="3-5">3-5 hours</option>
+                <option value="6-10">6-10 hours</option>
+                <option value="11-15">11-15 hours</option>
+                <option value="16+">16+ hours</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Time Slots *</label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {['Morning (6 AM - 12 PM)', 'Afternoon (12 PM - 6 PM)', 'Evening (6 PM - 12 AM)', 'Weekdays', 'Weekends', 'Flexible'].map(slot => (
+                  <label key={slot} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={formData.availability.preferredTimeSlots.includes(slot)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          handleArrayChange('availability.preferredTimeSlots', slot, 'add');
+                        } else {
+                          handleArrayChange('availability.preferredTimeSlots', slot, 'remove');
+                        }
+                      }}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span className="ml-2 text-sm text-gray-700">{slot}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 6:
+        return (
+          <div className="space-y-6">
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Motivation & Goals</h2>
+              <p className="text-gray-600">Tell us why you want to become a mentor</p>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">What motivates you to become a mentor? *</label>
               <textarea
-                id="bio"
-                name="bio"
+                value={formData.motivation}
+                onChange={(e) => handleInputChange('motivation', e.target.value)}
                 rows={4}
-                value={formData.bio}
-                onChange={handleInputChange}
-                placeholder="Tell us about your background, experience, and what makes you a great mentor..."
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Share your motivation for becoming a mentor..."
+                className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
                 required
               />
             </div>
             
             <div>
-              <label htmlFor="availability" className="block text-sm font-medium text-gray-700">
-                Availability per Week *
-              </label>
-              <select
-                id="availability"
-                name="availability"
-                value={formData.availability}
-                onChange={handleInputChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              <label className="block text-sm font-medium text-gray-700 mb-2">What are your goals as a mentor? *</label>
+              <textarea
+                value={formData.goals}
+                onChange={(e) => handleInputChange('goals', e.target.value)}
+                rows={4}
+                placeholder="Describe your goals and what you hope to achieve..."
+                className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
                 required
-              >
-                <option value="">Select availability</option>
-                <option value="1-5 hours">1-5 hours</option>
-                <option value="5-10 hours">5-10 hours</option>
-                <option value="10-15 hours">10-15 hours</option>
-                <option value="15+ hours">15+ hours</option>
-              </select>
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">What are your expectations from the mentoring program? *</label>
+              <textarea
+                value={formData.expectations}
+                onChange={(e) => handleInputChange('expectations', e.target.value)}
+                rows={4}
+                placeholder="Share your expectations from Kalpla's mentoring program..."
+                className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                required
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">LinkedIn Profile</label>
+                <input
+                  type="url"
+                  value={formData.linkedinProfile}
+                  onChange={(e) => handleInputChange('linkedinProfile', e.target.value)}
+                  placeholder="https://linkedin.com/in/yourprofile"
+                  className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Portfolio/Website</label>
+                <input
+                  type="url"
+                  value={formData.portfolio}
+                  onChange={(e) => handleInputChange('portfolio', e.target.value)}
+                  placeholder="https://yourwebsite.com"
+                  className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
             </div>
           </div>
         );
-        
-      case 2:
+
+      case 7:
         return (
           <div className="space-y-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div className="flex">
-                <ExclamationTriangleIcon className="h-5 w-5 text-blue-400 mt-0.5" />
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-blue-800">Mandatory Document Requirements</h3>
-                  <div className="mt-2 text-sm text-blue-700">
-                    <p>Please upload clear, readable documents. Accepted formats: PDF, JPEG, PNG (max 10MB each)</p>
-                    <p className="mt-1 font-medium">All documents marked with * are mandatory for compliance.</p>
-                  </div>
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Documents & Review</h2>
+              <p className="text-gray-600">Upload documents and review your application</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Profile Picture</label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <CloudArrowUpIcon className="mx-auto h-12 w-12 text-gray-400" />
+                  <p className="mt-2 text-sm text-gray-600">Upload your profile picture</p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleInputChange('profilePicture', e.target.files?.[0] || null)}
+                    className="mt-2"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Resume/CV</label>
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <DocumentTextIcon className="mx-auto h-12 w-12 text-gray-400" />
+                  <p className="mt-2 text-sm text-gray-600">Upload your resume (PDF)</p>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={(e) => handleInputChange('resume', e.target.files?.[0] || null)}
+                    className="mt-2"
+                  />
                 </div>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* PAN Card */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  PAN Card * (Mandatory)
-                </label>
-                <div className="mt-1 flex justify-center px-4 pt-4 pb-4 border-2 border-gray-300 border-dashed rounded-lg">
-                  <div className="space-y-1 text-center">
-                    <DocumentArrowUpIcon className="mx-auto h-8 w-8 text-gray-400" />
-                    <div className="flex text-sm text-gray-600">
-                      <label htmlFor="panCard" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
-                        <span>Upload PAN</span>
-                        <input
-                          id="panCard"
-                          name="panCard"
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={(e) => handleFileUpload(e, 'panCard')}
-                          className="sr-only"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                {formData.documents.panCard && (
-                  <p className="mt-2 text-sm text-green-600">✓ {formData.documents.panCard.name}</p>
-                )}
-              </div>
-
-              {/* Aadhaar Card */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Aadhaar Card * (ID + Address Proof)
-                </label>
-                <div className="mt-1 flex justify-center px-4 pt-4 pb-4 border-2 border-gray-300 border-dashed rounded-lg">
-                  <div className="space-y-1 text-center">
-                    <DocumentArrowUpIcon className="mx-auto h-8 w-8 text-gray-400" />
-                    <div className="flex text-sm text-gray-600">
-                      <label htmlFor="aadhaarCard" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
-                        <span>Upload Aadhaar</span>
-                        <input
-                          id="aadhaarCard"
-                          name="aadhaarCard"
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={(e) => handleFileUpload(e, 'aadhaarCard')}
-                          className="sr-only"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                {formData.documents.aadhaarCard && (
-                  <p className="mt-2 text-sm text-green-600">✓ {formData.documents.aadhaarCard.name}</p>
-                )}
-              </div>
-
-              {/* Bank Account Details */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Bank Account Details *
-                </label>
-                <div className="mt-1 flex justify-center px-4 pt-4 pb-4 border-2 border-gray-300 border-dashed rounded-lg">
-                  <div className="space-y-1 text-center">
-                    <DocumentArrowUpIcon className="mx-auto h-8 w-8 text-gray-400" />
-                    <div className="flex text-sm text-gray-600">
-                      <label htmlFor="bankAccountDetails" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
-                        <span>Upload Bank Details</span>
-                        <input
-                          id="bankAccountDetails"
-                          name="bankAccountDetails"
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={(e) => handleFileUpload(e, 'bankAccountDetails')}
-                          className="sr-only"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                {formData.documents.bankAccountDetails && (
-                  <p className="mt-2 text-sm text-green-600">✓ {formData.documents.bankAccountDetails.name}</p>
-                )}
-              </div>
-
-              {/* Cancelled Cheque */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cancelled Cheque / Bank Passbook *
-                </label>
-                <div className="mt-1 flex justify-center px-4 pt-4 pb-4 border-2 border-gray-300 border-dashed rounded-lg">
-                  <div className="space-y-1 text-center">
-                    <DocumentArrowUpIcon className="mx-auto h-8 w-8 text-gray-400" />
-                    <div className="flex text-sm text-gray-600">
-                      <label htmlFor="cancelledCheque" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
-                        <span>Upload Cheque</span>
-                        <input
-                          id="cancelledCheque"
-                          name="cancelledCheque"
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={(e) => handleFileUpload(e, 'cancelledCheque')}
-                          className="sr-only"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                {formData.documents.cancelledCheque && (
-                  <p className="mt-2 text-sm text-green-600">✓ {formData.documents.cancelledCheque.name}</p>
-                )}
-              </div>
-
-              {/* Educational Certificate */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Educational Qualification Certificate *
-                </label>
-                <div className="mt-1 flex justify-center px-4 pt-4 pb-4 border-2 border-gray-300 border-dashed rounded-lg">
-                  <div className="space-y-1 text-center">
-                    <DocumentArrowUpIcon className="mx-auto h-8 w-8 text-gray-400" />
-                    <div className="flex text-sm text-gray-600">
-                      <label htmlFor="educationalCertificate" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
-                        <span>Upload Certificate</span>
-                        <input
-                          id="educationalCertificate"
-                          name="educationalCertificate"
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={(e) => handleFileUpload(e, 'educationalCertificate')}
-                          className="sr-only"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                {formData.documents.educationalCertificate && (
-                  <p className="mt-2 text-sm text-green-600">✓ {formData.documents.educationalCertificate.name}</p>
-                )}
-              </div>
-
-              {/* Experience Proof */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Experience Proof * (Employment Letter / LinkedIn)
-                </label>
-                <div className="mt-1 flex justify-center px-4 pt-4 pb-4 border-2 border-gray-300 border-dashed rounded-lg">
-                  <div className="space-y-1 text-center">
-                    <DocumentArrowUpIcon className="mx-auto h-8 w-8 text-gray-400" />
-                    <div className="flex text-sm text-gray-600">
-                      <label htmlFor="experienceProof" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
-                        <span>Upload Experience</span>
-                        <input
-                          id="experienceProof"
-                          name="experienceProof"
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={(e) => handleFileUpload(e, 'experienceProof')}
-                          className="sr-only"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                {formData.documents.experienceProof && (
-                  <p className="mt-2 text-sm text-green-600">✓ {formData.documents.experienceProof.name}</p>
-                )}
-              </div>
-
-              {/* Passport Photo */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Passport-size Photograph *
-                </label>
-                <div className="mt-1 flex justify-center px-4 pt-4 pb-4 border-2 border-gray-300 border-dashed rounded-lg">
-                  <div className="space-y-1 text-center">
-                    <DocumentArrowUpIcon className="mx-auto h-8 w-8 text-gray-400" />
-                    <div className="flex text-sm text-gray-600">
-                      <label htmlFor="passportPhoto" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
-                        <span>Upload Photo</span>
-                        <input
-                          id="passportPhoto"
-                          name="passportPhoto"
-                          type="file"
-                          accept=".jpg,.jpeg,.png"
-                          onChange={(e) => handleFileUpload(e, 'passportPhoto')}
-                          className="sr-only"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                {formData.documents.passportPhoto && (
-                  <p className="mt-2 text-sm text-green-600">✓ {formData.documents.passportPhoto.name}</p>
-                )}
-              </div>
-
-              {/* Digital Signature */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Digital Signature / Scanned Signature *
-                </label>
-                <div className="mt-1 flex justify-center px-4 pt-4 pb-4 border-2 border-gray-300 border-dashed rounded-lg">
-                  <div className="space-y-1 text-center">
-                    <DocumentArrowUpIcon className="mx-auto h-8 w-8 text-gray-400" />
-                    <div className="flex text-sm text-gray-600">
-                      <label htmlFor="digitalSignature" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
-                        <span>Upload Signature</span>
-                        <input
-                          id="digitalSignature"
-                          name="digitalSignature"
-                          type="file"
-                          accept=".jpg,.jpeg,.png"
-                          onChange={(e) => handleFileUpload(e, 'digitalSignature')}
-                          className="sr-only"
-                        />
-                      </label>
-                    </div>
-                  </div>
-                </div>
-                {formData.documents.digitalSignature && (
-                  <p className="mt-2 text-sm text-green-600">✓ {formData.documents.digitalSignature.name}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Optional Documents */}
-            <div className="mt-8">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Optional Documents</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    GST Registration (if applicable)
-                  </label>
-                  <div className="mt-1 flex justify-center px-4 pt-4 pb-4 border-2 border-gray-300 border-dashed rounded-lg">
-                    <div className="space-y-1 text-center">
-                      <DocumentArrowUpIcon className="mx-auto h-8 w-8 text-gray-400" />
-                      <div className="flex text-sm text-gray-600">
-                        <label htmlFor="gstRegistration" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
-                          <span>Upload GST</span>
-                          <input
-                            id="gstRegistration"
-                            name="gstRegistration"
-                            type="file"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            onChange={(e) => handleFileUpload(e, 'gstRegistration')}
-                            className="sr-only"
-                          />
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                  {formData.documents.gstRegistration && (
-                    <p className="mt-2 text-sm text-green-600">✓ {formData.documents.gstRegistration.name}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Professional Tax Registration (if applicable)
-                  </label>
-                  <div className="mt-1 flex justify-center px-4 pt-4 pb-4 border-2 border-gray-300 border-dashed rounded-lg">
-                    <div className="space-y-1 text-center">
-                      <DocumentArrowUpIcon className="mx-auto h-8 w-8 text-gray-400" />
-                      <div className="flex text-sm text-gray-600">
-                        <label htmlFor="professionalTaxRegistration" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
-                          <span>Upload Tax Reg</span>
-                          <input
-                            id="professionalTaxRegistration"
-                            name="professionalTaxRegistration"
-                            type="file"
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            onChange={(e) => handleFileUpload(e, 'professionalTaxRegistration')}
-                            className="sr-only"
-                          />
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                  {formData.documents.professionalTaxRegistration && (
-                    <p className="mt-2 text-sm text-green-600">✓ {formData.documents.professionalTaxRegistration.name}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-        
-      case 3:
-        return (
-          <div className="space-y-6">
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Self-Declaration Agreement</h3>
-              <div className="space-y-4 text-sm text-gray-700">
-                <p>
-                  I, <strong>{formData.name}</strong>, hereby declare that:
-                </p>
-                <ul className="list-disc list-inside space-y-2 ml-4">
-                  <li>All the documents submitted are true and correct to the best of my knowledge.</li>
-                  <li>I accept that all classes, recordings, and course content rights belong solely to <strong>Learncap Academy Private Limited (Kalpla)</strong>.</li>
-                  <li>I understand that I am entering into a mentorship agreement with Learncap Academy Private Limited.</li>
-                  <li>I have the necessary qualifications and experience to serve as a mentor in the Kalpla Startup Mentorship Program (KSMP).</li>
-                  <li>I understand that my role as a mentor involves guiding and supporting startup founders through the KSMP phases.</li>
-                  <li>I commit to maintaining confidentiality regarding any sensitive information shared by mentees.</li>
-                  <li>I will adhere to the Kalpla Code of Conduct and professional standards.</li>
-                  <li>I understand that my application will be reviewed and approval is subject to Learncap Academy Private Limited's discretion.</li>
-                  <li>I acknowledge that providing false information may result in immediate termination of my mentor status.</li>
-                  <li>I consent to the collection, storage, and processing of my personal data as per the Privacy Policy.</li>
-                </ul>
-                
-                <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-800">
-                    <strong>Legal Notice:</strong> This declaration is legally binding and will be stored as proof of your agreement. 
-                    By accepting this declaration, you are entering into a legal agreement with Learncap Academy Private Limited.
-                  </p>
-                </div>
+            <div className="bg-gray-50 rounded-lg p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">Application Summary</h3>
+              <div className="space-y-2 text-sm">
+                <p><span className="font-medium">Name:</span> {formData.firstName} {formData.lastName}</p>
+                <p><span className="font-medium">Email:</span> {formData.email}</p>
+                <p><span className="font-medium">Company:</span> {formData.currentCompany}</p>
+                <p><span className="font-medium">Position:</span> {formData.currentPosition}</p>
+                <p><span className="font-medium">Experience:</span> {formData.yearsOfExperience} years</p>
+                <p><span className="font-medium">Specialization:</span> {formData.specialization.join(', ')}</p>
+                <p><span className="font-medium">Availability:</span> {formData.availability.hoursPerWeek} hours/week</p>
               </div>
             </div>
             
             <div className="space-y-4">
-              <div className="flex items-start">
-                <input
-                  id="declaration"
-                  name="declaration"
-                  type="checkbox"
-                  checked={formData.declaration}
-                  onChange={handleDeclarationChange}
-                  className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="declaration" className="ml-3 text-sm text-gray-700">
-                  I AGREE to the above Self-Declaration Agreement and accept all terms and conditions. *
+              <h3 className="text-lg font-medium text-gray-900">Terms & Conditions</h3>
+              <div className="space-y-3">
+                <label className="flex items-start">
+                  <input
+                    type="checkbox"
+                    checked={formData.agreeToTerms}
+                    onChange={(e) => handleInputChange('agreeToTerms', e.target.checked)}
+                    className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    required
+                  />
+                  <span className="ml-2 text-sm text-gray-700">
+                    I agree to the <a href="/terms" className="text-blue-600 hover:text-blue-800">Terms of Service</a> *
+                  </span>
                 </label>
-              </div>
-              
-              <div>
-                <label htmlFor="signature" className="block text-sm font-medium text-gray-700">
-                  Digital Signature *
+                <label className="flex items-start">
+                  <input
+                    type="checkbox"
+                    checked={formData.agreeToPrivacy}
+                    onChange={(e) => handleInputChange('agreeToPrivacy', e.target.checked)}
+                    className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    required
+                  />
+                  <span className="ml-2 text-sm text-gray-700">
+                    I agree to the <a href="/privacy" className="text-blue-600 hover:text-blue-800">Privacy Policy</a> *
+                  </span>
                 </label>
-                <input
-                  type="text"
-                  id="signature"
-                  name="signature"
-                  value={formData.signature}
-                  onChange={handleInputChange}
-                  placeholder="Type your full name as digital signature"
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-                <p className="mt-1 text-xs text-gray-500">
-                  By typing your name, you are providing a digital signature agreeing to the above declaration. 
-                  This will be logged with timestamp, IP address, and device information for legal compliance.
-                </p>
+                <label className="flex items-start">
+                  <input
+                    type="checkbox"
+                    checked={formData.agreeToCodeOfConduct}
+                    onChange={(e) => handleInputChange('agreeToCodeOfConduct', e.target.checked)}
+                    className="mt-1 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    required
+                  />
+                  <span className="ml-2 text-sm text-gray-700">
+                    I agree to follow the <a href="/code-of-conduct" className="text-blue-600 hover:text-blue-800">Code of Conduct</a> *
+                  </span>
+                </label>
               </div>
             </div>
           </div>
         );
-        
-      case 4:
-        return (
-          <div className="space-y-6">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-              <h3 className="text-lg font-medium text-blue-900 mb-4">Review Your Application</h3>
-              <div className="space-y-4 text-sm">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <span className="font-medium text-gray-700">Name:</span>
-                    <p className="text-gray-600">{formData.name}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">Email:</span>
-                    <p className="text-gray-600">{formData.email}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">Phone:</span>
-                    <p className="text-gray-600">{formData.phone}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">Expertise:</span>
-                    <p className="text-gray-600">{formData.expertise}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">Availability:</span>
-                    <p className="text-gray-600">{formData.availability}</p>
-                  </div>
-                  <div>
-                    <span className="font-medium text-gray-700">LinkedIn:</span>
-                    <p className="text-gray-600">{formData.linkedin || 'Not provided'}</p>
-                  </div>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Bio:</span>
-                  <p className="text-gray-600 mt-1">{formData.bio}</p>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Documents:</span>
-                  <ul className="text-gray-600 mt-1 space-y-1">
-                    <li>✓ Government ID: {formData.documents.govId?.name}</li>
-                    <li>✓ Degree/Certification: {formData.documents.degree?.name}</li>
-                    <li>✓ Resume/CV: {formData.documents.resume?.name}</li>
-                  </ul>
-                </div>
-                <div>
-                  <span className="font-medium text-gray-700">Declaration:</span>
-                  <p className="text-gray-600 mt-1">✓ Accepted and signed by {formData.signature}</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex">
-                <ExclamationTriangleIcon className="h-5 w-5 text-yellow-400 mt-0.5" />
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-yellow-800">Important Notice</h3>
-                  <div className="mt-2 text-sm text-yellow-700">
-                    <p>
-                      After submission, your application will be reviewed by our admin team. 
-                      You will receive an email notification once your application is approved or rejected. 
-                      This process typically takes 3-5 business days.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-        
+
       default:
         return null;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-extrabold text-gray-900">
-            Become a Mentor
-          </h1>
-          <p className="mt-2 text-lg text-gray-600">
-            Join our community of experienced professionals and help guide the next generation of entrepreneurs
-          </p>
-        </div>
-
-        {/* Progress Steps */}
-        <div className="mb-8">
-          <nav aria-label="Progress">
-            <ol className="flex items-center justify-center space-x-8">
-              {steps.map((step, stepIdx) => (
-                <li key={step.name} className="flex items-center">
-                  <div className={`flex items-center ${
-                    currentStep >= step.id ? 'text-blue-600' : 'text-gray-400'
-                  }`}>
-                    <div className={`flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full ${
-                      currentStep >= step.id 
-                        ? 'bg-blue-600 text-white' 
-                        : 'bg-gray-200 text-gray-500'
-                    }`}>
-                      <step.icon className="w-6 h-6" />
-                    </div>
-                    <span className="ml-4 text-sm font-medium">{step.name}</span>
-                  </div>
-                  {stepIdx < steps.length - 1 && (
-                    <div className={`ml-8 w-16 h-0.5 ${
-                      currentStep > step.id ? 'bg-blue-600' : 'bg-gray-200'
-                    }`} />
-                  )}
-                </li>
-              ))}
-            </ol>
-          </nav>
-        </div>
-
-        {/* Main Content */}
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          {error && (
-            <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex">
-                <ExclamationTriangleIcon className="h-5 w-5 text-red-400 mt-0.5" />
-                <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">Error</h3>
-                  <div className="mt-2 text-sm text-red-700">
-                    <p>{error}</p>
-                  </div>
-                </div>
-              </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            <div className="flex items-center">
+              <Image
+                src={kalplaLogo}
+                alt="Kalpla"
+                width={40}
+                height={40}
+                className="h-10 w-auto"
+              />
+              <span className="ml-2 text-xl font-bold text-gray-900">Kalpla</span>
             </div>
-          )}
+            <div className="text-sm text-gray-600">
+              Step {currentStep} of {steps.length}
+            </div>
+          </div>
+        </div>
+      </header>
 
-          {renderStepContent()}
-
-          {/* Navigation Buttons */}
-          <div className="mt-8 flex justify-between">
-            <button
-              onClick={prevStep}
-              disabled={currentStep === 1}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            
-            {currentStep < 4 ? (
-              <button
-                onClick={nextStep}
-                className="px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Next
-              </button>
-            ) : (
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="px-6 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Submitting...' : 'Submit Application'}
-              </button>
-            )}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Progress Bar */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            {steps.map((step, index) => (
+              <div key={step.id} className="flex items-center">
+                <div className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                  currentStep >= step.id 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-200 text-gray-600'
+                }`}>
+                  <step.icon className="h-5 w-5" />
+                </div>
+                <div className="ml-3 hidden sm:block">
+                  <p className={`text-sm font-medium ${
+                    currentStep >= step.id ? 'text-blue-600' : 'text-gray-500'
+                  }`}>
+                    {step.title}
+                  </p>
+                </div>
+                {index < steps.length - 1 && (
+                  <div className={`ml-4 w-16 h-0.5 ${
+                    currentStep > step.id ? 'bg-blue-600' : 'bg-gray-200'
+                  }`} />
+                )}
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Login Prompt */}
-        {!user && (
-          <div className="mt-8 text-center">
-            <p className="text-sm text-gray-600">
-              Already have an account?{' '}
-              <button
-                onClick={() => signInWithGoogle()}
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
-                Sign in with Google
-              </button>
-              {' '}or{' '}
-              <a href="/auth/signin" className="font-medium text-blue-600 hover:text-blue-500">
-                Sign in
-              </a>
-            </p>
-          </div>
-        )}
+        {/* Form Content */}
+        <div className="bg-white rounded-lg shadow-sm p-8">
+          {renderStepContent()}
+        </div>
+
+        {/* Navigation */}
+        <div className="flex justify-between mt-8">
+          <button
+            onClick={prevStep}
+            disabled={currentStep === 1}
+            className={`flex items-center px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 ${
+              currentStep === 1 ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+          >
+            <ArrowLeftIcon className="h-5 w-5 mr-2" />
+            Previous
+          </button>
+          
+          {currentStep < steps.length ? (
+            <button
+              onClick={nextStep}
+              className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            >
+              Next
+              <ArrowRightIcon className="h-5 w-5 ml-2" />
+            </button>
+          ) : (
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting || !formData.agreeToTerms || !formData.agreeToPrivacy || !formData.agreeToCodeOfConduct}
+              className={`flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 ${
+                isSubmitting || !formData.agreeToTerms || !formData.agreeToPrivacy || !formData.agreeToCodeOfConduct
+                  ? 'opacity-50 cursor-not-allowed' 
+                  : ''
+              }`}
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit Application'}
+              <CheckCircleIcon className="h-5 w-5 ml-2" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

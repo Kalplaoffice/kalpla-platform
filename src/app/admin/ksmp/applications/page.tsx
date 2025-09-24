@@ -29,10 +29,14 @@ import {
   LightBulbIcon,
   UserGroupIcon,
   BanknotesIcon,
-  TrendingUpIcon,
+  ArrowTrendingUpIcon,
   UsersIcon,
   DocumentCheckIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  XMarkIcon
 } from '@heroicons/react/24/outline';
 
 export default function KSMPApplicationsPage() {
@@ -46,6 +50,45 @@ export default function KSMPApplicationsPage() {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterCohort, setFilterCohort] = useState('all');
   const [filterIndustry, setFilterIndustry] = useState('all');
+  
+  // CRUD Modal States
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState<any>(null);
+  const [applications, setApplications] = useState<any[]>([]);
+  
+  // Form States
+  const [formData, setFormData] = useState({
+    applicantName: '',
+    email: '',
+    phone: '',
+    startupName: '',
+    industry: 'FinTech',
+    stage: 'Early Stage',
+    status: 'pending',
+    cohort: '2024-02',
+    teamSize: 1,
+    fundingRaised: 0,
+    revenue: 0,
+    businessModel: '',
+    targetMarket: '',
+    competitiveAdvantage: '',
+    problemStatement: '',
+    solution: '',
+    marketSize: '',
+    traction: '',
+    mentorshipGoals: [],
+    expectedOutcomes: '',
+    timeCommitment: '',
+    preferredMentors: [],
+    previousExperience: '',
+    education: '',
+    notes: '',
+    priority: 'medium'
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (userLoading) return;
@@ -66,8 +109,9 @@ export default function KSMPApplicationsPage() {
     setLoading(false);
   }, [user, userLoading, router, hasRedirected, role, isAuthenticated]);
 
-  // Mock data for KSMP applications
-  const applications = [
+  // Initialize applications data
+  useEffect(() => {
+    const initialApplications = [
     {
       id: 'KSMP_APP_001',
       applicantName: 'Rajesh Kumar',
@@ -337,7 +381,9 @@ export default function KSMPApplicationsPage() {
       notes: 'Excellent execution with strong market traction. Ready for scaling.',
       priority: 'high'
     }
-  ];
+    ];
+    setApplications(initialApplications);
+  }, []);
 
   const cohorts = [
     { value: 'all', label: 'All Cohorts' },
@@ -384,6 +430,234 @@ export default function KSMPApplicationsPage() {
       case 'low': return 'text-green-600 bg-green-100';
       default: return 'text-gray-600 bg-gray-100';
     }
+  };
+
+  // CRUD Functions
+  const handleCreateApplication = () => {
+    setFormData({
+      applicantName: '',
+      email: '',
+      phone: '',
+      startupName: '',
+      industry: 'FinTech',
+      stage: 'Early Stage',
+      status: 'pending',
+      cohort: '2024-02',
+      teamSize: 1,
+      fundingRaised: 0,
+      revenue: 0,
+      businessModel: '',
+      targetMarket: '',
+      competitiveAdvantage: '',
+      problemStatement: '',
+      solution: '',
+      marketSize: '',
+      traction: '',
+      mentorshipGoals: [],
+      expectedOutcomes: '',
+      timeCommitment: '',
+      preferredMentors: [],
+      previousExperience: '',
+      education: '',
+      notes: '',
+      priority: 'medium'
+    });
+    setSelectedApplication(null);
+    setShowCreateModal(true);
+  };
+
+  const handleEditApplication = (application: any) => {
+    setSelectedApplication(application);
+    setFormData({
+      applicantName: application.applicantName,
+      email: application.email,
+      phone: application.phone,
+      startupName: application.startupName,
+      industry: application.industry,
+      stage: application.stage,
+      status: application.status,
+      cohort: application.cohort,
+      teamSize: application.teamSize,
+      fundingRaised: application.fundingRaised,
+      revenue: application.revenue,
+      businessModel: application.businessModel,
+      targetMarket: application.targetMarket,
+      competitiveAdvantage: application.competitiveAdvantage,
+      problemStatement: application.problemStatement,
+      solution: application.solution,
+      marketSize: application.marketSize,
+      traction: application.traction,
+      mentorshipGoals: application.mentorshipGoals,
+      expectedOutcomes: application.expectedOutcomes,
+      timeCommitment: application.timeCommitment,
+      preferredMentors: application.preferredMentors,
+      previousExperience: application.previousExperience,
+      education: application.education,
+      notes: application.notes,
+      priority: application.priority
+    });
+    setShowEditModal(true);
+  };
+
+  const handleViewApplication = (application: any) => {
+    setSelectedApplication(application);
+    setShowViewModal(true);
+  };
+
+  const handleDeleteApplication = (application: any) => {
+    setSelectedApplication(application);
+    setShowDeleteModal(true);
+  };
+
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      if (showCreateModal) {
+        // Create new application
+        const newApplication = {
+          id: `KSMP_APP_${String(applications.length + 1).padStart(3, '0')}`,
+          ...formData,
+          applicationDate: new Date().toISOString(),
+          reviewedDate: null,
+          reviewedBy: null,
+          references: [],
+          documents: [],
+          evaluation: {
+            businessIdea: 0,
+            marketPotential: 0,
+            teamStrength: 0,
+            executionCapability: 0,
+            scalability: 0,
+            overallScore: 0
+          }
+        };
+        setApplications(prev => [...prev, newApplication]);
+        setShowCreateModal(false);
+      } else if (showEditModal) {
+        // Update existing application
+        setApplications(prev => prev.map(application => 
+          application.id === selectedApplication.id 
+            ? { ...application, ...formData }
+            : application
+        ));
+        setShowEditModal(false);
+      }
+    } catch (error) {
+      console.error('Error saving application:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    setIsSubmitting(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setApplications(prev => prev.filter(application => application.id !== selectedApplication.id));
+      setShowDeleteModal(false);
+      setSelectedApplication(null);
+    } catch (error) {
+      console.error('Error deleting application:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === 'teamSize' || name === 'fundingRaised' || name === 'revenue' ? Number(value) : value
+    }));
+  };
+
+  const handleMentorshipGoalChange = (index: number, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      mentorshipGoals: prev.mentorshipGoals.map((goal, i) => 
+        i === index ? value : goal
+      )
+    }));
+  };
+
+  const addMentorshipGoal = () => {
+    setFormData(prev => ({
+      ...prev,
+      mentorshipGoals: [...prev.mentorshipGoals, '']
+    }));
+  };
+
+  const removeMentorshipGoal = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      mentorshipGoals: prev.mentorshipGoals.filter((_, i) => i !== index)
+    }));
+  };
+
+  const handlePreferredMentorChange = (index: number, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      preferredMentors: prev.preferredMentors.map((mentor, i) => 
+        i === index ? value : mentor
+      )
+    }));
+  };
+
+  const addPreferredMentor = () => {
+    setFormData(prev => ({
+      ...prev,
+      preferredMentors: [...prev.preferredMentors, '']
+    }));
+  };
+
+  const removePreferredMentor = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      preferredMentors: prev.preferredMentors.filter((_, i) => i !== index)
+    }));
+  };
+
+  const closeModals = () => {
+    setShowCreateModal(false);
+    setShowEditModal(false);
+    setShowViewModal(false);
+    setShowDeleteModal(false);
+    setSelectedApplication(null);
+    setFormData({
+      applicantName: '',
+      email: '',
+      phone: '',
+      startupName: '',
+      industry: 'FinTech',
+      stage: 'Early Stage',
+      status: 'pending',
+      cohort: '2024-02',
+      teamSize: 1,
+      fundingRaised: 0,
+      revenue: 0,
+      businessModel: '',
+      targetMarket: '',
+      competitiveAdvantage: '',
+      problemStatement: '',
+      solution: '',
+      marketSize: '',
+      traction: '',
+      mentorshipGoals: [],
+      expectedOutcomes: '',
+      timeCommitment: '',
+      preferredMentors: [],
+      previousExperience: '',
+      education: '',
+      notes: '',
+      priority: 'medium'
+    });
   };
 
   const getStageColor = (stage: string) => {
@@ -443,9 +717,18 @@ export default function KSMPApplicationsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
               </button>
-              <div>
+              <div className="flex-1">
                 <h1 className="text-3xl font-bold text-gray-900">KSMP Applications</h1>
                 <p className="text-gray-600 mt-1">Review and manage Kalpla Startup Mentorship Program applications</p>
+              </div>
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleCreateApplication}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <PlusIcon className="h-4 w-4 mr-2" />
+                  Add Application
+                </button>
               </div>
             </div>
 
@@ -671,9 +954,21 @@ export default function KSMPApplicationsPage() {
 
                     {/* Actions */}
                     <div className="flex space-x-2">
-                      <button className="flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50">
+                      <button 
+                        onClick={() => handleViewApplication(application)}
+                        className="flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        title="View Details"
+                      >
                         <EyeIcon className="h-4 w-4 mr-1" />
-                        View Details
+                        View
+                      </button>
+                      <button 
+                        onClick={() => handleEditApplication(application)}
+                        className="flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        title="Edit Application"
+                      >
+                        <PencilIcon className="h-4 w-4 mr-1" />
+                        Edit
                       </button>
                       {application.status === 'pending' && (
                         <>
@@ -690,6 +985,14 @@ export default function KSMPApplicationsPage() {
                       <button className="flex items-center px-3 py-2 border border-blue-300 rounded-md text-sm font-medium text-blue-700 hover:bg-blue-50">
                         <UserGroupIcon className="h-4 w-4 mr-1" />
                         Assign Mentor
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteApplication(application)}
+                        className="flex items-center px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 hover:bg-red-50"
+                        title="Delete Application"
+                      >
+                        <TrashIcon className="h-4 w-4 mr-1" />
+                        Delete
                       </button>
                     </div>
                   </div>
@@ -713,6 +1016,858 @@ export default function KSMPApplicationsPage() {
           )}
         </div>
       </div>
+
+      {/* Create Application Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Create New KSMP Application</h3>
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            <form onSubmit={handleFormSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Applicant Name</label>
+                  <input
+                    type="text"
+                    name="applicantName"
+                    value={formData.applicantName}
+                    onChange={handleFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Startup Name</label>
+                  <input
+                    type="text"
+                    name="startupName"
+                    value={formData.startupName}
+                    onChange={handleFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Industry</label>
+                  <select
+                    name="industry"
+                    value={formData.industry}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="FinTech">FinTech</option>
+                    <option value="HealthTech">HealthTech</option>
+                    <option value="EdTech">EdTech</option>
+                    <option value="AgriTech">AgriTech</option>
+                    <option value="Logistics">Logistics</option>
+                    <option value="E-commerce">E-commerce</option>
+                    <option value="SaaS">SaaS</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Stage</label>
+                  <select
+                    name="stage"
+                    value={formData.stage}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="Pre-Seed">Pre-Seed</option>
+                    <option value="Early Stage">Early Stage</option>
+                    <option value="Seed Stage">Seed Stage</option>
+                    <option value="Series A">Series A</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="under_review">Under Review</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cohort</label>
+                  <select
+                    name="cohort"
+                    value={formData.cohort}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="2024-02">Cohort 2024-02</option>
+                    <option value="2024-03">Cohort 2024-03</option>
+                    <option value="2024-04">Cohort 2024-04</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Team Size</label>
+                  <input
+                    type="number"
+                    name="teamSize"
+                    value={formData.teamSize}
+                    onChange={handleFormChange}
+                    required
+                    min="1"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Funding Raised (₹)</label>
+                  <input
+                    type="number"
+                    name="fundingRaised"
+                    value={formData.fundingRaised}
+                    onChange={handleFormChange}
+                    min="0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Revenue (₹)</label>
+                  <input
+                    type="number"
+                    name="revenue"
+                    value={formData.revenue}
+                    onChange={handleFormChange}
+                    min="0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                  <select
+                    name="priority"
+                    value={formData.priority}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Business Model</label>
+                <input
+                  type="text"
+                  name="businessModel"
+                  value={formData.businessModel}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Target Market</label>
+                <input
+                  type="text"
+                  name="targetMarket"
+                  value={formData.targetMarket}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Competitive Advantage</label>
+                <input
+                  type="text"
+                  name="competitiveAdvantage"
+                  value={formData.competitiveAdvantage}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Problem Statement</label>
+                <textarea
+                  name="problemStatement"
+                  value={formData.problemStatement}
+                  onChange={handleFormChange}
+                  required
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Solution</label>
+                <textarea
+                  name="solution"
+                  value={formData.solution}
+                  onChange={handleFormChange}
+                  required
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Market Size</label>
+                  <input
+                    type="text"
+                    name="marketSize"
+                    value={formData.marketSize}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Traction</label>
+                  <input
+                    type="text"
+                    name="traction"
+                    value={formData.traction}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Expected Outcomes</label>
+                <input
+                  type="text"
+                  name="expectedOutcomes"
+                  value={formData.expectedOutcomes}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Time Commitment</label>
+                <input
+                  type="text"
+                  name="timeCommitment"
+                  value={formData.timeCommitment}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Previous Experience</label>
+                <input
+                  type="text"
+                  name="previousExperience"
+                  value={formData.previousExperience}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Education</label>
+                <input
+                  type="text"
+                  name="education"
+                  value={formData.education}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleFormChange}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closeModals}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Creating...' : 'Create Application'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Application Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Edit KSMP Application</h3>
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            <form onSubmit={handleFormSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Applicant Name</label>
+                  <input
+                    type="text"
+                    name="applicantName"
+                    value={formData.applicantName}
+                    onChange={handleFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Startup Name</label>
+                  <input
+                    type="text"
+                    name="startupName"
+                    value={formData.startupName}
+                    onChange={handleFormChange}
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Industry</label>
+                  <select
+                    name="industry"
+                    value={formData.industry}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="FinTech">FinTech</option>
+                    <option value="HealthTech">HealthTech</option>
+                    <option value="EdTech">EdTech</option>
+                    <option value="AgriTech">AgriTech</option>
+                    <option value="Logistics">Logistics</option>
+                    <option value="E-commerce">E-commerce</option>
+                    <option value="SaaS">SaaS</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Stage</label>
+                  <select
+                    name="stage"
+                    value={formData.stage}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="Pre-Seed">Pre-Seed</option>
+                    <option value="Early Stage">Early Stage</option>
+                    <option value="Seed Stage">Seed Stage</option>
+                    <option value="Series A">Series A</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <select
+                    name="status"
+                    value={formData.status}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="under_review">Under Review</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cohort</label>
+                  <select
+                    name="cohort"
+                    value={formData.cohort}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="2024-02">Cohort 2024-02</option>
+                    <option value="2024-03">Cohort 2024-03</option>
+                    <option value="2024-04">Cohort 2024-04</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Team Size</label>
+                  <input
+                    type="number"
+                    name="teamSize"
+                    value={formData.teamSize}
+                    onChange={handleFormChange}
+                    required
+                    min="1"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Funding Raised (₹)</label>
+                  <input
+                    type="number"
+                    name="fundingRaised"
+                    value={formData.fundingRaised}
+                    onChange={handleFormChange}
+                    min="0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Revenue (₹)</label>
+                  <input
+                    type="number"
+                    name="revenue"
+                    value={formData.revenue}
+                    onChange={handleFormChange}
+                    min="0"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                  <select
+                    name="priority"
+                    value={formData.priority}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Business Model</label>
+                <input
+                  type="text"
+                  name="businessModel"
+                  value={formData.businessModel}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Target Market</label>
+                <input
+                  type="text"
+                  name="targetMarket"
+                  value={formData.targetMarket}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Competitive Advantage</label>
+                <input
+                  type="text"
+                  name="competitiveAdvantage"
+                  value={formData.competitiveAdvantage}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Problem Statement</label>
+                <textarea
+                  name="problemStatement"
+                  value={formData.problemStatement}
+                  onChange={handleFormChange}
+                  required
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Solution</label>
+                <textarea
+                  name="solution"
+                  value={formData.solution}
+                  onChange={handleFormChange}
+                  required
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Market Size</label>
+                  <input
+                    type="text"
+                    name="marketSize"
+                    value={formData.marketSize}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Traction</label>
+                  <input
+                    type="text"
+                    name="traction"
+                    value={formData.traction}
+                    onChange={handleFormChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Expected Outcomes</label>
+                <input
+                  type="text"
+                  name="expectedOutcomes"
+                  value={formData.expectedOutcomes}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Time Commitment</label>
+                <input
+                  type="text"
+                  name="timeCommitment"
+                  value={formData.timeCommitment}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Previous Experience</label>
+                <input
+                  type="text"
+                  name="previousExperience"
+                  value={formData.previousExperience}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Education</label>
+                <input
+                  type="text"
+                  name="education"
+                  value={formData.education}
+                  onChange={handleFormChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleFormChange}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={closeModals}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Updating...' : 'Update Application'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Application Modal */}
+      {showViewModal && selectedApplication && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-full max-w-4xl shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">KSMP Application Details</h3>
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="space-y-6">
+              <div>
+                <h4 className="text-xl font-semibold text-gray-900">{selectedApplication.startupName}</h4>
+                <p className="text-sm text-gray-500">ID: {selectedApplication.id}</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Applicant Name</label>
+                    <p className="text-sm text-gray-900">{selectedApplication.applicantName}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Email</label>
+                    <p className="text-sm text-gray-900">{selectedApplication.email}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Phone</label>
+                    <p className="text-sm text-gray-900">{selectedApplication.phone}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Industry</label>
+                    <p className="text-sm text-gray-900">{selectedApplication.industry}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Stage</label>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStageColor(selectedApplication.stage)}`}>
+                      {selectedApplication.stage}
+                    </span>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Status</label>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(selectedApplication.status)}`}>
+                      {selectedApplication.status}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Cohort</label>
+                    <p className="text-sm text-gray-900">{selectedApplication.cohort}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Team Size</label>
+                    <p className="text-sm text-gray-900">{selectedApplication.teamSize} members</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Funding Raised</label>
+                    <p className="text-sm text-gray-900">₹{selectedApplication.fundingRaised.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Revenue</label>
+                    <p className="text-sm text-gray-900">₹{selectedApplication.revenue.toLocaleString('en-IN')}</p>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Priority</label>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(selectedApplication.priority)}`}>
+                      {selectedApplication.priority}
+                    </span>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Application Date</label>
+                    <p className="text-sm text-gray-900">{formatDate(selectedApplication.applicationDate)}</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Business Model</label>
+                <p className="text-sm text-gray-600">{selectedApplication.businessModel}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Target Market</label>
+                <p className="text-sm text-gray-600">{selectedApplication.targetMarket}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Competitive Advantage</label>
+                <p className="text-sm text-gray-600">{selectedApplication.competitiveAdvantage}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Problem Statement</label>
+                <p className="text-sm text-gray-600">{selectedApplication.problemStatement}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Solution</label>
+                <p className="text-sm text-gray-600">{selectedApplication.solution}</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Market Size</label>
+                  <p className="text-sm text-gray-600">{selectedApplication.marketSize}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Traction</label>
+                  <p className="text-sm text-gray-600">{selectedApplication.traction}</p>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Expected Outcomes</label>
+                <p className="text-sm text-gray-600">{selectedApplication.expectedOutcomes}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Time Commitment</label>
+                <p className="text-sm text-gray-600">{selectedApplication.timeCommitment}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Previous Experience</label>
+                <p className="text-sm text-gray-600">{selectedApplication.previousExperience}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Education</label>
+                <p className="text-sm text-gray-600">{selectedApplication.education}</p>
+              </div>
+              
+              {selectedApplication.mentorshipGoals && selectedApplication.mentorshipGoals.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Mentorship Goals</label>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedApplication.mentorshipGoals.map((goal: string, index: number) => (
+                      <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                        {goal}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {selectedApplication.preferredMentors && selectedApplication.preferredMentors.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Preferred Mentors</label>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedApplication.preferredMentors.map((mentor: string, index: number) => (
+                      <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                        {mentor}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {selectedApplication.notes && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Notes</label>
+                  <p className="text-sm text-gray-600">{selectedApplication.notes}</p>
+                </div>
+              )}
+              
+              <div className="flex justify-end pt-4">
+                <button
+                  onClick={closeModals}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && selectedApplication && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium text-gray-900">Delete KSMP Application</h3>
+              <button onClick={closeModals} className="text-gray-400 hover:text-gray-600">
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Are you sure you want to delete the application for <strong>{selectedApplication.startupName}</strong> by <strong>{selectedApplication.applicantName}</strong>? This action cannot be undone.
+              </p>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  onClick={closeModals}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteConfirm}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Deleting...' : 'Delete Application'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

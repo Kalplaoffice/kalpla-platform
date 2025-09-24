@@ -11,7 +11,7 @@ import {
   AcademicCapIcon,
   CurrencyDollarIcon,
   ClockIcon,
-  TrendingUpIcon,
+  ArrowTrendingUpIcon,
   TrendingDownIcon,
   EyeIcon,
   CalendarIcon,

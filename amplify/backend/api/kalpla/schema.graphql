@@ -1,13 +1,24 @@
 # This is a simplified schema to get the API working
 # The full schema will be added after the API is created
 
-type User @model @auth(rules: [{allow: owner}]) {
+type User @model @auth(rules: [{allow: owner}, {allow: groups, groups: ["Admin"]}]) {
   id: ID!
   email: String!
   firstName: String
   lastName: String
   role: String
+  status: String! @default(value: "Active") # Active, Suspended
   createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Leader @model @auth(rules: [{allow: public, operations: [read]}, {allow: groups, groups: ["Admin"], operations: [create, update, delete]}]) {
+  id: ID!
+  name: String!
+  imageUrl: String!
+  brandName: String
+  brandLogoUrl: String!
+  createdAt: AWSDateTime
   updatedAt: AWSDateTime!
 }
 
@@ -20,45 +31,92 @@ type Course @model @auth(rules: [{allow: public, operations: [read]}, {allow: ow
   updatedAt: AWSDateTime!
 }
 
-type DegreeProgram @model @auth(rules: [{allow: public, operations: [read, create, update, delete]}]) {
+type DegreeProgram @model @auth(rules: [{allow: public, operations: [read]}, {allow: groups, groups: ["Admin"], operations: [create, update, delete]}]) {
   id: ID!
   title: String!
-  slug: String! @index(name: "bySlug", queryField: "getDegreeProgramBySlug")
+  shortTitle: String!
   description: String!
-  shortDescription: String
-  duration: String!
-  mode: String!
-  schedule: String!
-  price: Float!
+  longDescription: String
+  degreeType: DegreeType!
+  field: String!
+  duration: Int! # in months
+  totalCredits: Int!
+  fee: Float!
   currency: String!
-  thumbnail: String
-  gallery: [String]
-  syllabus: [SyllabusSection] @hasMany
+  isActive: Boolean!
+  isPublic: Boolean!
+  curriculumPhases: [CurriculumPhase] @hasMany
+  admissionRequirements: [AdmissionRequirement] @hasMany
+  learningOutcomes: [LearningOutcome] @hasMany
+  careerProspects: [String!]!
   instructors: [Instructor] @manyToMany(relationName: "ProgramInstructors")
-  features: [String!]!
-  advantages: [String!]!
-  eligibility: String!
-  targetAudience: String!
-  prerequisites: [String]
-  learningOutcomes: [String]
-  certification: String
-  status: ProgramStatus!
-  totalStudents: Int
-  revenue: String
-  enrollmentCount: Int
-  rating: Float
-  reviews: [Review] @hasMany
+  createdBy: String!
+  updatedBy: String!
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
 }
 
-type SyllabusSection @model @auth(rules: [{allow: public, operations: [read, create, update, delete]}]) {
+type CurriculumPhase @model @auth(rules: [{allow: public, operations: [read]}, {allow: groups, groups: ["Admin"], operations: [create, update, delete]}]) {
+  id: ID!
+  name: String!
+  description: String!
+  order: Int!
+  duration: Int! # in weeks
+  isRequired: Boolean!
+  prerequisites: [String]
+  degreeProgramID: ID! @index(name: "byDegreeProgram")
+  courses: [PhaseCourse] @hasMany
+  requirements: [PhaseRequirement] @hasMany
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type PhaseCourse @model @auth(rules: [{allow: public, operations: [read]}, {allow: groups, groups: ["Admin"], operations: [create, update, delete]}]) {
+  id: ID!
+  courseId: String!
+  courseTitle: String!
+  courseDescription: String!
+  credits: Int!
+  isRequired: Boolean!
+  isElective: Boolean!
+  order: Int!
+  prerequisites: [String]
+  curriculumPhaseID: ID! @index(name: "byCurriculumPhase")
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type PhaseRequirement @model @auth(rules: [{allow: public, operations: [read]}, {allow: groups, groups: ["Admin"], operations: [create, update, delete]}]) {
+  id: ID!
+  type: RequirementType!
+  value: String! # Can be number or string depending on type
+  description: String!
+  isRequired: Boolean!
+  curriculumPhaseID: ID! @index(name: "byCurriculumPhase")
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type AdmissionRequirement @model @auth(rules: [{allow: public, operations: [read]}, {allow: groups, groups: ["Admin"], operations: [create, update, delete]}]) {
+  id: ID!
+  type: AdmissionRequirementType!
+  title: String!
+  description: String!
+  isRequired: Boolean!
+  minValue: Float
+  maxValue: Float
+  unit: String
+  degreeProgramID: ID! @index(name: "byDegreeProgram")
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type LearningOutcome @model @auth(rules: [{allow: public, operations: [read]}, {allow: groups, groups: ["Admin"], operations: [create, update, delete]}]) {
   id: ID!
   title: String!
-  description: String
-  order: Int!
-  duration: String
-  lessons: [Lesson] @hasMany
+  description: String!
+  category: OutcomeCategory!
+  level: OutcomeLevel!
   degreeProgramID: ID! @index(name: "byDegreeProgram")
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
@@ -101,7 +159,11 @@ type Instructor @model @auth(rules: [{allow: public, operations: [read, create, 
 type Enrollment @model @auth(rules: [{allow: owner}, {allow: public, operations: [read, create, update]}]) {
   id: ID!
   studentID: ID! @index(name: "byStudent")
+  studentName: String!
+  studentEmail: String!
   degreeProgramID: ID! @index(name: "byDegreeProgram")
+  programName: String!
+  status: EnrollmentStatus!
   paymentStatus: PaymentStatus!
   transactionId: String
   amount: Float!
@@ -116,6 +178,7 @@ type Enrollment @model @auth(rules: [{allow: owner}, {allow: public, operations:
   refundStatus: RefundStatus
   refundAmount: Float
   refundDate: AWSDateTime
+  payments: [Payment] @hasMany
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
 }
@@ -136,20 +199,69 @@ type Review @model @auth(rules: [{allow: owner}, {allow: public, operations: [re
 type Payment @model @auth(rules: [{allow: owner}, {allow: public, operations: [read, create, update]}]) {
   id: ID!
   enrollmentID: ID! @index(name: "byEnrollment")
+  studentID: ID! @index(name: "byStudent")
+  studentName: String!
+  studentEmail: String!
   amount: Float!
   currency: String!
   paymentMethod: String!
-  transactionId: String!
+  transactionId: String! @index(name: "byTransactionId")
+  payuTransactionId: String
   status: PaymentStatus!
   gateway: String!
   gatewayOrderId: String
   gatewayPaymentId: String
   gatewaySignature: String
+  paymentSource: String
+  bankReference: String
+  bankCode: String
+  errorCode: String
+  errorMessage: String
+  processedAt: AWSDateTime
+  webhookData: AWSJSON
   refundAmount: Float
   refundStatus: RefundStatus
   refundDate: AWSDateTime
   createdAt: AWSDateTime!
   updatedAt: AWSDateTime!
+}
+
+enum DegreeType {
+  bachelor
+  master
+  certificate
+  diploma
+  phd
+}
+
+enum RequirementType {
+  minimum_credits
+  minimum_courses
+  specific_course
+  gpa_requirement
+}
+
+enum AdmissionRequirementType {
+  education
+  experience
+  test_score
+  portfolio
+  interview
+  other
+}
+
+enum OutcomeCategory {
+  knowledge
+  skills
+  competencies
+  attitudes
+}
+
+enum OutcomeLevel {
+  beginner
+  intermediate
+  advanced
+  expert
 }
 
 enum ProgramStatus {
@@ -159,12 +271,54 @@ enum ProgramStatus {
   archived
 }
 
+enum EnrollmentStatus {
+  pending
+  enrolled
+  paid
+  payment_failed
+  completed
+  dropped
+  suspended
+}
+
 enum PaymentStatus {
   pending
   success
   failed
   cancelled
+  timeout
   refunded
+}
+
+enum SubscriptionType {
+  course
+  degree
+  ksmp
+  platform
+}
+
+enum PricingModel {
+  one_time
+  monthly
+  quarterly
+  yearly
+  lifetime
+}
+
+enum SubscriptionStatus {
+  active
+  inactive
+  cancelled
+  expired
+  suspended
+  pending
+}
+
+enum BillingCycle {
+  monthly
+  quarterly
+  yearly
+  one_time
 }
 
 enum RefundStatus {
@@ -173,4 +327,1294 @@ enum RefundStatus {
   processing
   completed
   rejected
+}
+
+type Assignment @model @auth(rules: [{ allow: public }]) {
+  id: ID!
+  courseID: ID! @index(name: "byCourse")
+  title: String!
+  description: String
+  dueDate: AWSDateTime
+  totalMarks: Int
+  fileUrl: String
+  createdBy: ID! # mentorID
+  submissions: [Submission] @hasMany
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Submission @model @auth(rules: [{ allow: owner }]) {
+  id: ID!
+  assignmentID: ID! @index(name: "byAssignment")
+  studentID: ID! @index(name: "byStudent")
+  fileUrl: String
+  submittedAt: AWSDateTime
+  grade: Grade @hasOne
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Ticket @model @auth(rules: [{ allow: owner }, { allow: groups, groups: ["Admin"], operations: [read, update] }]) {
+  id: ID!
+  userID: ID! @index(name: "byUser")
+  subject: String!
+  category: String
+  description: String!
+  priority: TicketPriority
+  status: TicketStatus!
+  assignedTo: String # Admin or support staff ID
+  courseID: ID @index(name: "byCourse") # Optional: if ticket is course-specific
+  attachments: [String] # URLs to attached files
+  replies: [TicketReply] @hasMany
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type TicketReply @model @auth(rules: [{ allow: owner }, { allow: groups, groups: ["Admin"], operations: [create, read, update] }]) {
+  id: ID!
+  ticketID: ID! @index(name: "byTicket")
+  userID: ID! @index(name: "byUser")
+  message: String!
+  isFromSupport: Boolean!
+  attachments: [String] # URLs to attached files
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+enum TicketPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum TicketStatus {
+  open
+  in_progress
+  resolved
+  closed
+}
+
+type Grade @model @auth(rules: [{ allow: owner }]) {
+  id: ID!
+  submissionID: ID! @index(name: "bySubmission")
+  score: Int!
+  maxScore: Int!
+  feedback: String
+  gradedBy: ID! # mentorID
+  gradedAt: AWSDateTime!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+enum PayoutStatus {
+  pending
+  processing
+  completed
+  failed
+  cancelled
+}
+
+type ProgramApplication @model @auth(rules: [{ allow: owner }, { allow: groups, groups: ["Admin"], operations: [read, update] }]) {
+  id: ID!
+  programID: ID! @index(name: "byProgram")
+  studentID: ID! @index(name: "byStudent")
+  fullName: String!
+  email: String!
+  phone: String
+  statementOfPurpose: String
+  status: ApplicationStatus!
+  submittedAt: AWSDateTime
+  reviewedAt: AWSDateTime
+  reviewedBy: String # Admin ID who reviewed
+  reviewNotes: String
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type SubscriptionPlan @model @auth(rules: [{allow: public, operations: [read]}, {allow: groups, groups: ["Admin"], operations: [create, update, delete]}]) {
+  id: ID!
+  name: String!
+  description: String!
+  type: SubscriptionType!
+  targetId: String! @index(name: "byTarget")
+  targetName: String!
+  pricingModel: PricingModel!
+  price: Float!
+  currency: String!
+  duration: Int! # in days for one_time, months for recurring
+  features: [String!]!
+  isActive: Boolean!
+  maxStudents: Int
+  discountPercentage: Float
+  earlyBirdDiscount: Float
+  groupDiscount: Float
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type StudentSubscription @model @auth(rules: [{allow: owner}, {allow: public, operations: [read, create, update]}]) {
+  id: ID!
+  studentId: ID! @index(name: "byStudent")
+  studentName: String!
+  studentEmail: String!
+  planId: ID! @index(name: "byPlan")
+  planName: String!
+  status: SubscriptionStatus!
+  startDate: AWSDateTime!
+  endDate: AWSDateTime!
+  nextBillingDate: AWSDateTime
+  autoRenew: Boolean!
+  paymentMethod: String!
+  totalPaid: Float!
+  currency: String!
+  billingCycle: BillingCycle!
+  lastPaymentDate: AWSDateTime
+  nextPaymentAmount: Float
+  cancellationDate: AWSDateTime
+  cancellationReason: String
+  refundAmount: Float
+  refundStatus: RefundStatus
+  payments: [PaymentTransaction] @hasMany
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type PaymentTransaction @model @auth(rules: [{allow: owner}, {allow: public, operations: [read, create, update]}]) {
+  id: ID!
+  subscriptionId: ID! @index(name: "bySubscription")
+  studentId: ID! @index(name: "byStudent")
+  studentName: String!
+  studentEmail: String!
+  amount: Float!
+  currency: String!
+  paymentMethod: String!
+  transactionId: String! @index(name: "byTransactionId")
+  status: PaymentStatus!
+  gateway: String!
+  gatewayTransactionId: String
+  description: String!
+  invoiceNumber: String
+  paymentDate: AWSDateTime!
+  dueDate: AWSDateTime
+  refundAmount: Float
+  refundDate: AWSDateTime
+  webhookData: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type BillingInfo @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  studentId: ID! @index(name: "byStudent")
+  studentName: String!
+  studentEmail: String!
+  billingAddress: AWSJSON!
+  taxId: String
+  companyName: String
+  paymentMethods: [AWSJSON!]!
+  invoices: [AWSJSON!]!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type RefundRequest @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read, create]}]) {
+  id: ID!
+  transactionId: String! @index(name: "byTransaction")
+  studentId: ID! @index(name: "byStudent")
+  studentName: String!
+  studentEmail: String!
+  amount: Float!
+  currency: String!
+  reason: String!
+  status: RefundStatus!
+  requestedBy: String!
+  requestedAt: AWSDateTime!
+  approvedBy: String
+  approvedAt: AWSDateTime
+  processedBy: String
+  processedAt: AWSDateTime
+  refundTransactionId: String
+  notes: String
+  attachments: [AWSJSON!]
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type MentorPayout @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read]}]) {
+  id: ID!
+  mentorId: ID! @index(name: "byMentor")
+  mentorName: String!
+  mentorEmail: String!
+  amount: Float!
+  currency: String!
+  period: String! @index(name: "byPeriod")
+  status: PayoutStatus!
+  paymentMethod: String!
+  bankAccount: AWSJSON
+  upiId: String
+  walletAddress: String
+  processedAt: AWSDateTime
+  transactionId: String
+  fees: AWSJSON!
+  courses: [AWSJSON!]!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type InvestorApplication @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read, create, update]}]) {
+  id: ID!
+  investorId: ID! @index(name: "byInvestor")
+  investorName: String!
+  investorEmail: String!
+  companyName: String
+  companyWebsite: String
+  investmentFocus: [String!]!
+  investmentAmount: Float
+  investmentStage: InvestmentStage!
+  portfolioCompanies: [String!]
+  previousInvestments: [AWSJSON!]
+  investmentCriteria: AWSJSON!
+  dueDiligence: AWSJSON!
+  riskAssessment: AWSJSON!
+  complianceDocuments: [AWSJSON!]!
+  references: [AWSJSON!]
+  status: ApplicationStatus!
+  submittedAt: AWSDateTime!
+  reviewedBy: String
+  reviewedAt: AWSDateTime
+  approvedBy: String
+  approvedAt: AWSDateTime
+  rejectionReason: String
+  notes: String
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type InvestorProfile @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read, create, update]}]) {
+  id: ID!
+  investorId: ID! @index(name: "byInvestor")
+  investorName: String!
+  investorEmail: String!
+  companyName: String!
+  companyWebsite: String
+  investmentFocus: [String!]!
+  investmentAmount: Float
+  investmentStage: InvestmentStage!
+  portfolioCompanies: [String!]
+  previousInvestments: [AWSJSON!]
+  investmentCriteria: AWSJSON!
+  dueDiligence: AWSJSON!
+  riskAssessment: AWSJSON!
+  complianceDocuments: [AWSJSON!]!
+  references: [AWSJSON!]
+  status: InvestorStatus!
+  accessLevel: AccessLevel!
+  permissions: [String!]!
+  lastLoginAt: AWSDateTime
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type InvestorAccessLog @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read]}]) {
+  id: ID!
+  investorId: ID! @index(name: "byInvestor")
+  investorName: String!
+  action: String!
+  resource: String!
+  timestamp: AWSDateTime!
+  ipAddress: String
+  userAgent: String
+  success: Boolean!
+  details: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+enum InvestmentStage {
+  seed
+  series_a
+  series_b
+  series_c
+  growth
+  late_stage
+  pre_ipo
+}
+
+enum InvestorStatus {
+  pending
+  active
+  suspended
+  terminated
+}
+
+enum AccessLevel {
+  basic
+  premium
+  vip
+  admin
+}
+
+type DemoDay @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: groups, groups: ["Investor"], operations: [read]}]) {
+  id: ID!
+  title: String!
+  description: String!
+  date: AWSDateTime!
+  location: String!
+  virtualLink: String
+  status: DemoDayStatus!
+  featuredStartups: [String!]!
+  agenda: [AWSJSON!]!
+  speakers: [AWSJSON!]!
+  sponsors: [AWSJSON!]!
+  attendees: [String!]!
+  registrationDeadline: AWSDateTime!
+  maxAttendees: Int
+  currentAttendees: Int
+  requirements: [String!]
+  materials: [AWSJSON!]
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type FeaturedStartup @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: groups, groups: ["Investor"], operations: [read]}]) {
+  id: ID!
+  startupName: String!
+  description: String!
+  industry: String!
+  stage: InvestmentStage!
+  fundingRaised: Float
+  fundingGoal: Float
+  valuation: Float
+  founders: [AWSJSON!]!
+  teamSize: Int
+  location: String!
+  website: String
+  pitchDeck: String
+  demoVideo: String
+  traction: AWSJSON!
+  marketSize: Float
+  competitiveAdvantage: String!
+  businessModel: String!
+  revenue: Float
+  growthRate: Float
+  keyMetrics: AWSJSON!
+  investmentHighlights: [String!]!
+  risks: [String!]!
+  useOfFunds: String!
+  exitStrategy: String
+  featuredDate: AWSDateTime!
+  status: StartupStatus!
+  investorInterest: [String!]!
+  meetingsScheduled: [AWSJSON!]!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type InvestorMeeting @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read, create, update]}]) {
+  id: ID!
+  investorId: ID! @index(name: "byInvestor")
+  investorName: String!
+  startupId: ID! @index(name: "byStartup")
+  startupName: String!
+  meetingType: MeetingType!
+  scheduledDate: AWSDateTime!
+  duration: Int!
+  status: MeetingStatus!
+  agenda: String
+  notes: String
+  outcome: String
+  followUpActions: [String!]
+  meetingLink: String
+  attendees: [AWSJSON!]!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type InvestorInterest @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read, create, update]}]) {
+  id: ID!
+  investorId: ID! @index(name: "byInvestor")
+  investorName: String!
+  startupId: ID! @index(name: "byStartup")
+  startupName: String!
+  interestLevel: InterestLevel!
+  investmentAmount: Float
+  timeline: String
+  conditions: [String!]
+  notes: String
+  status: InterestStatus!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+enum DemoDayStatus {
+  upcoming
+  live
+  completed
+  cancelled
+}
+
+enum StartupStatus {
+  active
+  featured
+  funded
+  inactive
+}
+
+enum MeetingType {
+  pitch_meeting
+  due_diligence
+  follow_up
+  negotiation
+  closing
+}
+
+enum MeetingStatus {
+  scheduled
+  confirmed
+  in_progress
+  completed
+  cancelled
+  rescheduled
+}
+
+enum InterestLevel {
+  low
+  medium
+  high
+  very_high
+}
+
+enum InterestStatus {
+  expressed
+  under_review
+  approved
+  rejected
+  withdrawn
+}
+
+type StartupProfile @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read, create, update]}]) {
+  id: ID!
+  startupName: String!
+  description: String!
+  industry: String!
+  stage: InvestmentStage!
+  foundedDate: AWSDateTime!
+  location: String!
+  website: String
+  logo: String
+  coverImage: String
+  pitchVideo: String
+  pitchDeck: String
+  demoVideo: String
+  team: [AWSJSON!]!
+  founders: [AWSJSON!]!
+  advisors: [AWSJSON!]
+  investors: [AWSJSON!]
+  funding: AWSJSON!
+  traction: AWSJSON!
+  metrics: AWSJSON!
+  milestones: [AWSJSON!]!
+  updates: [AWSJSON!]!
+  socialMedia: AWSJSON
+  contactInfo: AWSJSON!
+  status: StartupProfileStatus!
+  visibility: ProfileVisibility!
+  featured: Boolean!
+  verified: Boolean!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type TeamMember @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read, create, update]}]) {
+  id: ID!
+  startupId: ID! @index(name: "byStartup")
+  startupName: String!
+  name: String!
+  role: String!
+  position: String!
+  bio: String
+  photo: String
+  linkedin: String
+  twitter: String
+  email: String
+  phone: String
+  expertise: [String!]!
+  experience: AWSJSON!
+  education: AWSJSON!
+  achievements: [String!]
+  isFounder: Boolean!
+  isActive: Boolean!
+  joinedDate: AWSDateTime!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type TractionUpdate @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read, create, update]}]) {
+  id: ID!
+  startupId: ID! @index(name: "byStartup")
+  startupName: String!
+  title: String!
+  description: String!
+  category: TractionCategory!
+  metrics: AWSJSON!
+  attachments: [AWSJSON!]
+  isPublic: Boolean!
+  publishedAt: AWSDateTime!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type StartupMilestone @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read, create, update]}]) {
+  id: ID!
+  startupId: ID! @index(name: "byStartup")
+  startupName: String!
+  title: String!
+  description: String!
+  category: MilestoneCategory!
+  achievedDate: AWSDateTime!
+  impact: String
+  metrics: AWSJSON!
+  isPublic: Boolean!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+enum StartupProfileStatus {
+  draft
+  published
+  archived
+  suspended
+}
+
+enum ProfileVisibility {
+  public
+  private
+  investors_only
+}
+
+enum TractionCategory {
+  user_growth
+  revenue_growth
+  product_launch
+  partnership
+  funding
+  team_expansion
+  market_expansion
+  product_update
+  achievement
+  other
+}
+
+enum MilestoneCategory {
+  product_launch
+  funding_round
+  user_milestone
+  revenue_milestone
+  partnership
+  team_milestone
+  market_expansion
+  product_update
+  award
+  recognition
+  other
+}
+
+type ContactRequest @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read, create, update]}]) {
+  id: ID!
+  requesterId: ID! @index(name: "byRequester")
+  requesterName: String!
+  requesterEmail: String!
+  requesterRole: String!
+  targetId: ID! @index(name: "byTarget")
+  targetName: String!
+  targetEmail: String!
+  targetRole: String!
+  requestType: ContactRequestType!
+  subject: String!
+  message: String!
+  status: ContactRequestStatus!
+  priority: ContactPriority!
+  category: ContactCategory!
+  attachments: [AWSJSON!]
+  responseMessage: String
+  respondedAt: AWSDateTime
+  respondedBy: String
+  scheduledMeeting: AWSJSON
+  followUpDate: AWSDateTime
+  tags: [String!]
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type ContactMessage @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read, create, update]}]) {
+  id: ID!
+  conversationId: ID! @index(name: "byConversation")
+  senderId: ID! @index(name: "bySender")
+  senderName: String!
+  senderEmail: String!
+  senderRole: String!
+  recipientId: ID! @index(name: "byRecipient")
+  recipientName: String!
+  recipientEmail: String!
+  recipientRole: String!
+  messageType: MessageType!
+  subject: String
+  content: String!
+  attachments: [AWSJSON!]
+  isRead: Boolean!
+  readAt: AWSDateTime
+  isEncrypted: Boolean!
+  encryptionKey: String
+  priority: ContactPriority!
+  category: ContactCategory!
+  tags: [String!]
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type ContactConversation @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read, create, update]}]) {
+  id: ID!
+  participant1Id: ID! @index(name: "byParticipant1")
+  participant1Name: String!
+  participant1Email: String!
+  participant1Role: String!
+  participant2Id: ID! @index(name: "byParticipant2")
+  participant2Name: String!
+  participant2Email: String!
+  participant2Role: String!
+  conversationType: ConversationType!
+  subject: String!
+  status: ConversationStatus!
+  lastMessageAt: AWSDateTime!
+  lastMessageId: String
+  lastMessageContent: String
+  lastMessageSender: String
+  unreadCount1: Int!
+  unreadCount2: Int!
+  isArchived1: Boolean!
+  isArchived2: Boolean!
+  isBlocked1: Boolean!
+  isBlocked2: Boolean!
+  tags: [String!]
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type ContactSettings @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read, create, update]}]) {
+  id: ID!
+  userId: ID! @index(name: "byUser")
+  userName: String!
+  userEmail: String!
+  userRole: String!
+  allowContactRequests: Boolean!
+  allowDirectMessages: Boolean!
+  allowMeetingRequests: Boolean!
+  allowInvestorContact: Boolean!
+  allowMentorContact: Boolean!
+  allowStartupContact: Boolean!
+  allowStudentContact: Boolean!
+  contactPreferences: AWSJSON!
+  privacyLevel: PrivacyLevel!
+  autoResponse: String
+  businessHours: AWSJSON
+  timezone: String!
+  notificationSettings: AWSJSON!
+  blockedUsers: [String!]
+  whitelistedUsers: [String!]
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type ContactNotification @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read, create, update]}]) {
+  id: ID!
+  userId: ID! @index(name: "byUser")
+  userName: String!
+  userEmail: String!
+  notificationType: NotificationType!
+  title: String!
+  message: String!
+  relatedId: String
+  relatedType: String
+  isRead: Boolean!
+  readAt: AWSDateTime
+  priority: ContactPriority!
+  category: ContactCategory!
+  actionRequired: Boolean!
+  actionUrl: String
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+enum ContactRequestType {
+  general_inquiry
+  meeting_request
+  collaboration_request
+  investment_inquiry
+  mentorship_request
+  partnership_request
+  support_request
+  feedback_request
+  other
+}
+
+enum ContactRequestStatus {
+  pending
+  approved
+  rejected
+  expired
+  cancelled
+  completed
+}
+
+enum ContactPriority {
+  low
+  medium
+  high
+  urgent
+}
+
+enum ContactCategory {
+  business
+  technical
+  investment
+  mentorship
+  partnership
+  support
+  feedback
+  other
+}
+
+enum MessageType {
+  text
+  image
+  file
+  meeting_invite
+  system_message
+  notification
+}
+
+enum ConversationType {
+  direct_message
+  group_message
+  support_conversation
+  meeting_discussion
+  project_discussion
+}
+
+enum ConversationStatus {
+  active
+  archived
+  blocked
+  deleted
+}
+
+enum PrivacyLevel {
+  public
+  private
+  restricted
+  confidential
+}
+
+enum NotificationType {
+  new_message
+  new_contact_request
+  meeting_request
+  message_read
+  conversation_archived
+  contact_approved
+  contact_rejected
+  system_notification
+}
+
+type Investment @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read, create, update]}]) {
+  id: ID!
+  investorId: ID! @index(name: "byInvestor")
+  investorName: String!
+  investorEmail: String!
+  investorRole: String!
+  startupId: ID! @index(name: "byStartup")
+  startupName: String!
+  startupEmail: String!
+  investmentType: InvestmentType!
+  investmentStage: InvestmentStage!
+  amount: Float!
+  currency: String!
+  equityPercentage: Float
+  valuation: Float
+  investmentDate: AWSDateTime!
+  closingDate: AWSDateTime
+  status: InvestmentStatus!
+  roundName: String
+  roundType: RoundType
+  leadInvestor: Boolean!
+  coInvestors: [String!]
+  investmentTerms: AWSJSON!
+  dueDiligence: AWSJSON
+  legalDocuments: [AWSJSON!]
+  boardSeat: Boolean!
+  boardSeats: Int
+  votingRights: Boolean!
+  antiDilution: Boolean!
+  liquidationPreference: Float
+  participationRights: Boolean!
+  tagAlongRights: Boolean!
+  dragAlongRights: Boolean!
+  informationRights: Boolean!
+  proRataRights: Boolean!
+  exitStrategy: String
+  expectedReturn: Float
+  riskLevel: RiskLevel!
+  sector: String!
+  geography: String!
+  notes: String
+  tags: [String!]
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type FundingRound @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read, create, update]}]) {
+  id: ID!
+  startupId: ID! @index(name: "byStartup")
+  startupName: String!
+  startupEmail: String!
+  roundName: String!
+  roundType: RoundType!
+  targetAmount: Float!
+  raisedAmount: Float!
+  currency: String!
+  valuation: Float!
+  preMoneyValuation: Float
+  postMoneyValuation: Float
+  roundDate: AWSDateTime!
+  closingDate: AWSDateTime
+  status: RoundStatus!
+  leadInvestor: String
+  leadInvestorAmount: Float
+  coInvestors: [AWSJSON!]!
+  minimumInvestment: Float
+  maximumInvestment: Float
+  useOfFunds: String!
+  milestones: [String!]!
+  timeline: String!
+  documents: [AWSJSON!]
+  legalStructure: String
+  sharePrice: Float
+  totalShares: Float
+  newShares: Float
+  dilutionPercentage: Float
+  antiDilution: Boolean!
+  liquidationPreference: Float
+  boardComposition: AWSJSON
+  votingRights: AWSJSON
+  informationRights: AWSJSON
+  exitStrategy: String
+  expectedReturn: Float
+  riskAssessment: AWSJSON
+  sector: String!
+  geography: String!
+  notes: String
+  tags: [String!]
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type InvestmentPortfolio @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read, create, update]}]) {
+  id: ID!
+  investorId: ID! @index(name: "byInvestor")
+  investorName: String!
+  investorEmail: String!
+  investorRole: String!
+  portfolioName: String!
+  description: String
+  totalInvested: Float!
+  totalValue: Float!
+  currency: String!
+  numberOfInvestments: Int!
+  activeInvestments: Int!
+  exitedInvestments: Int!
+  averageInvestment: Float!
+  averageReturn: Float!
+  totalReturn: Float!
+  irr: Float
+  multiple: Float
+  portfolioAllocation: AWSJSON!
+  sectorAllocation: AWSJSON!
+  stageAllocation: AWSJSON!
+  geographyAllocation: AWSJSON!
+  riskProfile: RiskProfile!
+  investmentStrategy: String!
+  targetReturns: Float!
+  investmentHorizon: String!
+  liquidityNeeds: String!
+  diversification: AWSJSON!
+  performanceMetrics: AWSJSON!
+  benchmarkComparison: AWSJSON
+  portfolioStatus: PortfolioStatus!
+  lastUpdated: AWSDateTime!
+  notes: String
+  tags: [String!]
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type InvestmentAnalytics @model @auth(rules: [{allow: groups, groups: ["Admin"], operations: [create, read, update, delete]}, {allow: owner, operations: [read, create, update]}]) {
+  id: ID!
+  investorId: ID! @index(name: "byInvestor")
+  investorName: String!
+  investorEmail: String!
+  investorRole: String!
+  analyticsType: AnalyticsType!
+  period: String!
+  startDate: AWSDateTime!
+  endDate: AWSDateTime!
+  totalInvestments: Int!
+  totalInvested: Float!
+  totalValue: Float!
+  totalReturn: Float!
+  averageReturn: Float!
+  irr: Float
+  multiple: Float
+  winRate: Float!
+  lossRate: Float!
+  averageHoldingPeriod: Float!
+  sectorPerformance: AWSJSON!
+  stagePerformance: AWSJSON!
+  geographyPerformance: AWSJSON!
+  riskMetrics: AWSJSON!
+  performanceAttribution: AWSJSON!
+  benchmarkComparison: AWSJSON
+  portfolioMetrics: AWSJSON!
+  marketMetrics: AWSJSON
+  peerComparison: AWSJSON
+  trends: AWSJSON!
+  insights: [String!]!
+  recommendations: [String!]!
+  alerts: [String!]!
+  notes: String
+  tags: [String!]
+  metadata: AWSJSON
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+enum InvestmentType {
+  equity
+  convertible_note
+  safe
+  debt
+  revenue_share
+  hybrid
+  other
+}
+
+enum InvestmentStatus {
+  committed
+  invested
+  active
+  exited
+  written_off
+  pending
+  cancelled
+}
+
+enum RoundType {
+  pre_seed
+  seed
+  series_a
+  series_b
+  series_c
+  series_d
+  series_e
+  growth
+  late_stage
+  bridge
+  convertible
+  other
+}
+
+enum RoundStatus {
+  announced
+  active
+  oversubscribed
+  closed
+  cancelled
+  delayed
+}
+
+enum RiskLevel {
+  low
+  medium
+  high
+  very_high
+}
+
+enum RiskProfile {
+  conservative
+  moderate
+  aggressive
+  very_aggressive
+}
+
+enum PortfolioStatus {
+  active
+  inactive
+  closed
+  liquidated
+}
+
+enum AnalyticsType {
+  portfolio_performance
+  sector_analysis
+  stage_analysis
+  geography_analysis
+  risk_analysis
+  benchmark_comparison
+  peer_comparison
+  market_analysis
+  trend_analysis
+  custom
+}
+
+# ===========================================
+# MISSING SCHEMA OPERATIONS - PHASE 1 FIXES
+# ===========================================
+
+# Transcript Service Schema
+type Transcript @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  studentId: ID! @index(name: "byStudent")
+  transcriptUrl: String!
+  generatedAt: AWSDateTime!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+# Notes Service Schema
+type Note @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  studentId: ID! @index(name: "byStudent")
+  lessonId: ID! @index(name: "byLesson")
+  content: String!
+  timestamp: Int!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+# Q&A Service Schema
+type Question @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  studentId: ID! @index(name: "byStudent")
+  lessonId: ID! @index(name: "byLesson")
+  question: String!
+  status: QuestionStatus!
+  answers: [Answer] @hasMany
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type Answer @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  questionId: ID! @index(name: "byQuestion")
+  mentorId: ID! @index(name: "byMentor")
+  answer: String!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+enum QuestionStatus {
+  PENDING
+  ANSWERED
+  RESOLVED
+}
+
+# Profile Service Schema
+type StudentProfile @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  userId: ID! @index(name: "byUser")
+  bio: String
+  interests: [String]
+  goals: String
+  currentPhase: String
+  education: String
+  experience: String
+  skills: [String]
+  totalCoursesCompleted: Int
+  totalHoursWatched: Float
+  averageGrade: Float
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type MentorProfile @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  userId: ID! @index(name: "byUser")
+  bio: String
+  expertise: [String]
+  experience: String
+  education: String
+  certifications: [String]
+  portfolio: String
+  linkedinProfile: String
+  website: String
+  assignedPhases: [String]
+  maxStudentsPerPhase: Int
+  status: String
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+# Discussion Service Schema
+type Discussion @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  studentId: ID! @index(name: "byStudent")
+  lessonId: ID! @index(name: "byLesson")
+  title: String!
+  content: String!
+  replies: [DiscussionReply] @hasMany
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type DiscussionReply @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  discussionId: ID! @index(name: "byDiscussion")
+  authorId: ID! @index(name: "byAuthor")
+  content: String!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+# Application Service Schema
+type Application @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  applicantId: ID! @index(name: "byApplicant")
+  applicationType: ApplicationType!
+  status: ApplicationStatus!
+  data: AWSJSON!
+  submittedAt: AWSDateTime!
+  reviewedAt: AWSDateTime
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+enum ApplicationType {
+  STUDENT
+  MENTOR
+  INVESTOR
+  INSTRUCTOR
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  WITHDRAWN
+}
+
+# Analytics Service Schema
+type AnalyticsEvent @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  userId: ID! @index(name: "byUser")
+  eventType: String!
+  eventData: AWSJSON!
+  timestamp: AWSDateTime!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+# Input types for mutations
+input UpdateUserProfileInput {
+  id: ID!
+  firstName: String
+  lastName: String
+  profilePicture: String
+  bio: String
+}
+
+input UpdateStudentProfileInput {
+  id: ID!
+  bio: String
+  interests: [String]
+  goals: String
+  education: String
+  experience: String
+  skills: [String]
+}
+
+input UpdateMentorProfileInput {
+  id: ID!
+  bio: String
+  expertise: [String]
+  experience: String
+  education: String
+  certifications: [String]
+  portfolio: String
+  linkedinProfile: String
+  website: String
+}
+
+# Interactive Video Service Schema
+type InteractiveElement @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  lessonId: ID! @index(name: "byLesson")
+  elementType: InteractiveElementType!
+  title: String!
+  content: String!
+  timestamp: Int!
+  duration: Int
+  options: [String]
+  correctAnswer: String
+  explanation: String
+  isActive: Boolean!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type QuizResponse @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  studentId: ID! @index(name: "byStudent")
+  elementId: ID! @index(name: "byElement")
+  answer: String!
+  isCorrect: Boolean!
+  score: Float
+  submittedAt: AWSDateTime!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+type VideoAnnotation @model @auth(rules: [{allow: owner}]) {
+  id: ID!
+  studentId: ID! @index(name: "byStudent")
+  lessonId: ID! @index(name: "byLesson")
+  timestamp: Int!
+  content: String!
+  annotationType: AnnotationType!
+  isPublic: Boolean!
+  createdAt: AWSDateTime!
+  updatedAt: AWSDateTime!
+}
+
+enum InteractiveElementType {
+  QUIZ
+  POLL
+  NOTE
+  BOOKMARK
+  DISCUSSION
+  RESOURCE
+}
+
+enum AnnotationType {
+  NOTE
+  QUESTION
+  BOOKMARK
+  HIGHLIGHT
+  COMMENT
 }

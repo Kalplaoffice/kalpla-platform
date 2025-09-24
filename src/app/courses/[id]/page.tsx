@@ -225,7 +225,7 @@ export default function CourseDetailPage() {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-lg p-6 sticky top-8">
               <div className="text-center mb-6">
-                <div className="text-3xl font-bold text-gray-900 mb-2">${course.price}</div>
+                <div className="text-3xl font-bold text-gray-900 mb-2">₹{course.price.toLocaleString('en-IN')}</div>
                 <p className="text-gray-600">One-time payment</p>
               </div>
 
