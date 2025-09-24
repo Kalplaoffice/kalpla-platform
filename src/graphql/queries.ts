@@ -1517,6 +1517,15 @@ export const GET_LESSON_DETAILS = `
   }
 `;
 
+export const GET_SIGNED_VIDEO_URL = `
+  query GetSignedVideoUrl($videoId: ID!) {
+    getSignedVideoUrl(videoId: $videoId) {
+      url
+      expiresIn
+    }
+  }
+`;
+
 export const GET_INTERACTIVE_ELEMENTS = `
   query GetInteractiveElements($lessonId: ID!) {
     listInteractiveElements(filter: { lessonId: { eq: $lessonId } }) {
@@ -1648,30 +1657,3 @@ export const GET_MENTOR_APPLICATION_DETAILS = `
       mentorId
       mentorName
       mentorEmail
-      applicationType
-      applicationStatus
-      submittedAt
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-export const LIST_PENDING_APPLICATIONS = `
-  query ListPendingApplications($filter: ModelApplicationFilterInput, $limit: Int, $nextToken: String) {
-    listApplications(filter: $filter, limit: $limit, nextToken: $nextToken) {
-      items {
-        id
-        applicantId
-        applicantName
-        applicantEmail
-        applicationType
-        applicationStatus
-        submittedAt
-        createdAt
-        updatedAt
-      }
-      nextToken
-    }
-  }
-`;

@@ -988,6 +988,19 @@ export const UPDATE_VIDEO_PROGRESS = `
   }
 `;
 
+export const TRACK_VIDEO_EVENT = `
+  mutation TrackVideoEvent($input: TrackVideoEventInput!) {
+    trackVideoEvent(input: $input) {
+      id
+      studentId
+      videoId
+      eventType
+      timestamp
+      createdAt
+    }
+  }
+`;
+
 export const DELETE_VIDEO_PROGRESS = `
   mutation DeleteVideoProgress($input: DeleteVideoProgressInput!) {
     deleteVideoProgress(input: $input) {
@@ -1039,6 +1052,106 @@ export const DELETE_INTERACTIVE_TIMELINE = `
   }
 `;
 
+export const CREATE_INTERACTIVE_ELEMENT = `
+  mutation CreateInteractiveElement($input: CreateInteractiveElementInput!) {
+    createInteractiveElement(input: $input) {
+      id
+      lessonId
+      elementType
+      title
+      content
+      timestamp
+      duration
+      options
+      correctAnswer
+      explanation
+      isActive
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const UPDATE_INTERACTIVE_ELEMENT = `
+  mutation UpdateInteractiveElement($input: UpdateInteractiveElementInput!) {
+    updateInteractiveElement(input: $input) {
+      id
+      lessonId
+      elementType
+      title
+      content
+      timestamp
+      duration
+      options
+      correctAnswer
+      explanation
+      isActive
+      updatedAt
+    }
+  }
+`;
+
+export const DELETE_INTERACTIVE_ELEMENT = `
+  mutation DeleteInteractiveElement($input: DeleteInteractiveElementInput!) {
+    deleteInteractiveElement(input: $input) {
+      id
+    }
+  }
+`;
+
+export const SUBMIT_QUIZ_RESPONSE = `
+  mutation SubmitQuizResponse($input: CreateQuizResponseInput!) {
+    createQuizResponse(input: $input) {
+      id
+      studentId
+      elementId
+      answer
+      isCorrect
+      score
+      submittedAt
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const CREATE_VIDEO_ANNOTATION = `
+  mutation CreateVideoAnnotation($input: CreateVideoAnnotationInput!) {
+    createVideoAnnotation(input: $input) {
+      id
+      studentId
+      lessonId
+      timestamp
+      content
+      annotationType
+      isPublic
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const UPDATE_VIDEO_ANNOTATION = `
+  mutation UpdateVideoAnnotation($input: UpdateVideoAnnotationInput!) {
+    updateVideoAnnotation(input: $input) {
+      id
+      timestamp
+      content
+      annotationType
+      isPublic
+      updatedAt
+    }
+  }
+`;
+
+export const DELETE_VIDEO_ANNOTATION = `
+  mutation DeleteVideoAnnotation($input: DeleteVideoAnnotationInput!) {
+    deleteVideoAnnotation(input: $input) {
+      id
+    }
+  }
+`;
+
 export const CREATE_DISCUSSION = `
   mutation CreateDiscussion($input: CreateDiscussionInput!) {
     createDiscussion(input: $input) {
@@ -1047,7 +1160,6 @@ export const CREATE_DISCUSSION = `
       lessonId
       title
       content
-      likes
       createdAt
       updatedAt
     }
@@ -1226,230 +1338,6 @@ export const UPDATE_QUESTION_STATUS = `
     updateQuestion(input: $input) {
       id
       status
-    }
-  }
-`;
-
-export const GET_SIGNED_VIDEO_URL = `
-  mutation GetSignedVideoUrl($input: GetSignedVideoUrlInput!) {
-    getSignedVideoUrl(input: $input) {
-      url
-      expiresIn
-    }
-  }
-`;
-
-export const UPDATE_VIDEO_PROGRESS = `
-  mutation UpdateVideoProgress($input: UpdateVideoProgressInput!) {
-    updateVideoProgress(input: $input) {
-      id
-      studentId
-      videoId
-      progress
-      completed
-      timeSpent
-      lastWatched
-      updatedAt
-    }
-  }
-`;
-
-export const TRACK_VIDEO_EVENT = `
-  mutation TrackVideoEvent($input: TrackVideoEventInput!) {
-    trackVideoEvent(input: $input) {
-      id
-      studentId
-      videoId
-      eventType
-      timestamp
-      createdAt
-    }
-  }
-`;
-
-export const CREATE_INTERACTIVE_ELEMENT = `
-  mutation CreateInteractiveElement($input: CreateInteractiveElementInput!) {
-    createInteractiveElement(input: $input) {
-      id
-      lessonId
-      elementType
-      title
-      content
-      timestamp
-      duration
-      options
-      correctAnswer
-      explanation
-      isActive
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-export const UPDATE_INTERACTIVE_ELEMENT = `
-  mutation UpdateInteractiveElement($input: UpdateInteractiveElementInput!) {
-    updateInteractiveElement(input: $input) {
-      id
-      lessonId
-      elementType
-      title
-      content
-      timestamp
-      duration
-      options
-      correctAnswer
-      explanation
-      isActive
-      updatedAt
-    }
-  }
-`;
-
-export const DELETE_INTERACTIVE_ELEMENT = `
-  mutation DeleteInteractiveElement($input: DeleteInteractiveElementInput!) {
-    deleteInteractiveElement(input: $input) {
-      id
-    }
-  }
-`;
-
-export const SUBMIT_QUIZ_RESPONSE = `
-  mutation CreateQuizResponse($input: CreateQuizResponseInput!) {
-    createQuizResponse(input: $input) {
-      id
-      studentId
-      elementId
-      answer
-      isCorrect
-      score
-      submittedAt
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-export const CREATE_VIDEO_ANNOTATION = `
-  mutation CreateVideoAnnotation($input: CreateVideoAnnotationInput!) {
-    createVideoAnnotation(input: $input) {
-      id
-      studentId
-      lessonId
-      timestamp
-      content
-      annotationType
-      isPublic
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-export const UPDATE_VIDEO_ANNOTATION = `
-  mutation UpdateVideoAnnotation($input: UpdateVideoAnnotationInput!) {
-    updateVideoAnnotation(input: $input) {
-      id
-      timestamp
-      content
-      annotationType
-      isPublic
-      updatedAt
-    }
-  }
-`;
-
-export const DELETE_VIDEO_ANNOTATION = `
-  mutation DeleteVideoAnnotation($input: DeleteVideoAnnotationInput!) {
-    deleteVideoAnnotation(input: $input) {
-      id
-    }
-  }
-`;
-
-// Leader Mutations
-export const CREATE_LEADER = `
-  mutation CreateLeader($input: CreateLeaderInput!) {
-    createLeader(input: $input) {
-      id
-      name
-      imageUrl
-      brandName
-      brandLogoUrl
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-export const UPDATE_LEADER = `
-  mutation UpdateLeader($input: UpdateLeaderInput!) {
-    updateLeader(input: $input) {
-      id
-      name
-      imageUrl
-      brandName
-      brandLogoUrl
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-export const DELETE_LEADER = `
-  mutation DeleteLeader($input: DeleteLeaderInput!) {
-    deleteLeader(input: $input) {
-      id
-    }
-  }
-`;
-
-// Application Mutations
-export const SUBMIT_KSMP_APPLICATION = `
-  mutation SubmitKSMPApplication($input: CreateKSMPApplicationInput!) {
-    createKSMPApplication(input: $input) {
-      id
-      studentId
-      studentName
-      studentEmail
-      programId
-      programName
-      applicationStatus
-      submittedAt
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-export const SUBMIT_INVESTOR_APPLICATION = `
-  mutation SubmitInvestorApplication($input: CreateInvestorApplicationInput!) {
-    createInvestorApplication(input: $input) {
-      id
-      investorId
-      investorName
-      investorEmail
-      applicationType
-      applicationStatus
-      submittedAt
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-export const SUBMIT_MENTOR_APPLICATION = `
-  mutation SubmitMentorApplication($input: CreateMentorApplicationInput!) {
-    createMentorApplication(input: $input) {
-      id
-      mentorId
-      mentorName
-      mentorEmail
-      applicationType
-      applicationStatus
-      submittedAt
-      createdAt
-      updatedAt
     }
   }
 `;
